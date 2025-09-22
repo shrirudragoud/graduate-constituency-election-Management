@@ -1,0 +1,127 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated to professional CRM color palette with white, blue, and violet gradients */
+  --background: #ffffff; /* Clean white base for professional interface */
+  --foreground: #343a40; /* Dark gray text for excellent readability */
+  --card: #f8f9fa; /* Light gray card background for subtle depth */
+  --card-foreground: #343a40; /* Dark gray card text */
+  --popover: rgba(255, 255, 255, 0.9); /* Semi-transparent white popover */
+  --popover-foreground: #343a40; /* Dark gray popover text */
+  --primary: #4c6ef5; /* Professional blue for primary actions */
+  --primary-foreground: #ffffff; /* White text on primary */
+  --secondary: #6f42c1; /* Rich violet for secondary actions */
+  --secondary-foreground: #ffffff; /* White text on secondary */
+  --muted: #f8f9fa; /* Light gray muted background */
+  --muted-foreground: #6c757d; /* Medium gray muted text */
+  --accent: #6f42c1; /* Violet accent for highlights */
+  --accent-foreground: #ffffff; /* White text on accent */
+  --destructive: #dc2626; /* Red for destructive actions */
+  --destructive-foreground: #ffffff; /* White text on destructive */
+  --border: #e9ecef; /* Light gray border */
+  --input: #ffffff; /* White input background */
+  --ring: rgba(76, 110, 245, 0.5); /* Blue focus ring */
+  --chart-1: #4c6ef5; /* Blue chart color */
+  --chart-2: #6f42c1; /* Violet chart color */
+  --chart-3: #ff6b6b; /* Red chart color */
+  --chart-4: #f7b733; /* Yellow chart color */
+  --chart-5: #00d2ff; /* Cyan chart color */
+  --radius: 0.5rem;
+  --sidebar: #ffffff; /* White sidebar background */
+  --sidebar-foreground: #343a40; /* Dark gray sidebar text */
+  --sidebar-primary: #4c6ef5; /* Blue sidebar primary */
+  --sidebar-primary-foreground: #ffffff; /* White sidebar primary text */
+  --sidebar-accent: #6f42c1; /* Violet sidebar accent */
+  --sidebar-accent-foreground: #ffffff; /* White sidebar accent text */
+  --sidebar-border: #e9ecef; /* Light gray sidebar border */
+  --sidebar-ring: rgba(76, 110, 245, 0.5); /* Blue sidebar focus ring */
+}
+
+.dark {
+  /* Dark mode variants for professional CRM interface */
+  --background: #1a1d29; /* Dark blue-gray background */
+  --foreground: #f8f9fa; /* Light text */
+  --card: #2d3748; /* Dark card background */
+  --card-foreground: #f8f9fa; /* Light card text */
+  --popover: rgba(26, 29, 41, 0.95); /* Dark popover */
+  --popover-foreground: #f8f9fa; /* Light popover text */
+  --primary: #5a67d8; /* Lighter blue for dark mode visibility */
+  --primary-foreground: #ffffff; /* White text on primary */
+  --secondary: #805ad5; /* Lighter violet for dark mode */
+  --secondary-foreground: #ffffff; /* White text on secondary */
+  --muted: #2d3748; /* Dark muted background */
+  --muted-foreground: #a0aec0; /* Light gray muted text */
+  --accent: #805ad5; /* Lighter violet accent */
+  --accent-foreground: #ffffff; /* White text on accent */
+  --destructive: #e53e3e; /* Brighter red for dark mode */
+  --destructive-foreground: #ffffff; /* White text on destructive */
+  --border: #4a5568; /* Medium gray border */
+  --input: #2d3748; /* Dark input background */
+  --ring: rgba(90, 103, 216, 0.5); /* Blue focus ring */
+  --chart-1: #5a67d8; /* Lighter blue chart */
+  --chart-2: #805ad5; /* Lighter violet chart */
+  --chart-3: #fc8181; /* Lighter red chart */
+  --chart-4: #f6e05e; /* Lighter yellow chart */
+  --chart-5: #63b3ed; /* Lighter cyan chart */
+  --sidebar: #2d3748; /* Dark sidebar background */
+  --sidebar-foreground: #f8f9fa; /* Light sidebar text */
+  --sidebar-primary: #5a67d8; /* Lighter blue sidebar primary */
+  --sidebar-primary-foreground: #ffffff; /* White sidebar primary text */
+  --sidebar-accent: #805ad5; /* Lighter violet sidebar accent */
+  --sidebar-accent-foreground: #ffffff; /* White sidebar accent text */
+  --sidebar-border: #4a5568; /* Medium gray sidebar border */
+  --sidebar-ring: rgba(90, 103, 216, 0.5); /* Blue sidebar focus ring */
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
