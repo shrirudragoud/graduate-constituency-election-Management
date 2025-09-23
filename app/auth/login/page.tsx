@@ -4,259 +4,228 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Vote, User, UserCheck, Shield, Eye, EyeOff, ArrowRight } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Vote, Eye, EyeOff, ArrowRight, Mail, Lock, AlertCircle } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedRole, setSelectedRole] = useState("student")
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    twoFA: ""
+  })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const roles = [
+    { id: "student", name: "Student", href: "/student" },
+    { id: "team", name: "Team Member", href: "/team" },
+    { id: "manager", name: "Manager", href: "/team" },
+    { id: "admin", name: "Admin", href: "/admin" }
+  ]
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }))
+    }
+  }
+
+  const handleLogin = async () => {
+    // Simple validation
+    if (!formData.email || !formData.password) {
+      setErrors({ email: !formData.email ? "Email required" : "", password: !formData.password ? "Password required" : "" })
+      return
+    }
+    
+    setIsLoading(true)
+    setTimeout(() => {
+      setIsLoading(false)
+      const role = roles.find(r => r.id === selectedRole)
+      if (role) {
+        window.location.href = role.href
+      }
+    }, 1000)
+  }
+
+  const quickLogin = () => {
+    setFormData({
+      email: "demo@university.edu",
+      password: "demo123",
+      twoFA: selectedRole === "admin" ? "123456" : ""
+    })
+    setErrors({})
+    setTimeout(() => handleLogin(), 100)
+  }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Vote className="w-8 h-8 text-primary-foreground" />
+          <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Vote className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground font-[family-name:var(--font-montserrat)]">
-            ElectionEnroll
-          </h1>
-          <p className="text-muted-foreground font-[family-name:var(--font-open-sans)]">
-            Secure Election Registration Platform
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">ElectionEnroll</h1>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 
-        <Card className="border-2 border-primary/10 bg-gradient-to-br from-background to-card/30">
-          <CardHeader className="text-center">
-            <CardTitle className="font-[family-name:var(--font-montserrat)]">Sign In to Your Account</CardTitle>
-            <CardDescription className="font-[family-name:var(--font-open-sans)]">
-              Choose your role and enter your credentials to continue
-            </CardDescription>
+        <Card className="shadow-lg">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-xl">Welcome Back</CardTitle>
+            <CardDescription>Choose your role and sign in</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="student" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 h-12">
-                <TabsTrigger
-                  value="student"
-                  className="flex items-center gap-2 font-[family-name:var(--font-open-sans)]"
-                >
-                  <User className="w-4 h-4" />
-                  Student
-                </TabsTrigger>
-                <TabsTrigger value="team" className="flex items-center gap-2 font-[family-name:var(--font-open-sans)]">
-                  <UserCheck className="w-4 h-4" />
-                  Team
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="flex items-center gap-2 font-[family-name:var(--font-open-sans)]">
-                  <Shield className="w-4 h-4" />
-                  Admin
-                </TabsTrigger>
-              </TabsList>
+          <CardContent className="space-y-6">
+            {/* Role Selection */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Select Role</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Student Login */}
-              <TabsContent value="student" className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="student-email" className="font-[family-name:var(--font-montserrat)]">
-                    Student Email
-                  </Label>
-                  <Input
-                    id="student-email"
-                    type="email"
-                    placeholder="your.email@university.edu"
-                    className="w-full font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="student-password" className="font-[family-name:var(--font-montserrat)]">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="student-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      className="w-full pr-10 font-[family-name:var(--font-open-sans)]"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <Link href="/student">
-                  <Button
-                    className="w-full bg-primary hover:bg-primary/90 font-[family-name:var(--font-open-sans)]"
-                    size="lg"
-                  >
-                    Sign In as Student
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <div className="text-center">
-                  <Link href="/auth/register">
-                    <Button variant="link" className="text-sm font-[family-name:var(--font-open-sans)]">
-                      Don't have an account? Register here
-                    </Button>
-                  </Link>
-                </div>
-              </TabsContent>
-
-              {/* Team Login */}
-              <TabsContent value="team" className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="team-email" className="font-[family-name:var(--font-montserrat)]">
-                    Team Member Email
-                  </Label>
-                  <Input
-                    id="team-email"
-                    type="email"
-                    placeholder="team.member@university.edu"
-                    className="w-full font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="team-password" className="font-[family-name:var(--font-montserrat)]">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="team-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      className="w-full pr-10 font-[family-name:var(--font-open-sans)]"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <Link href="/team">
-                  <Button
-                    className="w-full bg-accent hover:bg-accent/90 font-[family-name:var(--font-open-sans)]"
-                    size="lg"
-                  >
-                    Sign In as Team Member
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <div className="text-center">
-                  <Button variant="link" className="text-sm font-[family-name:var(--font-open-sans)]">
-                    Need team access? Contact administrator
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {/* Admin Login */}
-              <TabsContent value="admin" className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="admin-email" className="font-[family-name:var(--font-montserrat)]">
-                    Administrator Email
-                  </Label>
-                  <Input
-                    id="admin-email"
-                    type="email"
-                    placeholder="admin@university.edu"
-                    className="w-full font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="admin-password" className="font-[family-name:var(--font-montserrat)]">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="admin-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      className="w-full pr-10 font-[family-name:var(--font-open-sans)]"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="admin-2fa" className="font-[family-name:var(--font-montserrat)]">
-                    Two-Factor Authentication Code
-                  </Label>
-                  <Input
-                    id="admin-2fa"
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    className="w-full font-[family-name:var(--font-open-sans)]"
-                    maxLength={6}
-                  />
-                </div>
-                <Link href="/admin">
-                  <Button
-                    className="w-full bg-primary hover:bg-primary/90 font-[family-name:var(--font-open-sans)]"
-                    size="lg"
-                  >
-                    Sign In as Administrator
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <div className="text-center">
-                  <Button variant="link" className="text-sm font-[family-name:var(--font-open-sans)]">
-                    Lost access? Contact system administrator
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            {/* Security Notice */}
-            <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-primary mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-sm font-[family-name:var(--font-montserrat)]">Secure Access</h4>
-                  <p className="text-xs text-muted-foreground font-[family-name:var(--font-open-sans)]">
-                    Your login is protected with enterprise-grade security. All data is encrypted and access is logged
-                    for audit purposes.
-                  </p>
-                </div>
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="your.email@university.edu"
+                  className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`}
+                />
               </div>
+              {errors.email && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  placeholder="Enter your password"
+                  className={`pl-10 pr-10 h-12 ${errors.password ? "border-destructive" : ""}`}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            {/* 2FA for Admin */}
+            {selectedRole === "admin" && (
+              <div className="space-y-2">
+                <Label htmlFor="2fa" className="text-sm font-medium">2FA Code</Label>
+                <Input
+                  id="2fa"
+                  type="text"
+                  value={formData.twoFA}
+                  onChange={(e) => handleInputChange("twoFA", e.target.value)}
+                  placeholder="Enter 6-digit code"
+                  className="h-12"
+                  maxLength={6}
+                />
+              </div>
+            )}
+
+            {/* Login Buttons */}
+            <div className="space-y-3">
+              <Button
+                onClick={handleLogin}
+                disabled={isLoading}
+                className="w-full h-12 text-base font-semibold"
+              >
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                )}
+              </Button>
+              
+              <Button
+                onClick={quickLogin}
+                variant="outline"
+                disabled={isLoading}
+                className="w-full h-12 text-base"
+              >
+                🚀 Quick Demo Login
+              </Button>
+            </div>
+
+            {/* Links */}
+            <div className="text-center space-y-2">
+              <Link href="/auth/register" className="text-sm text-primary hover:underline">
+                Don't have an account? Register here
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Demo Info */}
+        <Card className="mt-6 bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <h3 className="font-semibold text-sm mb-2">Demo Credentials</h3>
+              <p className="text-xs text-muted-foreground mb-2">
+                Email: <code className="bg-muted px-1 rounded">demo@university.edu</code>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Password: <code className="bg-muted px-1 rounded">demo123</code>
+                {selectedRole === "admin" && (
+                  <span> | 2FA: <code className="bg-muted px-1 rounded">123456</code></span>
+                )}
+              </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-6 space-y-2">
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground font-[family-name:var(--font-open-sans)]">
-            <a href="#" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </a>
-            <span>•</span>
-            <a href="#" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>
-            <span>•</span>
-            <a href="#" className="hover:text-primary transition-colors">
-              Support
-            </a>
-          </div>
-          <p className="text-xs text-muted-foreground font-[family-name:var(--font-open-sans)]">
-            &copy; 2024 ElectionEnroll. All rights reserved.
-          </p>
+        <div className="text-center mt-6 text-xs text-muted-foreground">
+          &copy; 2024 ElectionEnroll. All rights reserved.
         </div>
       </div>
     </div>

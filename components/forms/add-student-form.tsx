@@ -148,14 +148,14 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[100vw] sm:w-[95vw] max-w-md sm:max-w-4xl h-[100vh] sm:h-[95vh] max-h-[100vh] sm:max-h-[95vh] p-0 gap-0 overflow-hidden sm:rounded-lg rounded-none flex flex-col">
-        <DialogHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b bg-gradient-to-r from-background to-primary/5 shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
-              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
+        <DialogHeader className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-border/60 bg-gradient-to-r from-background via-background to-primary/5 shrink-0 shadow-soft">
+          <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl md:text-2xl font-bold tracking-tight">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 shadow-soft">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
             </div>
-            <span className="font-semibold">Add New Student</span>
+            <span className="font-bold">Add New Student</span>
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+          <DialogDescription className="text-sm text-muted-foreground font-medium">
             Complete the electoral registration form based on Form-18 requirements
           </DialogDescription>
         </DialogHeader>
@@ -772,7 +772,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="w-full sm:w-auto order-2 sm:order-1 h-11 sm:h-10 text-sm bg-background/90 hover:bg-background"
+                className="w-full sm:w-auto order-2 sm:order-1 h-11 sm:h-10 text-sm bg-background/90 hover:bg-background focus-ring transition-all duration-200 hover:shadow-soft"
               >
                 <X className="w-4 h-4 mr-2" />
                 Cancel

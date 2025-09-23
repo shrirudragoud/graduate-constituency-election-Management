@@ -33,115 +33,120 @@ export default function TeamDashboard() {
   return (
     <SidebarLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Team Management</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Team Management</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Manage student registrations, review applications, and coordinate team efforts.
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="bg-chart-4/10 text-chart-4 border-chart-4/20">
+            <Badge variant="outline" className="bg-chart-4/10 text-chart-4 border-chart-4/20 text-xs sm:text-sm">
               <AlertCircle className="w-3 h-3 mr-1" />
-              89 Pending
+              <span className="hidden sm:inline">89 Pending</span>
+              <span className="sm:hidden">89</span>
             </Badge>
-            <Button onClick={() => setShowAddStudentForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Student
+            <Button onClick={() => setShowAddStudentForm(true)} className="text-xs sm:text-sm h-8 sm:h-9">
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Add Student</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Students</p>
-                  <p className="text-3xl font-bold text-chart-1">1,247</p>
-                </div>
-                <div className="w-12 h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-chart-1" />
-                </div>
-              </div>
-              <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="w-3 h-3 text-chart-1" />
-                <span className="text-xs text-chart-1">+12%</span>
-                <span className="text-xs text-muted-foreground">from last week</span>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-medium bg-gradient-to-br from-card via-card to-chart-1/5 border-chart-1/20">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Students</p>
+                      <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight">1,247</p>
+                    </div>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-300 group-hover:scale-105">
+                      <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-chart-1" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 p-2 bg-chart-1/10 rounded-lg">
+                    <TrendingUp className="w-3 h-3 text-chart-1 flex-shrink-0" />
+                    <span className="text-[10px] sm:text-xs text-chart-1 font-medium">+12%</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline font-medium">from last week</span>
+                  </div>
+                </CardContent>
+              </Card>
 
           <Card className="border-chart-2/20 bg-gradient-to-br from-background to-chart-2/5">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending Review</p>
-                  <p className="text-3xl font-bold text-chart-2">89</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Pending Review</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2">89</p>
                 </div>
-                <div className="w-12 h-12 bg-chart-2/20 rounded-lg flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-chart-2" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-2" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-chart-2">Needs attention</span>
+              <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                <span className="text-[10px] sm:text-xs text-chart-2">Needs attention</span>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Approved</p>
-                  <p className="text-3xl font-bold text-chart-1">1,089</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Approved</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">1,089</p>
                 </div>
-                <div className="w-12 h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-chart-1" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-chart-1">87.3%</span>
-                <span className="text-xs text-muted-foreground">approval rate</span>
+              <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                <span className="text-[10px] sm:text-xs text-chart-1">87.3%</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">approval rate</span>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-destructive/20 bg-gradient-to-br from-background to-destructive/5">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Issues</p>
-                  <p className="text-3xl font-bold text-destructive">69</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Issues</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive">69</p>
                 </div>
-                <div className="w-12 h-12 bg-destructive/20 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-destructive" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-destructive/20 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-destructive" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-destructive">Requires action</span>
+              <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                <span className="text-[10px] sm:text-xs text-destructive">Requires action</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="students" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-muted">
-            <TabsTrigger value="students" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Student Management
+        <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-4 h-10 sm:h-12 bg-muted">
+            <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Student Management</span>
+              <span className="sm:hidden">Students</span>
             </TabsTrigger>
-            <TabsTrigger value="review" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Application Review
+            <TabsTrigger value="review" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Application Review</span>
+              <span className="sm:hidden">Review</span>
             </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Bulk Operations
+            <TabsTrigger value="bulk" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Bulk Operations</span>
+              <span className="sm:hidden">Bulk</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Reports
+            <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
           </TabsList>
 

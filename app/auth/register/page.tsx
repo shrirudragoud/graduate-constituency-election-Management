@@ -6,371 +6,395 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Vote, User, Eye, EyeOff, CheckCircle, ArrowRight } from "lucide-react"
+import { Vote, Eye, EyeOff, ArrowRight, Mail, Lock, AlertCircle, UserPlus } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [selectedRole, setSelectedRole] = useState("student")
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    studentId: "",
+    employeeId: "",
+    department: "",
+    agreeToTerms: false
+  })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const roles = [
+    { id: "student", name: "Student", href: "/student" },
+    { id: "team", name: "Team Member", href: "/team" },
+    { id: "manager", name: "Manager", href: "/team" },
+    { id: "admin", name: "Admin", href: "/admin" }
+  ]
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+    
+    if (!formData.firstName) newErrors.firstName = "First name required"
+    if (!formData.lastName) newErrors.lastName = "Last name required"
+    if (!formData.email) newErrors.email = "Email required"
+    if (!formData.password) newErrors.password = "Password required"
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords don't match"
+    if (selectedRole === "student" && !formData.studentId) newErrors.studentId = "Student ID required"
+    if ((selectedRole === "team" || selectedRole === "manager" || selectedRole === "admin") && !formData.employeeId) {
+      newErrors.employeeId = "Employee ID required"
+    }
+    if (!formData.agreeToTerms) newErrors.agreeToTerms = "Must agree to terms"
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleRegister = async () => {
+    if (!validateForm()) return
+    
+    setIsLoading(true)
+    setTimeout(() => {
+      setIsLoading(false)
+      const role = roles.find(r => r.id === selectedRole)
+      if (role) {
+        window.location.href = role.href
+      }
+    }, 1000)
+  }
+
+  const quickRegister = () => {
+    const demoData = {
+      firstName: "Demo",
+      lastName: "User",
+      email: "demo@university.edu",
+      phone: "+1 (555) 123-4567",
+      password: "demo123",
+      confirmPassword: "demo123",
+      studentId: "STU2024001",
+      employeeId: "EMP2024001",
+      department: "it",
+      agreeToTerms: true
+    }
+    
+    setFormData(prev => ({ ...prev, ...demoData }))
+    setErrors({})
+    setTimeout(() => handleRegister(), 100)
+  }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Vote className="w-8 h-8 text-primary-foreground" />
+          <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <UserPlus className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground font-[family-name:var(--font-montserrat)]">
-            Create Student Account
-          </h1>
-          <p className="text-muted-foreground font-[family-name:var(--font-open-sans)]">
-            Register for election participation
-          </p>
+          <h1 className="text-2xl font-bold text-foreground">Join ElectionEnroll</h1>
+          <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
 
-        <Card className="border-2 border-primary/10 bg-gradient-to-br from-background to-card/30">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2 font-[family-name:var(--font-montserrat)]">
-              <User className="w-5 h-5 text-primary" />
-              Student Registration
-            </CardTitle>
-            <CardDescription className="font-[family-name:var(--font-open-sans)]">
-              Complete your profile to begin the election registration process
-            </CardDescription>
+        <Card className="shadow-lg">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-xl">Create Account</CardTitle>
+            <CardDescription>Fill in your details to get started</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg font-[family-name:var(--font-montserrat)]">Personal Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="font-[family-name:var(--font-montserrat)]">
-                    First Name
-                  </Label>
-                  <Input id="firstName" placeholder="John" className="font-[family-name:var(--font-open-sans)]" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="font-[family-name:var(--font-montserrat)]">
-                    Last Name
-                  </Label>
-                  <Input id="lastName" placeholder="Doe" className="font-[family-name:var(--font-open-sans)]" />
-                </div>
+            {/* Role Selection */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Select Role</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  placeholder="John"
+                  className={`h-12 ${errors.firstName ? "border-destructive" : ""}`}
+                />
+                {errors.firstName && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.firstName}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="font-[family-name:var(--font-montserrat)]">
-                  University Email
-                </Label>
+                <Label htmlFor="lastName" className="text-sm font-medium">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  placeholder="Doe"
+                  className={`h-12 ${errors.lastName ? "border-destructive" : ""}`}
+                />
+                {errors.lastName && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.lastName}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
                   placeholder="john.doe@university.edu"
-                  className="font-[family-name:var(--font-open-sans)]"
+                  className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="studentId" className="font-[family-name:var(--font-montserrat)]">
-                    Student ID
-                  </Label>
-                  <Input
-                    id="studentId"
-                    placeholder="STU-2024-001247"
-                    className="font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="font-[family-name:var(--font-montserrat)]">
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    className="font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth" className="font-[family-name:var(--font-montserrat)]">
-                    Date of Birth
-                  </Label>
-                  <Input id="dateOfBirth" type="date" className="font-[family-name:var(--font-open-sans)]" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="academicYear" className="font-[family-name:var(--font-montserrat)]">
-                    Academic Year
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="font-[family-name:var(--font-open-sans)]">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="freshman">Freshman (1st Year)</SelectItem>
-                      <SelectItem value="sophomore">Sophomore (2nd Year)</SelectItem>
-                      <SelectItem value="junior">Junior (3rd Year)</SelectItem>
-                      <SelectItem value="senior">Senior (4th Year)</SelectItem>
-                      <SelectItem value="graduate">Graduate Student</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              {errors.email && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.email}
+                </p>
+              )}
             </div>
 
-            {/* Address Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg font-[family-name:var(--font-montserrat)]">Address Information</h3>
+            {/* Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="+1 (555) 123-4567"
+                className="h-12"
+              />
+            </div>
+
+            {/* Role-specific ID */}
+            {selectedRole === "student" ? (
               <div className="space-y-2">
-                <Label htmlFor="address" className="font-[family-name:var(--font-montserrat)]">
-                  Street Address
-                </Label>
+                <Label htmlFor="studentId" className="text-sm font-medium">Student ID *</Label>
                 <Input
-                  id="address"
-                  placeholder="123 University Ave, Apt 4B"
-                  className="font-[family-name:var(--font-open-sans)]"
+                  id="studentId"
+                  value={formData.studentId}
+                  onChange={(e) => handleInputChange("studentId", e.target.value)}
+                  placeholder="STU2024001"
+                  className={`h-12 ${errors.studentId ? "border-destructive" : ""}`}
                 />
+                {errors.studentId && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.studentId}
+                  </p>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="font-[family-name:var(--font-montserrat)]">
-                    City
-                  </Label>
-                  <Input id="city" placeholder="College Town" className="font-[family-name:var(--font-open-sans)]" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="font-[family-name:var(--font-montserrat)]">
-                    State
-                  </Label>
-                  <Input id="state" placeholder="ST" className="font-[family-name:var(--font-open-sans)]" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="zipCode" className="font-[family-name:var(--font-montserrat)]">
-                    ZIP Code
-                  </Label>
-                  <Input id="zipCode" placeholder="12345" className="font-[family-name:var(--font-open-sans)]" />
-                </div>
-              </div>
-            </div>
-
-            {/* Election Preferences */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg font-[family-name:var(--font-montserrat)]">Election Preferences</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="votingLocation" className="font-[family-name:var(--font-montserrat)]">
-                    Preferred Voting Location
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="font-[family-name:var(--font-open-sans)]">
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="main-campus">Main Campus - Student Center</SelectItem>
-                      <SelectItem value="north-campus">North Campus - Library</SelectItem>
-                      <SelectItem value="south-campus">South Campus - Recreation Center</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="politicalAffiliation" className="font-[family-name:var(--font-montserrat)]">
-                    Political Affiliation (Optional)
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="font-[family-name:var(--font-open-sans)]">
-                      <SelectValue placeholder="Select affiliation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="democrat">Democrat</SelectItem>
-                      <SelectItem value="republican">Republican</SelectItem>
-                      <SelectItem value="independent">Independent</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                      <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Emergency Contact */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg font-[family-name:var(--font-montserrat)]">Emergency Contact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyName" className="font-[family-name:var(--font-montserrat)]">
-                    Contact Name
-                  </Label>
-                  <Input
-                    id="emergencyName"
-                    placeholder="Jane Doe"
-                    className="font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyRelation" className="font-[family-name:var(--font-montserrat)]">
-                    Relationship
-                  </Label>
-                  <Input
-                    id="emergencyRelation"
-                    placeholder="Mother"
-                    className="font-[family-name:var(--font-open-sans)]"
-                  />
-                </div>
-              </div>
+            ) : (
               <div className="space-y-2">
-                <Label htmlFor="emergencyPhone" className="font-[family-name:var(--font-montserrat)]">
-                  Emergency Phone
-                </Label>
+                <Label htmlFor="employeeId" className="text-sm font-medium">Employee ID *</Label>
                 <Input
-                  id="emergencyPhone"
-                  type="tel"
-                  placeholder="+1 (555) 987-6543"
-                  className="font-[family-name:var(--font-open-sans)]"
+                  id="employeeId"
+                  value={formData.employeeId}
+                  onChange={(e) => handleInputChange("employeeId", e.target.value)}
+                  placeholder="EMP2024001"
+                  className={`h-12 ${errors.employeeId ? "border-destructive" : ""}`}
                 />
-              </div>
-            </div>
-
-            {/* Account Security */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg font-[family-name:var(--font-montserrat)]">Account Security</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="font-[family-name:var(--font-montserrat)]">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a strong password"
-                      className="pr-10 font-[family-name:var(--font-open-sans)]"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="font-[family-name:var(--font-montserrat)]">
-                    Confirm Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
-                      className="pr-10 font-[family-name:var(--font-open-sans)]"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground font-[family-name:var(--font-open-sans)]">
-                Password must be at least 8 characters with uppercase, lowercase, number, and special character.
-              </div>
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="space-y-4">
-              <div className="flex items-start space-x-2">
-                <Checkbox id="terms" />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="terms"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-[family-name:var(--font-montserrat)]"
-                  >
-                    I agree to the Terms of Service and Privacy Policy
-                  </Label>
-                  <p className="text-xs text-muted-foreground font-[family-name:var(--font-open-sans)]">
-                    By registering, you agree to our terms and acknowledge that your information will be used for
-                    election registration purposes.
+                {errors.employeeId && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.employeeId}
                   </p>
-                </div>
+                )}
               </div>
-              <div className="flex items-start space-x-2">
-                <Checkbox id="notifications" />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="notifications"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-[family-name:var(--font-montserrat)]"
-                  >
-                    Send me election updates and notifications
-                  </Label>
-                  <p className="text-xs text-muted-foreground font-[family-name:var(--font-open-sans)]">
-                    Receive important updates about your registration status and election information.
-                  </p>
-                </div>
-              </div>
+            )}
+
+            {/* Department */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Department</Label>
+              <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="it">Information Technology</SelectItem>
+                  <SelectItem value="hr">Human Resources</SelectItem>
+                  <SelectItem value="admin">Administration</SelectItem>
+                  <SelectItem value="academic">Academic Affairs</SelectItem>
+                  <SelectItem value="student">Student Services</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Submit Button */}
-            <div className="space-y-4">
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Password *</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  placeholder="Create a strong password"
+                  className={`pl-10 pr-10 h-12 ${errors.password ? "border-destructive" : ""}`}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            {/* Confirm Password */}
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password *</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                  placeholder="Confirm your password"
+                  className={`pl-10 pr-10 h-12 ${errors.confirmPassword ? "border-destructive" : ""}`}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            {/* Terms */}
+            <div className="space-y-2">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="agreeToTerms"
+                  checked={formData.agreeToTerms}
+                  onCheckedChange={(checked) => handleInputChange("agreeToTerms", checked as boolean)}
+                  className="mt-1"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="agreeToTerms" className="text-sm text-muted-foreground leading-relaxed">
+                    I agree to the{" "}
+                    <a href="#" className="text-primary hover:underline">Terms of Service</a>{" "}
+                    and{" "}
+                    <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                  </Label>
+                </div>
+              </div>
+              {errors.agreeToTerms && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.agreeToTerms}
+                </p>
+              )}
+            </div>
+
+            {/* Register Buttons */}
+            <div className="space-y-3">
               <Button
-                className="w-full bg-primary hover:bg-primary/90 font-[family-name:var(--font-open-sans)]"
-                size="lg"
+                onClick={handleRegister}
+                disabled={isLoading}
+                className="w-full h-12 text-base font-semibold"
               >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Create Account & Start Registration
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Creating account...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span>Create Account</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                )}
               </Button>
-              <div className="text-center">
-                <Link href="/auth/login">
-                  <Button variant="link" className="text-sm font-[family-name:var(--font-open-sans)]">
-                    Already have an account? Sign in here
-                  </Button>
-                </Link>
-              </div>
+              
+              <Button
+                onClick={quickRegister}
+                variant="outline"
+                disabled={isLoading}
+                className="w-full h-12 text-base"
+              >
+                🚀 Quick Demo Registration
+              </Button>
             </div>
 
-            {/* Security Notice */}
-            <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-sm font-[family-name:var(--font-montserrat)]">Secure Registration</h4>
-                  <p className="text-xs text-muted-foreground font-[family-name:var(--font-open-sans)]">
-                    Your personal information is encrypted and protected. After registration, you'll need to upload
-                    required documents to complete your election registration.
-                  </p>
-                </div>
-              </div>
+            {/* Links */}
+            <div className="text-center">
+              <Link href="/auth/login" className="text-sm text-primary hover:underline">
+                Already have an account? Sign in here
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Demo Info */}
+        <Card className="mt-6 bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <h3 className="font-semibold text-sm mb-2">Demo Registration</h3>
+              <p className="text-xs text-muted-foreground">
+                Click "Quick Demo Registration" to auto-fill all fields and create an account instantly
+              </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-6 space-y-2">
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground font-[family-name:var(--font-open-sans)]">
-            <a href="#" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </a>
-            <span>•</span>
-            <a href="#" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>
-            <span>•</span>
-            <a href="#" className="hover:text-primary transition-colors">
-              Support
-            </a>
-          </div>
-          <p className="text-xs text-muted-foreground font-[family-name:var(--font-open-sans)]">
-            &copy; 2024 ElectionEnroll. All rights reserved.
-          </p>
+        <div className="text-center mt-6 text-xs text-muted-foreground">
+          &copy; 2024 ElectionEnroll. All rights reserved.
         </div>
       </div>
     </div>

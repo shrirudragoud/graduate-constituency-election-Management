@@ -23,76 +23,79 @@ export default function StudentPortal() {
   return (
     <SidebarLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Student Registration</h1>
-            <p className="text-muted-foreground">Welcome back, John! Complete your election enrollment process.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Student Registration</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Welcome back, John! Complete your election enrollment process.</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+            <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs sm:text-sm">
               <Clock className="w-3 h-3 mr-1" />
-              Under Review
+              <span className="hidden sm:inline">Under Review</span>
+              <span className="sm:hidden">Review</span>
             </Badge>
-            <Badge variant="outline" className="bg-chart-1/10 text-chart-1 border-chart-1/20">
+            <Badge variant="outline" className="bg-chart-1/10 text-chart-1 border-chart-1/20 text-xs sm:text-sm">
               <TrendingUp className="w-3 h-3 mr-1" />
               75% Complete
             </Badge>
           </div>
         </div>
 
-        <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl">Registration Progress</CardTitle>
-                <CardDescription>Complete all steps to finalize your election registration</CardDescription>
+            <Card className="border-primary/30 bg-gradient-to-br from-background via-background to-primary/5 shadow-medium hover:shadow-strong transition-all duration-300">
+              <CardHeader className="pb-4 sm:pb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl lg:text-2xl font-bold">Registration Progress</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm text-muted-foreground font-medium">Complete all steps to finalize your election registration</CardDescription>
+                  </div>
+                  <div className="text-center sm:text-right">
+                    <div className="text-2xl sm:text-3xl font-bold text-primary">75%</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground font-medium">Complete</div>
+                  </div>
+                </div>
+              </CardHeader>
+          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+            <Progress value={75} className="mb-3 sm:mb-4 h-2 sm:h-3" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+              <div className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-chart-1 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">Profile Complete</span>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-primary">75%</div>
-                <div className="text-sm text-muted-foreground">Complete</div>
+              <div className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-chart-1 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">Form Submitted</span>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Progress value={75} className="mb-4 h-3" />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="flex items-center gap-2 p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
-                <CheckCircle className="w-5 h-5 text-chart-1" />
-                <span className="text-sm font-medium">Profile Complete</span>
+              <div className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-chart-1 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">Documents Uploaded</span>
               </div>
-              <div className="flex items-center gap-2 p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
-                <CheckCircle className="w-5 h-5 text-chart-1" />
-                <span className="text-sm font-medium">Form Submitted</span>
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-chart-1/10 rounded-lg border border-chart-1/20">
-                <CheckCircle className="w-5 h-5 text-chart-1" />
-                <span className="text-sm font-medium">Documents Uploaded</span>
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-chart-2/10 rounded-lg border border-chart-2/20">
-                <Clock className="w-5 h-5 text-chart-2" />
-                <span className="text-sm font-medium">Pending Review</span>
+              <div className="flex items-center gap-1 sm:gap-2 p-2 sm:p-3 bg-chart-2/10 rounded-lg border border-chart-2/20">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-chart-2 flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">Pending Review</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-muted">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Profile
+        <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full grid-cols-4 h-10 sm:h-12 bg-muted">
+            <TabsTrigger value="profile" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <User className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="form" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Registration Form
+            <TabsTrigger value="form" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Registration Form</span>
+              <span className="sm:hidden">Form</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Documents
+            <TabsTrigger value="documents" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Documents</span>
+              <span className="sm:hidden">Docs</span>
             </TabsTrigger>
-            <TabsTrigger value="status" className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              Status
+            <TabsTrigger value="status" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Status</span>
             </TabsTrigger>
           </TabsList>
 

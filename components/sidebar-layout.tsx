@@ -16,7 +16,7 @@ interface SidebarLayoutProps {
 const navigation = [
   {
     name: "Dashboard",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     description: "Overview and analytics",
   },
@@ -63,117 +63,145 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-sidebar border-r border-sidebar-border transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-full flex-col">
-          {/* Logo and close button */}
-          <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white" />
+          {/* Sidebar */}
+          <div
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 w-64 sm:w-72 transform bg-sidebar/95 backdrop-blur-sm border-r border-sidebar-border/50 shadow-strong transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:shadow-none",
+              sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
+            <div className="flex h-full flex-col">
+              {/* Logo and close button */}
+              <div className="flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6 border-b border-sidebar-border/60 bg-sidebar/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary via-primary/90 to-secondary rounded-xl flex items-center justify-center shadow-medium ring-1 ring-primary/20">
+                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-base sm:text-lg font-bold text-sidebar-foreground tracking-tight">ElectionEnroll</span>
+                    <span className="text-[10px] sm:text-xs text-sidebar-foreground/60 font-medium">Platform</span>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="lg:hidden h-8 w-8 p-0 hover:bg-sidebar-accent/20 focus-ring" 
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-              <span className="text-lg font-semibold text-sidebar-foreground">ElectionEnroll</span>
-            </div>
-            <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
 
-          {/* Navigation */}
-          <ScrollArea className="flex-1 px-3 py-4">
-            <nav className="space-y-2">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center space-x-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent/10",
-                      isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                        : "text-sidebar-foreground hover:text-sidebar-accent",
-                    )}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <item.icon
-                      className={cn(
-                        "w-5 h-5",
-                        isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70",
-                      )}
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium">{item.name}</div>
-                      <div
+              {/* Navigation */}
+              <ScrollArea className="flex-1 px-3 sm:px-4 py-4 sm:py-6">
+                <nav className="space-y-2">
+                  {navigation.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
                         className={cn(
-                          "text-xs",
-                          isActive ? "text-sidebar-primary-foreground/80" : "text-sidebar-foreground/60",
+                          "group flex items-center space-x-3 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent/15 hover:shadow-soft focus-ring",
+                          isActive
+                            ? "bg-gradient-to-r from-sidebar-primary to-sidebar-primary/90 text-sidebar-primary-foreground shadow-medium ring-1 ring-sidebar-primary/20"
+                            : "text-sidebar-foreground hover:text-sidebar-accent hover:scale-[1.02]",
                         )}
+                        onClick={() => setSidebarOpen(false)}
                       >
-                        {item.description}
-                      </div>
-                    </div>
-                  </Link>
-                )
-              })}
-            </nav>
-          </ScrollArea>
+                        <div className={cn(
+                          "flex-shrink-0 p-1.5 rounded-lg transition-all duration-200",
+                          isActive 
+                            ? "bg-sidebar-primary-foreground/20 text-sidebar-primary-foreground" 
+                            : "text-sidebar-foreground/70 group-hover:text-sidebar-accent group-hover:bg-sidebar-accent/10"
+                        )}>
+                          <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold truncate">{item.name}</div>
+                          <div
+                            className={cn(
+                              "text-[10px] sm:text-xs truncate mt-0.5",
+                              isActive ? "text-sidebar-primary-foreground/80" : "text-sidebar-foreground/60 group-hover:text-sidebar-accent/80",
+                            )}
+                          >
+                            {item.description}
+                          </div>
+                        </div>
+                        {isActive && (
+                          <div className="w-1.5 h-1.5 bg-sidebar-primary-foreground rounded-full animate-pulse" />
+                        )}
+                      </Link>
+                    )
+                  })}
+                </nav>
+              </ScrollArea>
 
-          {/* User section */}
-          <div className="border-t border-sidebar-border p-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-secondary to-primary rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-white">AD</span>
+              {/* User section */}
+              <div className="border-t border-sidebar-border/60 p-4 sm:p-5 bg-sidebar/30">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary via-secondary/90 to-primary rounded-xl flex items-center justify-center shadow-medium ring-1 ring-secondary/20">
+                    <span className="text-sm font-bold text-white">AD</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-sidebar-foreground truncate">Admin User</p>
+                    <p className="text-[10px] sm:text-xs text-sidebar-foreground/60 truncate font-medium">admin@electionenroll.com</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/15 text-xs sm:text-sm h-9 sm:h-10 rounded-lg transition-all duration-200 hover:shadow-soft focus-ring group"
+                >
+                  <LogOut className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                  Sign out
+                </Button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">Admin User</p>
-                <p className="text-xs text-sidebar-foreground/60 truncate">admin@electionenroll.com</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign out
-            </Button>
-          </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
-          <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-5 h-5" />
+        <header className="h-14 sm:h-16 bg-background/95 backdrop-blur-sm border-b border-border/60 flex items-center justify-between px-4 sm:px-6 shadow-soft">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="lg:hidden h-9 w-9 p-0 hover:bg-muted/50 focus-ring" 
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
 
-          <div className="flex-1 lg:ml-0 ml-4">
-            <h1 className="text-xl font-semibold text-foreground">Election Enrollment Platform</h1>
+          <div className="flex-1 lg:ml-0 ml-3 sm:ml-4">
+            <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate tracking-tight">
+              Election Enrollment Platform
+            </h1>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4 hover:bg-muted/50 focus-ring transition-all duration-200 hover:shadow-soft"
+            >
               <FileText className="w-4 h-4 mr-2" />
-              Export Data
+              <span className="hidden lg:inline">Export Data</span>
             </Button>
-            <Button size="sm">
+            <Button 
+              size="sm" 
+              className="text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-medium hover:shadow-strong focus-ring transition-all duration-200"
+            >
               <UserCheck className="w-4 h-4 mr-2" />
-              New Enrollment
+              <span className="hidden sm:inline">New Enrollment</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-muted/30">
-          <div className="p-6">{children}</div>
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-background via-background to-muted/20">
+          <div className="p-4 sm:p-6 lg:p-8 animate-in">{children}</div>
         </main>
       </div>
     </div>
