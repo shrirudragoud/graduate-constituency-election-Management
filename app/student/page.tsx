@@ -5,9 +5,11 @@ import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import Script from "next/script"
+import { AddStudentForm } from "@/components/forms/add-student-form"
 
 export default function StudentOnboardingPage() {
   const lottieRef = useRef<HTMLDivElement>(null)
+  const [showAddStudentForm, setShowAddStudentForm] = useState(false)
 
   useEffect(() => {
     // Create the Lottie element after the script loads
@@ -35,6 +37,13 @@ export default function StudentOnboardingPage() {
         type="module" 
       />
       <div className="min-h-screen relative overflow-hidden" style={{backgroundImage: 'linear-gradient(-225deg, #5D9FFF 0%, #B8DCFF 30%,rgb(103, 117, 128) 60%,rgb(155, 144, 144) 80%, #E0E0E0 100%)', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed'}}>
+        {/* Logo text at the top */}
+        <div className="absolute top-8 left-8 z-20">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-lg">
+            ElectionEnroll
+          </h1>
+        </div>
+
         {/* Lottie animation positioned in the middle */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-32 flex items-center justify-center px-8">
           <div className="relative w-full max-w-sm h-24 flex items-center justify-center">
@@ -73,23 +82,28 @@ export default function StudentOnboardingPage() {
               
               {/* Registration button */}
               <div className="text-center">
-                <Link href="/team#registration-form">
-                  <Button 
-                    size="lg" 
-                    className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 group w-full sm:w-auto min-w-[250px] sm:min-w-[300px]"
-                  >
-                    <span className="flex items-center justify-center gap-3">
-                      Start Registration
-                      <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform duration-300" />
-                    </span>
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={() => setShowAddStudentForm(true)}
+                  size="lg" 
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 group w-full sm:w-auto min-w-[250px] sm:min-w-[300px]"
+                >
+                  <span className="flex items-center justify-center gap-3">
+                    Start Registration
+                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform duration-300" />
+                  </span>
+                </Button>
               </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Add Student Form Dialog */}
+      <AddStudentForm 
+        open={showAddStudentForm} 
+        onOpenChange={setShowAddStudentForm} 
+      />
     </>
   )
 }

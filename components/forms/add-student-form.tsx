@@ -786,19 +786,19 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 }}
               >
                 <div
-                  className="absolute left-0 top-0 h-full transition-all duration-700 ease-out border-r-2 border-primary/30"
+                  className="absolute left-0 top-0 h-full transition-all duration-700 ease-out border-r-2 border-green-500/50"
                   style={{
                     width: `${formCompletion}%`,
                     background:
                       formCompletion === 100
-                        ? "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)/0.9))"
+                        ? "linear-gradient(135deg, #10b981, #059669)"
                         : formCompletion > 70
-                          ? "linear-gradient(135deg, hsl(var(--primary)/0.8), hsl(var(--primary)/0.6))"
+                          ? "linear-gradient(135deg, #10b981, #34d399)"
                           : formCompletion > 30
-                            ? "linear-gradient(135deg, hsl(var(--primary)/0.6), hsl(var(--primary)/0.4))"
-                            : "linear-gradient(135deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.2))",
+                            ? "linear-gradient(135deg, #34d399, #6ee7b7)"
+                            : "linear-gradient(135deg, #6ee7b7, #a7f3d0)",
                     boxShadow:
-                      formCompletion > 0 ? "inset 0 1px 0 rgba(255,255,255,0.3), 0 0 10px rgba(0,0,0,0.1)" : "none",
+                      formCompletion > 0 ? "inset 0 1px 0 rgba(255,255,255,0.3), 0 0 10px rgba(16, 185, 129, 0.3)" : "none",
                   }}
                 />
 
@@ -817,7 +817,8 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 <div
                   className="relative z-10 flex items-center font-medium transition-colors duration-300"
                   style={{
-                    color: formCompletion > 50 ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
+                    color: formCompletion > 30 ? "#ffffff" : "hsl(var(--muted-foreground))",
+                    textShadow: formCompletion > 30 ? "0 1px 2px rgba(0,0,0,0.5)" : "none",
                   }}
                 >
                   <Save className="w-4 h-4 mr-2" />
