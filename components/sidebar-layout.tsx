@@ -175,7 +175,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
 
           <div className="flex-1 lg:ml-0 ml-3 sm:ml-4">
             <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate tracking-tight">
-              Election Enrollment Platform
+              Enrollment Platform
             </h1>
           </div>
 

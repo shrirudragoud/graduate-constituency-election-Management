@@ -148,30 +148,30 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[100vw] sm:w-[95vw] max-w-md sm:max-w-4xl h-[100vh] sm:h-[95vh] max-h-[100vh] sm:max-h-[95vh] p-0 gap-0 overflow-hidden sm:rounded-lg rounded-none flex flex-col">
-        <DialogHeader className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 border-b border-border/60 bg-gradient-to-r from-background via-background to-primary/5 shrink-0 shadow-soft">
-          <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl md:text-2xl font-bold tracking-tight">
-            <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20 shadow-soft">
-              <User className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary" />
+        <DialogHeader className="px-3 sm:px-4 py-3 sm:py-4 border-b border-border/60 bg-gradient-to-r from-background via-background to-primary/5 shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20">
+              <User className="w-4 h-4 text-primary" />
             </div>
-            <span className="font-bold">Add New Student</span>
+            <span>Add New Student</span>
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground font-medium">
+          <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
             Complete the electoral registration form based on Form-18 requirements
           </DialogDescription>
         </DialogHeader>
 
         <div className="border-b bg-muted/30 shrink-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full h-16 sm:h-14 p-1 bg-transparent grid grid-cols-5 gap-0.5 sm:gap-1 rounded-none">
+            <TabsList className="w-full h-12 sm:h-10 p-1 bg-transparent grid grid-cols-5 gap-0.5 rounded-none">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 return (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
-                    className="flex flex-col items-center justify-center gap-0.5 sm:gap-1 py-2 px-1 sm:px-3 text-[10px] sm:text-xs md:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm h-14 sm:h-12 rounded-md"
+                    className="flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 text-[9px] sm:text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm h-10 sm:h-8 rounded-md"
                   >
-                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                     <span className="leading-tight text-center font-medium">{tab.label}</span>
                   </TabsTrigger>
                 )

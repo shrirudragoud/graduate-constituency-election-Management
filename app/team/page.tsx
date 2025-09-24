@@ -37,7 +37,7 @@ export default function TeamDashboard() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Team Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Volunteer portal</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               Manage student registrations, review applications, and coordinate team efforts.
             </p>
@@ -596,12 +596,28 @@ export default function TeamDashboard() {
             <DialogTitle className="text-xs sm:text-sm font-medium">Student Registration Form Preview</DialogTitle>
           </DialogHeader>
           <div className="flex-1 p-0 overflow-hidden">
-            <iframe
-              src="https://e5850872-baaa-4597-87ce-9befbc15af1e.usrfiles.com/ugd/e58508_3380a0454eec4527bff63f8b4dede599.pdf#toolbar=1&navpanes=1&scrollbar=1"
-              className="w-full h-full border-0"
-              title="Student Registration Form"
-              style={{ minHeight: 'calc(100vh - 60px)' }}
-            />
+            {/* Mobile PDF Viewer */}
+            <div className="w-full h-full">
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent('https://e5850872-baaa-4597-87ce-9befbc15af1e.usrfiles.com/ugd/e58508_3380a0454eec4527bff63f8b4dede599.pdf')}&embedded=true`}
+                className="w-full h-full border-0"
+                title="Student Registration Form"
+                style={{ minHeight: 'calc(100vh - 60px)' }}
+                allowFullScreen
+              />
+            </div>
+            
+            {/* Fallback for mobile - Direct PDF link */}
+            <div className="absolute bottom-4 right-4 sm:hidden">
+              <Button
+                size="sm"
+                onClick={() => window.open('https://e5850872-baaa-4597-87ce-9befbc15af1e.usrfiles.com/ugd/e58508_3380a0454eec4527bff63f8b4dede599.pdf', '_blank')}
+                className="bg-primary text-primary-foreground shadow-lg"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Open PDF
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
