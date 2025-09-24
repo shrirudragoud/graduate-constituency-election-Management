@@ -42,7 +42,7 @@ const systemSettings = [
     settings: [
       {
         name: "Platform Name",
-        value: "ElectionEnroll",
+        value: "Voter Registor",
         type: "text",
         description: "The name displayed throughout the platform"
       },
@@ -219,7 +219,7 @@ export default function SettingsPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">System Settings</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Configure platform settings, security policies, and system preferences.
+              Configure platform settings, security policies, and system preferences. (Admin Only)
             </p>
           </div>
           <div className="flex items-center space-x-2">

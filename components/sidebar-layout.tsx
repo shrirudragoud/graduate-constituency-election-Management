@@ -11,6 +11,7 @@ import { useState } from "react"
 
 interface SidebarLayoutProps {
   children: React.ReactNode
+  currentRole?: "volunteer" | "manager" | "admin"
 }
 
 const navigation = [
@@ -19,42 +20,63 @@ const navigation = [
     href: "/dashboard",
     icon: LayoutDashboard,
     description: "Overview and analytics",
-  },
-  {
-    name: "Student Portal",
-    href: "/student",
-    icon: UserCheck,
-    description: "Registration and enrollment",
+    roles: ["volunteer", "manager", "admin"]
   },
   {
     name: "Team Management",
     href: "/team",
     icon: Users,
-    description: "Manage enrollments",
+    description: "Manage volunteers",
+    roles: ["volunteer", "manager", "admin"]
   },
   {
-    name: "Admin Analytics",
+    name: "Manager Dashboard",
+    href: "/manager",
+    icon: BarChart3,
+    description: "Manage volunteers",
+    roles: ["manager"]
+  },
+  {
+    name: "Manager Analytics",
     href: "/admin",
     icon: BarChart3,
-    description: "System analytics",
+    description: "Team analytics",
+    roles: ["manager", "admin"]
   },
   {
-    name: "Reports",
+    name: "Reports & Analytics",
     href: "/reports",
     icon: FileText,
     description: "Generate reports",
+    roles: ["admin"]
   },
   {
     name: "Settings",
     href: "/settings",
     icon: Settings,
     description: "System configuration",
+    roles: ["admin"]
   },
 ]
 
-export function SidebarLayout({ children }: SidebarLayoutProps) {
+export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  
+  // Auto-detect role based on current URL if not provided
+  const getRoleFromPath = (path: string): "volunteer" | "manager" | "admin" => {
+    if (path === "/manager") return "manager"
+    if (path === "/admin") return "manager" // Admin page shows manager analytics
+    if (path === "/reports" || path === "/settings") return "admin"
+    return "volunteer" // Default for dashboard, team, etc.
+  }
+  
+  const detectedRole = currentRole || getRoleFromPath(pathname)
+  
+  // Filter navigation based on current role
+  const filteredNavigation = navigation.filter(item => 
+    item.roles.includes(detectedRole)
+  )
 
   return (
     <div className="flex h-screen bg-background">
@@ -95,7 +117,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
               {/* Navigation */}
               <ScrollArea className="flex-1 px-3 sm:px-4 py-4 sm:py-6">
                 <nav className="space-y-2">
-                  {navigation.map((item) => {
+                  {filteredNavigation.map((item) => {
                     const isActive = pathname === item.href
                     return (
                       <Link

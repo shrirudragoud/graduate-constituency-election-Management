@@ -37,9 +37,9 @@ export default function TeamDashboard() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Volunteer portal</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Volunteer Portal</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Manage student registrations, review applications, and coordinate team efforts.
+              Reach out to voters, collect voter information, and coordinate constituency outreach efforts.
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -50,7 +50,7 @@ export default function TeamDashboard() {
             </Badge>
             <Button onClick={() => setShowAddStudentForm(true)} className="text-xs sm:text-sm h-8 sm:h-9">
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Add Student</span>
+              <span className="hidden sm:inline">Add Voter</span>
               <span className="sm:hidden">Add</span>
             </Button>
           </div>
@@ -61,7 +61,7 @@ export default function TeamDashboard() {
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Students</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Voters Contacted</p>
                       <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight">1,247</p>
                     </div>
                     <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-300 group-hover:scale-105">
@@ -80,7 +80,7 @@ export default function TeamDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Pending Review</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Pending Verification</p>
                   <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2">89</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center">
@@ -88,7 +88,7 @@ export default function TeamDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-chart-2">Needs attention</span>
+                <span className="text-[10px] sm:text-xs text-chart-2">Needs verification</span>
               </div>
             </CardContent>
           </Card>
@@ -97,7 +97,7 @@ export default function TeamDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Approved</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Verified Voters</p>
                   <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">1,089</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
@@ -106,7 +106,7 @@ export default function TeamDashboard() {
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
                 <span className="text-[10px] sm:text-xs text-chart-1">87.3%</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">approval rate</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">verification rate</span>
               </div>
             </CardContent>
           </Card>
@@ -115,7 +115,7 @@ export default function TeamDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Issues</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Follow-up Required</p>
                   <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive">69</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-destructive/20 rounded-lg flex items-center justify-center">
@@ -123,7 +123,7 @@ export default function TeamDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-destructive">Requires action</span>
+                <span className="text-[10px] sm:text-xs text-destructive">Needs follow-up</span>
               </div>
             </CardContent>
           </Card>
@@ -133,13 +133,13 @@ export default function TeamDashboard() {
           <TabsList className="grid w-full grid-cols-4 h-10 sm:h-12 bg-muted">
             <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Student Management</span>
-              <span className="sm:hidden">Students</span>
+              <span className="hidden sm:inline">Voter Management</span>
+              <span className="sm:hidden">Voters</span>
             </TabsTrigger>
             <TabsTrigger value="review" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Application Review</span>
-              <span className="sm:hidden">Review</span>
+              <span className="hidden sm:inline">Voter Verification</span>
+              <span className="sm:hidden">Verify</span>
             </TabsTrigger>
             <TabsTrigger value="bulk" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -160,13 +160,13 @@ export default function TeamDashboard() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-primary" />
-                      Student Registry
+                      Voter Registry
                     </CardTitle>
-                    <CardDescription>Manage student registrations and profiles</CardDescription>
+                    <CardDescription>Manage voter information and constituency data</CardDescription>
                   </div>
                   <Button onClick={() => setShowAddStudentForm(true)}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Student
+                    Add Voter
                   </Button>
                 </div>
               </CardHeader>
@@ -175,17 +175,17 @@ export default function TeamDashboard() {
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="Search students..." className="pl-10" />
+                    <Input placeholder="Search voters..." className="pl-10" />
                   </div>
                   <Select>
                     <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Students</SelectItem>
-                      <SelectItem value="pending">Pending Review</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="all">All Voters</SelectItem>
+                      <SelectItem value="pending">Pending Verification</SelectItem>
+                      <SelectItem value="approved">Verified</SelectItem>
+                      <SelectItem value="rejected">Follow-up Required</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline">
@@ -199,10 +199,10 @@ export default function TeamDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead>Student</TableHead>
-                        <TableHead>Student ID</TableHead>
+                        <TableHead>Voter</TableHead>
+                        <TableHead>Voter ID</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Submitted</TableHead>
+                        <TableHead>Contacted</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -210,15 +210,15 @@ export default function TeamDashboard() {
                       <TableRow className="hover:bg-muted/30">
                         <TableCell>
                           <div>
-                            <div className="font-medium">John Michael Doe</div>
-                            <div className="text-sm text-muted-foreground">john.doe@university.edu</div>
+                            <div className="font-medium">Rajesh Kumar Sharma</div>
+                            <div className="text-sm text-muted-foreground">rajesh.sharma@gmail.com</div>
                           </div>
                         </TableCell>
-                        <TableCell>STU-2024-001247</TableCell>
+                        <TableCell>VOT-2024-001247</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
                             <Clock className="w-3 h-3 mr-1" />
-                            Under Review
+                            Under Verification
                           </Badge>
                         </TableCell>
                         <TableCell>Mar 10, 2024</TableCell>
@@ -240,15 +240,15 @@ export default function TeamDashboard() {
                       <TableRow className="hover:bg-muted/30">
                         <TableCell>
                           <div>
-                            <div className="font-medium">Sarah Johnson</div>
-                            <div className="text-sm text-muted-foreground">sarah.j@university.edu</div>
+                            <div className="font-medium">Priya Singh Patel</div>
+                            <div className="text-sm text-muted-foreground">priya.patel@gmail.com</div>
                           </div>
                         </TableCell>
-                        <TableCell>STU-2024-001248</TableCell>
+                        <TableCell>VOT-2024-001248</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-chart-1/10 text-chart-1 border-chart-1/20">
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Approved
+                            Verified
                           </Badge>
                         </TableCell>
                         <TableCell>Mar 9, 2024</TableCell>
@@ -270,15 +270,15 @@ export default function TeamDashboard() {
                       <TableRow className="hover:bg-muted/30">
                         <TableCell>
                           <div>
-                            <div className="font-medium">Michael Chen</div>
-                            <div className="text-sm text-muted-foreground">m.chen@university.edu</div>
+                            <div className="font-medium">Amit Kumar Verma</div>
+                            <div className="text-sm text-muted-foreground">amit.verma@gmail.com</div>
                           </div>
                         </TableCell>
-                        <TableCell>STU-2024-001249</TableCell>
+                        <TableCell>VOT-2024-001249</TableCell>
                         <TableCell>
                           <Badge variant="destructive">
                             <AlertCircle className="w-3 h-3 mr-1" />
-                            Needs Documents
+                            Follow-up Required
                           </Badge>
                         </TableCell>
                         <TableCell>Mar 8, 2024</TableCell>
@@ -310,9 +310,9 @@ export default function TeamDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  Pending Applications
+                  Pending Voter Verifications
                 </CardTitle>
-                <CardDescription>Review and approve student registration applications</CardDescription>
+                <CardDescription>Review and verify voter information and constituency data</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
@@ -320,13 +320,13 @@ export default function TeamDashboard() {
                   <div className="border border-chart-1/20 rounded-lg p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-background to-chart-1/5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-base sm:text-lg">John Michael Doe</h3>
-                        <p className="text-sm text-muted-foreground break-all">STU-2024-001247 • john.doe@university.edu</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Submitted: March 10, 2024</p>
+                        <h3 className="font-semibold text-base sm:text-lg">Rajesh Kumar Sharma</h3>
+                        <p className="text-sm text-muted-foreground break-all">VOT-2024-001247 • rajesh.sharma@gmail.com</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Contacted: March 10, 2024</p>
                       </div>
                       <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 w-fit">
                         <Clock className="w-3 h-3 mr-1" />
-                        <span className="text-xs sm:text-sm">Pending Review</span>
+                        <span className="text-xs sm:text-sm">Pending Verification</span>
                       </Badge>
                     </div>
 
@@ -334,17 +334,17 @@ export default function TeamDashboard() {
                       <div className="space-y-1 sm:space-y-2">
                         <h4 className="font-medium text-xs sm:text-sm">Personal Information</h4>
                         <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>DOB: March 15, 2002</p>
-                          <p>Phone: +1 (555) 123-4567</p>
-                          <p>Year: Junior (3rd Year)</p>
+                          <p>DOB: March 15, 1985</p>
+                          <p>Phone: +91 98765 43210</p>
+                          <p>Age: 39 years</p>
                         </div>
                       </div>
                       <div className="space-y-1 sm:space-y-2">
-                        <h4 className="font-medium text-xs sm:text-sm">Registration Details</h4>
+                        <h4 className="font-medium text-xs sm:text-sm">Constituency Details</h4>
                         <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>Location: Main Campus</p>
-                          <p>Affiliation: Independent</p>
-                          <p>Emergency: Jane Doe</p>
+                          <p>Location: Delhi Central</p>
+                          <p>Ward: 45</p>
+                          <p>Emergency Contact: Sunita Sharma</p>
                         </div>
                       </div>
                       <div className="space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1">
@@ -352,15 +352,15 @@ export default function TeamDashboard() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Student ID</span>
+                            <span>Voter ID</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Photo ID</span>
+                            <span>Aadhaar Card</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Proof of Address</span>
+                            <span>Address Proof</span>
                           </div>
                         </div>
                       </div>
@@ -369,13 +369,13 @@ export default function TeamDashboard() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                       <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Approve Application</span>
-                        <span className="sm:hidden">Approve</span>
+                        <span className="hidden sm:inline">Verify Voter</span>
+                        <span className="sm:hidden">Verify</span>
                       </Button>
                       <Button variant="destructive" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Request Changes</span>
-                        <span className="sm:hidden">Request</span>
+                        <span className="hidden sm:inline">Request Follow-up</span>
+                        <span className="sm:hidden">Follow-up</span>
                       </Button>
                       <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -389,13 +389,13 @@ export default function TeamDashboard() {
                   <div className="border border-destructive/20 rounded-lg p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-background to-destructive/5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-base sm:text-lg">Emily Rodriguez</h3>
-                        <p className="text-sm text-muted-foreground break-all">STU-2024-001250 • emily.r@university.edu</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Submitted: March 11, 2024</p>
+                        <h3 className="font-semibold text-base sm:text-lg">Sneha Gupta</h3>
+                        <p className="text-sm text-muted-foreground break-all">VOT-2024-001250 • sneha.gupta@gmail.com</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Contacted: March 11, 2024</p>
                       </div>
                       <Badge variant="destructive" className="w-fit">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        <span className="text-xs sm:text-sm">Missing Documents</span>
+                        <span className="text-xs sm:text-sm">Follow-up Required</span>
                       </Badge>
                     </div>
 
@@ -403,17 +403,17 @@ export default function TeamDashboard() {
                       <div className="space-y-1 sm:space-y-2">
                         <h4 className="font-medium text-xs sm:text-sm">Personal Information</h4>
                         <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>DOB: July 22, 2001</p>
-                          <p>Phone: +1 (555) 987-6543</p>
-                          <p>Year: Senior (4th Year)</p>
+                          <p>DOB: July 22, 1990</p>
+                          <p>Phone: +91 98765 43211</p>
+                          <p>Age: 34 years</p>
                         </div>
                       </div>
                       <div className="space-y-1 sm:space-y-2">
-                        <h4 className="font-medium text-xs sm:text-sm">Registration Details</h4>
+                        <h4 className="font-medium text-xs sm:text-sm">Constituency Details</h4>
                         <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>Location: North Campus</p>
-                          <p>Affiliation: Democrat</p>
-                          <p>Emergency: Carlos Rodriguez</p>
+                          <p>Location: Mumbai North</p>
+                          <p>Ward: 12</p>
+                          <p>Emergency Contact: Ravi Gupta</p>
                         </div>
                       </div>
                       <div className="space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1">
@@ -421,11 +421,11 @@ export default function TeamDashboard() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Student ID</span>
+                            <span>Voter ID</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <AlertCircle className="w-3 h-3 text-destructive flex-shrink-0" />
-                            <span>Photo ID (Missing)</span>
+                            <span>Aadhaar Card (Missing)</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs sm:text-sm">
                             <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
@@ -438,8 +438,8 @@ export default function TeamDashboard() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                       <Button variant="destructive" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Request Missing Documents</span>
-                        <span className="sm:hidden">Request Documents</span>
+                        <span className="hidden sm:inline">Request Follow-up</span>
+                        <span className="sm:hidden">Follow-up</span>
                       </Button>
                       <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -459,17 +459,17 @@ export default function TeamDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="w-5 h-5 text-primary" />
-                  Bulk Student Management
+                  Bulk Voter Management
                 </CardTitle>
-                <CardDescription>Import, export, and manage multiple student registrations</CardDescription>
+                <CardDescription>Import, export, and manage multiple voter registrations</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Bulk Import */}
                   <div className="border border-chart-1/20 rounded-lg p-6 bg-gradient-to-br from-background to-chart-1/5">
-                    <h3 className="font-semibold mb-3">Bulk Import Students</h3>
+                    <h3 className="font-semibold mb-3">Bulk Import Voters</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Upload a CSV file to register multiple students at once
+                      Upload a CSV file to register multiple voters at once
                     </p>
                     <div className="space-y-3">
                       <Button variant="outline" className="w-full bg-transparent">
@@ -487,12 +487,12 @@ export default function TeamDashboard() {
 
                   {/* Bulk Export */}
                   <div className="border border-chart-2/20 rounded-lg p-6 bg-gradient-to-br from-background to-chart-2/5">
-                    <h3 className="font-semibold mb-3">Export Student Data</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Export student registration data for reporting</p>
+                    <h3 className="font-semibold mb-3">Export Voter Data</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Export voter registration data for reporting</p>
                     <div className="space-y-3">
                       <Button variant="outline" className="w-full bg-transparent">
                         <Download className="w-4 h-4 mr-2" />
-                        Export All Students
+                        Export All Voters
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
                       <Button variant="outline" className="w-full bg-transparent">
@@ -507,15 +507,15 @@ export default function TeamDashboard() {
                 {/* Bulk Actions */}
                 <div className="border border-border rounded-lg p-6 bg-gradient-to-br from-background to-muted/30">
                   <h3 className="font-semibold mb-3">Bulk Actions</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Perform actions on multiple selected students</p>
+                  <p className="text-sm text-muted-foreground mb-4">Perform actions on multiple selected voters</p>
                   <div className="flex flex-wrap gap-3">
                     <Button>
                       <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve Selected
+                      Verify Selected
                     </Button>
                     <Button variant="secondary">
                       <AlertCircle className="w-4 h-4 mr-2" />
-                      Request Documents
+                      Request Follow-up
                     </Button>
                     <Button variant="outline">
                       <FileText className="w-4 h-4 mr-2" />
@@ -535,16 +535,16 @@ export default function TeamDashboard() {
                   <Download className="w-5 h-5 text-primary" />
                   Reports & Analytics
                 </CardTitle>
-                <CardDescription>Generate reports and view registration analytics</CardDescription>
+                <CardDescription>Generate reports and view voter outreach analytics</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h3 className="font-semibold">Registration Reports</h3>
+                    <h3 className="font-semibold">Voter Outreach Reports</h3>
                     <div className="space-y-2">
                       <Button variant="outline" className="w-full justify-start bg-transparent">
                         <Download className="w-4 h-4 mr-2" />
-                        Daily Registration Summary
+                        Daily Outreach Summary
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
                       <Button variant="outline" className="w-full justify-start bg-transparent">
@@ -565,17 +565,17 @@ export default function TeamDashboard() {
                     <div className="space-y-2">
                       <Button variant="outline" className="w-full justify-start bg-transparent">
                         <Download className="w-4 h-4 mr-2" />
-                        Pending Applications
+                        Pending Verifications
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
                       <Button variant="outline" className="w-full justify-start bg-transparent">
                         <Download className="w-4 h-4 mr-2" />
-                        Document Issues
+                        Follow-up Required
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
                       <Button variant="outline" className="w-full justify-start bg-transparent">
                         <Download className="w-4 h-4 mr-2" />
-                        Approval Statistics
+                        Verification Statistics
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
                     </div>
@@ -593,7 +593,7 @@ export default function TeamDashboard() {
       <Dialog open={showPdfPreview} onOpenChange={setShowPdfPreview}>
         <DialogContent className="max-w-7xl h-[98vh] p-0 sm:max-w-5xl">
           <DialogHeader className="px-2 py-1 sm:px-3 sm:py-2 border-b bg-gray-50">
-            <DialogTitle className="text-xs sm:text-sm font-medium">Student Registration Form Preview</DialogTitle>
+            <DialogTitle className="text-xs sm:text-sm font-medium">Voter Registration Form Preview</DialogTitle>
           </DialogHeader>
           <div className="flex-1 p-0 overflow-hidden">
             {/* Mobile PDF Viewer */}

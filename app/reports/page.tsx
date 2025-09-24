@@ -128,7 +128,7 @@ export default function ReportsPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Reports & Analytics</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Generate, download, and manage comprehensive reports for your election enrollment platform.
+              Generate, download, and manage comprehensive reports for your election enrollment platform. (Admin Only)
             </p>
           </div>
           <div className="flex items-center space-x-2">

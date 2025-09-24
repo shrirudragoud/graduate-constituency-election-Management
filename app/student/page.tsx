@@ -15,7 +15,7 @@ export default function StudentOnboardingPage() {
         {/* Logo text at the top */}
         <div className="absolute top-8 left-8 z-20">
           <h1 className="text-3xl sm:text-4xl font-black text-white drop-shadow-2xl" style={{fontFamily: 'Arial Black, sans-serif', textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-            BJP 
+          Bharatiya Janata Party
           </h1>
         </div>
 
@@ -43,13 +43,12 @@ export default function StudentOnboardingPage() {
               {/* Main heading */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 leading-tight mb-6 sm:mb-8 text-center">
                 <span className="block bg-gradient-to-r from-orange-500 via-green-600 to-gray-800 bg-clip-text text-transparent">
-                  Get Your ID Created
+                Voter ID Register
                 </span>
               </h1>
               
               {/* Subtitle */}
               <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 mb-8 sm:mb-12 leading-relaxed text-center font-medium max-w-3xl mx-auto">
-                Fill out the form below to register and receive your official ID. Make sure your details are accurate for a smooth verification process.
               </p>
               
               {/* Registration button */}

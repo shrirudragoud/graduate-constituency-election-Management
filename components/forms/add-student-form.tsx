@@ -22,6 +22,7 @@ interface AddStudentFormProps {
 
 export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   const [activeTab, setActiveTab] = useState("personal")
+  const [showThankYou, setShowThankYou] = useState(false)
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: "",
@@ -133,6 +134,12 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
     onOpenChange(false)
   }
 
+  const handleCompletionClick = () => {
+    if (formCompletion === 100) {
+      setShowThankYou(true)
+    }
+  }
+
   const nextTab = () => {
     if (currentTabIndex < tabs.length - 1) {
       setActiveTab(tabs[currentTabIndex + 1].id)
@@ -146,6 +153,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[100vw] sm:w-[95vw] max-w-md sm:max-w-4xl h-[100vh] sm:h-[95vh] max-h-[100vh] sm:max-h-[95vh] p-0 gap-0 overflow-hidden sm:rounded-lg rounded-none flex flex-col">
         <DialogHeader className="px-3 sm:px-4 py-3 sm:py-4 border-b border-border/60 bg-gradient-to-r from-background via-background to-primary/5 shrink-0">
@@ -778,7 +786,8 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 Cancel
               </Button>
               <Button
-                type="submit"
+                type={formCompletion === 100 ? "button" : "submit"}
+                onClick={formCompletion === 100 ? handleCompletionClick : undefined}
                 className="w-full sm:w-auto order-1 sm:order-2 h-11 sm:h-10 text-sm relative overflow-hidden group shadow-lg border-2 border-primary/20"
                 style={{
                   background: "hsl(var(--muted))",
@@ -847,5 +856,47 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Thank You Modal */}
+    <Dialog open={showThankYou} onOpenChange={setShowThankYou}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-center text-2xl font-bold text-green-600">
+            Thank You! 🎉
+          </DialogTitle>
+          <DialogDescription className="text-center text-base">
+            Your voter registration form has been successfully submitted.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Registration Complete!</h3>
+            <p className="text-gray-600 mb-4">
+              You will receive an email shortly with confirmation details and next steps for your voter registration.
+            </p>
+            <p className="text-sm text-gray-500">
+              Please check your email (including spam folder) within the next 24 hours.
+            </p>
+          </div>
+          <div className="flex justify-center pt-4">
+            <Button 
+              onClick={() => {
+                setShowThankYou(false)
+                onOpenChange(false)
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-2"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
