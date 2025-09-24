@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AddStudentForm } from "@/components/forms/add-student-form"
 import {
   Users,
@@ -29,6 +30,7 @@ import {
 
 export default function TeamDashboard() {
   const [showAddStudentForm, setShowAddStudentForm] = useState(false)
+  const [showPdfPreview, setShowPdfPreview] = useState(false)
 
   return (
     <SidebarLayout>
@@ -222,7 +224,11 @@ export default function TeamDashboard() {
                         <TableCell>Mar 10, 2024</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setShowPdfPreview(true)}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button variant="outline" size="sm">
@@ -248,7 +254,11 @@ export default function TeamDashboard() {
                         <TableCell>Mar 9, 2024</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setShowPdfPreview(true)}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button variant="outline" size="sm">
@@ -274,7 +284,11 @@ export default function TeamDashboard() {
                         <TableCell>Mar 8, 2024</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setShowPdfPreview(true)}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button variant="outline" size="sm">
@@ -303,129 +317,134 @@ export default function TeamDashboard() {
               <CardContent>
                 <div className="space-y-6">
                   {/* Application Item */}
-                  <div className="border border-chart-1/20 rounded-lg p-6 bg-gradient-to-br from-background to-chart-1/5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-semibold text-lg">John Michael Doe</h3>
-                        <p className="text-muted-foreground">STU-2024-001247 • john.doe@university.edu</p>
-                        <p className="text-sm text-muted-foreground">Submitted: March 10, 2024</p>
+                  <div className="border border-chart-1/20 rounded-lg p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-background to-chart-1/5">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base sm:text-lg">John Michael Doe</h3>
+                        <p className="text-sm text-muted-foreground break-all">STU-2024-001247 • john.doe@university.edu</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Submitted: March 10, 2024</p>
                       </div>
-                      <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+                      <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 w-fit">
                         <Clock className="w-3 h-3 mr-1" />
-                        Pending Review
+                        <span className="text-xs sm:text-sm">Pending Review</span>
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Personal Information</h4>
-                        <div className="text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                      <div className="space-y-1 sm:space-y-2">
+                        <h4 className="font-medium text-xs sm:text-sm">Personal Information</h4>
+                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                           <p>DOB: March 15, 2002</p>
                           <p>Phone: +1 (555) 123-4567</p>
                           <p>Year: Junior (3rd Year)</p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Registration Details</h4>
-                        <div className="text-sm text-muted-foreground">
+                      <div className="space-y-1 sm:space-y-2">
+                        <h4 className="font-medium text-xs sm:text-sm">Registration Details</h4>
+                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                           <p>Location: Main Campus</p>
                           <p>Affiliation: Independent</p>
                           <p>Emergency: Jane Doe</p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Documents</h4>
+                      <div className="space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1">
+                        <h4 className="font-medium text-xs sm:text-sm">Documents</h4>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1" />
+                          <div className="flex items-center gap-2 text-xs sm:text-sm">
+                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
                             <span>Student ID</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1" />
+                          <div className="flex items-center gap-2 text-xs sm:text-sm">
+                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
                             <span>Photo ID</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1" />
+                          <div className="flex items-center gap-2 text-xs sm:text-sm">
+                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
                             <span>Proof of Address</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Button>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Approve Application
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                      <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Approve Application</span>
+                        <span className="sm:hidden">Approve</span>
                       </Button>
-                      <Button variant="destructive">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        Request Changes
+                      <Button variant="destructive" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Request Changes</span>
+                        <span className="sm:hidden">Request</span>
                       </Button>
-                      <Button variant="outline">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">View Details</span>
+                        <span className="sm:hidden">View</span>
                       </Button>
                     </div>
                   </div>
 
                   {/* Another Application Item */}
-                  <div className="border border-destructive/20 rounded-lg p-6 bg-gradient-to-br from-background to-destructive/5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="font-semibold text-lg">Emily Rodriguez</h3>
-                        <p className="text-muted-foreground">STU-2024-001250 • emily.r@university.edu</p>
-                        <p className="text-sm text-muted-foreground">Submitted: March 11, 2024</p>
+                  <div className="border border-destructive/20 rounded-lg p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-background to-destructive/5">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base sm:text-lg">Emily Rodriguez</h3>
+                        <p className="text-sm text-muted-foreground break-all">STU-2024-001250 • emily.r@university.edu</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Submitted: March 11, 2024</p>
                       </div>
-                      <Badge variant="destructive">
+                      <Badge variant="destructive" className="w-fit">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        Missing Documents
+                        <span className="text-xs sm:text-sm">Missing Documents</span>
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Personal Information</h4>
-                        <div className="text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                      <div className="space-y-1 sm:space-y-2">
+                        <h4 className="font-medium text-xs sm:text-sm">Personal Information</h4>
+                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                           <p>DOB: July 22, 2001</p>
                           <p>Phone: +1 (555) 987-6543</p>
                           <p>Year: Senior (4th Year)</p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Registration Details</h4>
-                        <div className="text-sm text-muted-foreground">
+                      <div className="space-y-1 sm:space-y-2">
+                        <h4 className="font-medium text-xs sm:text-sm">Registration Details</h4>
+                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                           <p>Location: North Campus</p>
                           <p>Affiliation: Democrat</p>
                           <p>Emergency: Carlos Rodriguez</p>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm">Documents</h4>
+                      <div className="space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1">
+                        <h4 className="font-medium text-xs sm:text-sm">Documents</h4>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1" />
+                          <div className="flex items-center gap-2 text-xs sm:text-sm">
+                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
                             <span>Student ID</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <AlertCircle className="w-3 h-3 text-destructive" />
+                          <div className="flex items-center gap-2 text-xs sm:text-sm">
+                            <AlertCircle className="w-3 h-3 text-destructive flex-shrink-0" />
                             <span>Photo ID (Missing)</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1" />
+                          <div className="flex items-center gap-2 text-xs sm:text-sm">
+                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
                             <span>Proof of Address</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <Button variant="destructive">
-                        <AlertCircle className="w-4 h-4 mr-2" />
-                        Request Missing Documents
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                      <Button variant="destructive" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Request Missing Documents</span>
+                        <span className="sm:hidden">Request Documents</span>
                       </Button>
-                      <Button variant="outline">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">View Details</span>
+                        <span className="sm:hidden">View</span>
                       </Button>
                     </div>
                   </div>
@@ -569,6 +588,23 @@ export default function TeamDashboard() {
       </div>
 
       <AddStudentForm open={showAddStudentForm} onOpenChange={setShowAddStudentForm} />
+
+      {/* PDF Preview Dialog */}
+      <Dialog open={showPdfPreview} onOpenChange={setShowPdfPreview}>
+        <DialogContent className="max-w-7xl h-[98vh] p-0 sm:max-w-5xl">
+          <DialogHeader className="px-2 py-1 sm:px-3 sm:py-2 border-b bg-gray-50">
+            <DialogTitle className="text-xs sm:text-sm font-medium">Student Registration Form Preview</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 p-0 overflow-hidden">
+            <iframe
+              src="https://e5850872-baaa-4597-87ce-9befbc15af1e.usrfiles.com/ugd/e58508_3380a0454eec4527bff63f8b4dede599.pdf#toolbar=1&navpanes=1&scrollbar=1"
+              className="w-full h-full border-0"
+              title="Student Registration Form"
+              style={{ minHeight: 'calc(100vh - 60px)' }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarLayout>
   )
 }
