@@ -117,7 +117,7 @@ const systemSettings = [
         description: "Send email notifications for important events"
       },
       {
-        name: "SMS Notifications",
+        name: "Email Notifications",
         value: false,
         type: "switch",
         description: "Send SMS notifications for critical alerts"

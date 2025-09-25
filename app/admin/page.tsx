@@ -549,12 +549,14 @@ export default function AdminDashboard() {
                       </div>
                       <span className="text-xs text-muted-foreground">Review security settings</span>
                     </Button>
-                    <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-4 h-4" />
-                        <span className="font-medium text-sm">Generate Report</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">Create custom reports</span>
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2" asChild>
+                      <a href="/admin/submissions">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4" />
+                          <span className="font-medium text-sm">View Submissions</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">View all student registrations</span>
+                      </a>
                     </Button>
                   </div>
                 </CardContent>

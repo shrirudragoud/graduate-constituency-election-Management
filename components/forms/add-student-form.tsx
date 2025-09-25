@@ -23,68 +23,92 @@ interface AddStudentFormProps {
 export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   const [activeTab, setActiveTab] = useState("personal")
   const [showThankYou, setShowThankYou] = useState(false)
+  const [submissionId, setSubmissionId] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     // Personal Details
-    fullName: "",
-    fatherMotherHusbandName: "",
+    surname: "",
+    firstName: "",
+    fathersHusbandName: "",
+    fathersHusbandFullName: "",
+    sex: "",
     qualification: "",
     occupation: "",
-    sex: "",
+    dateOfBirth: "",
     ageYears: "",
     ageMonths: "",
-    dateOfBirth: "",
-    disability: "",
-    disabilityType: "",
+
+    // Address Details
+    district: "",
+    taluka: "",
+    villageName: "",
+    houseNo: "",
+    street: "",
+    pinCode: "",
 
     // Contact and Identification
-    houseAddress: "",
-    aadhaarNumber: "",
-    noAadhaar: false,
     mobileNumber: "",
-    landlineNumber: "",
-    emailId: "",
+    email: "",
+    aadhaarNumber: "",
 
-    // Elector Registration Details
-    registeredElector: "",
-    assemblyConstituency: "",
-    pollingStationNo: "",
-    epicNumber: "",
-
-    // Educational Qualification
-    university: "",
+    // Educational Details
     yearOfPassing: "",
-    diplomaCertificateName: "",
+    degreeDiploma: "",
+    nameOfUniversity: "",
+    nameOfDiploma: "",
+
+    // Name Change Details
+    haveChangedName: "",
+    marriageCertificate: null as File | null,
+    gazetteNotification: null as File | null,
+    panCard: null as File | null,
 
     // Declaration
-    previousElectoralRollStatus: "",
     place: "",
     declarationDate: "",
   })
 
   const [files, setFiles] = useState({
-    photograph: null as File | null,
+    degreeDiplomaCertificate: null as File | null,
     aadhaarCard: null as File | null,
+    residentialProof: null as File | null,
+    marriageCertificate: null as File | null,
+    gazetteNotification: null as File | null,
     panCard: null as File | null,
+    signaturePhoto: null as File | null,
   })
 
   const tabs = [
     { id: "personal", label: "Personal", icon: User },
-    { id: "contact", label: "Contact", icon: MapPin },
-    { id: "elector", label: "Elector", icon: FileText },
+    { id: "address", label: "Address", icon: MapPin },
     { id: "education", label: "Education", icon: GraduationCap },
     { id: "documents", label: "Documents", icon: Camera },
+    { id: "namechange", label: "Name Change", icon: FileText },
   ]
 
   const currentTabIndex = tabs.findIndex((tab) => tab.id === activeTab)
 
   const formCompletion = useMemo(() => {
     const requiredFields = [
-      "fullName",
-      "fatherMotherHusbandName",
+      "surname",
+      "firstName",
+      "fathersHusbandName",
+      "fathersHusbandFullName",
       "sex",
-      "ageYears",
       "dateOfBirth",
-      "houseAddress",
+      "ageYears",
+      "district",
+      "taluka",
+      "villageName",
+      "houseNo",
+      "street",
+      "pinCode",
+      "mobileNumber",
+      "email",
+      "aadhaarNumber",
+      "yearOfPassing",
+      "degreeDiploma",
+      "nameOfUniversity",
       "place",
       "declarationDate",
     ]
@@ -93,45 +117,217 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       "qualification",
       "occupation",
       "ageMonths",
-      "disability",
-      "mobileNumber",
-      "landlineNumber",
-      "emailId",
-      "university",
-      "yearOfPassing",
-      "diplomaCertificateName",
+      "nameOfDiploma",
     ]
 
-    const conditionalFields = formData.noAadhaar ? [] : ["aadhaarNumber"]
-    const electorFields = formData.registeredElector === "yes" ? ["assemblyConstituency"] : []
+    // Required file fields
+    const requiredFileFields = [
+      "degreeDiplomaCertificate",
+      "aadhaarCard", 
+      "residentialProof",
+      "signaturePhoto"
+    ]
 
-    const allFields = [...requiredFields, ...optionalFields, ...conditionalFields, ...electorFields]
-    const filledFields = allFields.filter((field) => {
+    // Conditional file fields (only if name changed)
+    const conditionalFileFields = formData.haveChangedName === "yes" ? [
+      "marriageCertificate", 
+      "gazetteNotification", 
+      "panCard"
+    ] : []
+
+    const allRequiredFields = [...requiredFields, ...requiredFileFields]
+    const allOptionalFields = [...optionalFields, ...conditionalFileFields]
+    
+    // Count filled required fields
+    const filledRequiredFields = allRequiredFields.filter((field) => {
+      if (requiredFileFields.includes(field)) {
+        return files[field as keyof typeof files] !== null
+      }
       const value = formData[field as keyof typeof formData]
       return value !== "" && value !== false
     })
 
-    // Add file uploads to completion
-    const fileFields = Object.values(files).filter((file) => file !== null)
-    const totalPossibleFields = allFields.length + 3 // 3 file uploads
-    const totalFilledFields = filledFields.length + fileFields.length
+    // Count filled optional fields
+    const filledOptionalFields = allOptionalFields.filter((field) => {
+      if (conditionalFileFields.includes(field)) {
+        return files[field as keyof typeof files] !== null
+      }
+      const value = formData[field as keyof typeof formData]
+      return value !== "" && value !== false
+    })
 
-    return Math.round((totalFilledFields / totalPossibleFields) * 100)
+    // Calculate completion based on required fields only
+    const requiredCompletion = (filledRequiredFields.length / allRequiredFields.length) * 100
+    const optionalCompletion = filledOptionalFields.length > 0 ? (filledOptionalFields.length / allOptionalFields.length) * 10 : 0
+    
+    return Math.round(Math.min(requiredCompletion + optionalCompletion, 100))
   }, [formData, files])
 
+  const calculateAge = (dateOfBirth: string) => {
+    if (!dateOfBirth) return { years: "", months: "" }
+    
+    const today = new Date()
+    const birthDate = new Date(dateOfBirth)
+    
+    let years = today.getFullYear() - birthDate.getFullYear()
+    let months = today.getMonth() - birthDate.getMonth()
+    
+    if (months < 0) {
+      years--
+      months += 12
+    }
+    
+    return { years: years.toString(), months: months.toString() }
+  }
+
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value }
+      
+      // Auto-calculate age when date of birth changes
+      if (field === "dateOfBirth" && typeof value === "string") {
+        const age = calculateAge(value)
+        newData.ageYears = age.years
+        newData.ageMonths = age.months
+      }
+      
+      return newData
+    })
   }
 
   const handleFileChange = (field: string, file: File | null) => {
     setFiles((prev) => ({ ...prev, [field]: file }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("[v0] Form submitted:", { formData, files })
-    // Handle form submission here
-    onOpenChange(false)
+  const resetForm = () => {
+    setIsSubmitting(false)
+    setFormData({
+      surname: "",
+      firstName: "",
+      fathersHusbandName: "",
+      fathersHusbandFullName: "",
+      sex: "",
+      qualification: "",
+      occupation: "",
+      dateOfBirth: "",
+      ageYears: "",
+      ageMonths: "",
+      district: "",
+      taluka: "",
+      villageName: "",
+      houseNo: "",
+      street: "",
+      pinCode: "",
+      mobileNumber: "",
+      email: "",
+      aadhaarNumber: "",
+      yearOfPassing: "",
+      degreeDiploma: "",
+      nameOfUniversity: "",
+      nameOfDiploma: "",
+      haveChangedName: "",
+      place: "",
+      declarationDate: "",
+    })
+    setFiles({
+      degreeDiplomaCertificate: null,
+      aadhaarCard: null,
+      residentialProof: null,
+      marriageCertificate: null,
+      gazetteNotification: null,
+      panCard: null,
+      signaturePhoto: null,
+    })
+  }
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      console.log('⚠️ Form is already submitting, ignoring...')
+      return
+    }
+    setIsSubmitting(true)
+    
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('⏰ Form submission timeout, resetting state')
+      setIsSubmitting(false)
+    }, 30000) // 30 second timeout
+    
+    // Debug: Log current form data before submission
+    console.log('🔍 Current form data before submission:', formData)
+    console.log('🔍 Form completion:', formCompletion)
+    console.log('🔍 Files state:', files)
+    
+    // Show warning if form is not complete
+    if (formCompletion < 100) {
+      const proceed = confirm(`Form is only ${formCompletion}% complete. Some required fields or files may be missing. Do you want to submit anyway?`)
+      if (!proceed) {
+        return
+      }
+    }
+    
+    try {
+      console.log('🚀 Form submission started')
+      console.log('📝 Form data:', formData)
+      console.log('📁 Files:', files)
+      
+      // Create FormData for file uploads
+      const submitData = new FormData()
+      
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        submitData.append(key, value ? value.toString() : '')
+        console.log(`📝 Adding field: ${key} = ${value}`)
+      })
+      
+      // Add files
+      Object.entries(files).forEach(([key, file]) => {
+        if (file) {
+          submitData.append(key, file)
+          console.log(`📁 Adding file: ${key} = ${file.name} (${file.size} bytes)`)
+        } else {
+          console.log(`⚠️ No file for ${key}`)
+        }
+      })
+      
+      console.log('📤 Sending data to API...')
+      console.log('📋 FormData entries:', Array.from(submitData.entries()))
+      
+      // Send as FormData to handle files properly
+      const response = await fetch('/api/submit-form', {
+        method: 'POST',
+        body: submitData,
+      })
+      
+      const result = await response.json()
+      console.log('📥 API Response:', result)
+      
+      if (result.success) {
+        console.log('✅ Form submitted successfully:', result)
+        setSubmissionId(result.submissionId)
+        setShowThankYou(true)
+        
+        // Notify parent window to refresh data (if in team page)
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'FORM_SUBMITTED' }, '*')
+        }
+        
+        // Reset form
+        resetForm()
+      } else {
+        console.error('❌ Form submission failed:', result.error)
+        alert(`Form submission failed: ${result.error || 'Unknown error'}. Please try again.`)
+      }
+    } catch (error) {
+      console.error('❌ Error submitting form:', error)
+      alert(`An error occurred: ${error.message || 'Unknown error'}. Please try again.`)
+    } finally {
+      clearTimeout(timeout)
+      setIsSubmitting(false)
+    }
   }
 
   const handleCompletionClick = () => {
@@ -189,7 +385,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <form onSubmit={handleSubmit} className="h-full flex flex-col">
+          <form className="h-full flex flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
               <div className="flex-1 overflow-y-auto overscroll-contain">
                 <div className="p-3 sm:p-4 md:p-6 pb-6">
@@ -202,33 +398,35 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                           Personal Details
                         </CardTitle>
                         <CardDescription className="text-xs sm:text-sm">
-                          Basic personal information as per Form-18
+                          Basic personal information
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-6 pb-3 sm:pb-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                           <div className="space-y-1.5 sm:space-y-2">
-                            <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium">
-                              Full Name (पूर्ण नाव) <span className="text-destructive">*</span>
+                            <Label htmlFor="surname" className="text-xs sm:text-sm font-medium">
+                              Surname <span className="text-destructive">*</span>
                             </Label>
                             <Input
-                              id="fullName"
-                              value={formData.fullName}
-                              onChange={(e) => handleInputChange("fullName", e.target.value)}
-                              placeholder="Enter full name"
+                              id="surname"
+                              name="surname"
+                              value={formData.surname}
+                              onChange={(e) => handleInputChange("surname", e.target.value)}
+                              placeholder="Enter surname"
                               className="h-11 sm:h-10 text-sm sm:text-base"
                               required
                             />
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">
-                            <Label htmlFor="fatherMotherHusbandName" className="text-xs sm:text-sm font-medium">
-                              Father's/Mother's/Husband's Name <span className="text-destructive">*</span>
+                            <Label htmlFor="firstName" className="text-xs sm:text-sm font-medium">
+                              First Name <span className="text-destructive">*</span>
                             </Label>
                             <Input
-                              id="fatherMotherHusbandName"
-                              value={formData.fatherMotherHusbandName}
-                              onChange={(e) => handleInputChange("fatherMotherHusbandName", e.target.value)}
-                              placeholder="Enter parent/spouse name"
+                              id="firstName"
+                              name="firstName"
+                              value={formData.firstName}
+                              onChange={(e) => handleInputChange("firstName", e.target.value)}
+                              placeholder="Enter first name"
                               className="h-11 sm:h-10 text-sm sm:text-base"
                               required
                             />
@@ -237,20 +435,63 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                           <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="fathersHusbandName" className="text-xs sm:text-sm font-medium">
+                              Father's/Husband Name <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="fathersHusbandName"
+                              value={formData.fathersHusbandName}
+                              onChange={(e) => handleInputChange("fathersHusbandName", e.target.value)}
+                              placeholder="Enter father's/husband's name"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="fathersHusbandFullName" className="text-xs sm:text-sm font-medium">
+                              Father's/Husband Full Name <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="fathersHusbandFullName"
+                              value={formData.fathersHusbandFullName}
+                              onChange={(e) => handleInputChange("fathersHusbandFullName", e.target.value)}
+                              placeholder="Enter full name"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label className="text-xs sm:text-sm font-medium">
+                              Sex: M/F <span className="text-destructive">*</span>
+                            </Label>
+                            <Select value={formData.sex} onValueChange={(value) => handleInputChange("sex", value)}>
+                              <SelectTrigger className="h-11 sm:h-10 text-sm sm:text-base">
+                                <SelectValue placeholder="Select sex" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="M">Male (M)</SelectItem>
+                                <SelectItem value="F">Female (F)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5 sm:space-y-2">
                             <Label htmlFor="qualification" className="text-xs sm:text-sm font-medium">
-                              Qualification (अर्हता)
+                              Qualifications
                             </Label>
                             <Input
                               id="qualification"
                               value={formData.qualification}
                               onChange={(e) => handleInputChange("qualification", e.target.value)}
-                              placeholder="Educational qualification"
+                              placeholder="Educational qualifications"
                               className="h-11 sm:h-10 text-sm sm:text-base"
                             />
                           </div>
-                          <div className="space-y-1.5 sm:space-y-2">
+                          <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
                             <Label htmlFor="occupation" className="text-xs sm:text-sm font-medium">
-                              Occupation (व्यवसाय)
+                              Occupation
                             </Label>
                             <Input
                               id="occupation"
@@ -262,59 +503,10 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                          <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm font-medium">
-                              Sex (लिंग) <span className="text-destructive">*</span>
-                            </Label>
-                            <Select value={formData.sex} onValueChange={(value) => handleInputChange("sex", value)}>
-                              <SelectTrigger className="h-11 sm:h-10 text-sm sm:text-base">
-                                <SelectValue placeholder="Select sex" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="male">Male</SelectItem>
-                                <SelectItem value="female">Female</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1.5 sm:space-y-2">
-                            <Label htmlFor="ageYears" className="text-xs sm:text-sm font-medium">
-                              Age - Years <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                              id="ageYears"
-                              type="number"
-                              value={formData.ageYears}
-                              onChange={(e) => handleInputChange("ageYears", e.target.value)}
-                              placeholder="Years"
-                              className="h-11 sm:h-10 text-sm sm:text-base"
-                              min="18"
-                              max="120"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
-                            <Label htmlFor="ageMonths" className="text-xs sm:text-sm font-medium">
-                              Age - Months
-                            </Label>
-                            <Input
-                              id="ageMonths"
-                              type="number"
-                              value={formData.ageMonths}
-                              onChange={(e) => handleInputChange("ageMonths", e.target.value)}
-                              placeholder="Months"
-                              className="h-11 sm:h-10 text-sm sm:text-base"
-                              min="0"
-                              max="11"
-                            />
-                          </div>
-                        </div>
-
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                           <div className="space-y-1.5 sm:space-y-2">
                             <Label htmlFor="dateOfBirth" className="text-xs sm:text-sm font-medium">
-                              Date of Birth (जन्मतारीख) <span className="text-destructive">*</span>
+                              Date of Birth <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="dateOfBirth"
@@ -326,90 +518,147 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                             />
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm font-medium">Disability (दिव्यांगत्व)</Label>
-                            <Select
-                              value={formData.disability}
-                              onValueChange={(value) => handleInputChange("disability", value)}
-                            >
-                              <SelectTrigger className="h-11 sm:h-10 text-sm sm:text-base">
-                                <SelectValue placeholder="Select if applicable" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">No Disability</SelectItem>
-                                <SelectItem value="visual">Visual Impairment</SelectItem>
-                                <SelectItem value="hearing">Speech & Hearing Disability</SelectItem>
-                                <SelectItem value="locomotor">Locomotor Disability</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Label className="text-xs sm:text-sm font-medium">
+                              Age (Automatic calculation) <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="ageYears"
+                                type="number"
+                                value={formData.ageYears}
+                                placeholder="Years"
+                                className="h-11 sm:h-10 text-sm sm:text-base"
+                                readOnly
+                              />
+                              <span className="flex items-center text-sm text-muted-foreground">years</span>
+                              <Input
+                                id="ageMonths"
+                                type="number"
+                                value={formData.ageMonths}
+                                placeholder="Months"
+                                className="h-11 sm:h-10 text-sm sm:text-base"
+                                readOnly
+                              />
+                              <span className="flex items-center text-sm text-muted-foreground">months</span>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
 
-                  {/* Contact and Identification Tab */}
-                  <TabsContent value="contact" className="mt-0 space-y-4 sm:space-y-6">
+                  {/* Address Tab */}
+                  <TabsContent value="address" className="mt-0 space-y-4 sm:space-y-6">
                     <Card className="border-0 shadow-sm">
                       <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
                         <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                           <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                          Contact & Identification
+                          Address Details
                         </CardTitle>
                         <CardDescription className="text-xs sm:text-sm">
-                          Address and identification information
+                          Complete address information
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-6 pb-3 sm:pb-6">
                         <div className="space-y-2">
-                          <Label htmlFor="houseAddress" className="text-xs sm:text-sm font-medium">
-                            House Address (घरचा पत्ता) <span className="text-destructive">*</span>
+                          <Label className="text-xs sm:text-sm font-medium">
+                            Address: <span className="text-destructive">*</span>
                           </Label>
-                          <Textarea
-                            id="houseAddress"
-                            value={formData.houseAddress}
-                            onChange={(e) => handleInputChange("houseAddress", e.target.value)}
-                            placeholder="Enter complete address"
-                            rows={3}
-                            className="resize-none text-sm sm:text-base"
-                            required
-                          />
                         </div>
 
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="noAadhaar"
-                              checked={formData.noAadhaar}
-                              onCheckedChange={(checked) => handleInputChange("noAadhaar", checked as boolean)}
-                            />
-                            <Label htmlFor="noAadhaar" className="text-xs sm:text-sm">
-                              I do not have an Aadhaar number
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="district" className="text-xs sm:text-sm font-medium">
+                              District <span className="text-destructive">*</span>
                             </Label>
+                            <Input
+                              id="district"
+                              value={formData.district}
+                              onChange={(e) => handleInputChange("district", e.target.value)}
+                              placeholder="Enter district"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
                           </div>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="taluka" className="text-xs sm:text-sm font-medium">
+                              Taluka <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="taluka"
+                              value={formData.taluka}
+                              onChange={(e) => handleInputChange("taluka", e.target.value)}
+                              placeholder="Enter taluka"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                        </div>
 
-                          {!formData.noAadhaar && (
-                            <div className="space-y-1.5 sm:space-y-2">
-                              <Label htmlFor="aadhaarNumber" className="text-xs sm:text-sm font-medium">
-                                Aadhaar Number (आधार क्रमांक)
-                              </Label>
-                              <Input
-                                id="aadhaarNumber"
-                                value={formData.aadhaarNumber}
-                                onChange={(e) => handleInputChange("aadhaarNumber", e.target.value)}
-                                placeholder="Enter 12-digit Aadhaar number"
-                                className="h-11 sm:h-10 text-sm sm:text-base"
-                                maxLength={12}
-                                pattern="[0-9]{12}"
-                              />
-                            </div>
-                          )}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="villageName" className="text-xs sm:text-sm font-medium">
+                              Village Name <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="villageName"
+                              value={formData.villageName}
+                              onChange={(e) => handleInputChange("villageName", e.target.value)}
+                              placeholder="Enter village name"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="houseNo" className="text-xs sm:text-sm font-medium">
+                              House No. <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="houseNo"
+                              value={formData.houseNo}
+                              onChange={(e) => handleInputChange("houseNo", e.target.value)}
+                              placeholder="Enter house number"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="street" className="text-xs sm:text-sm font-medium">
+                              Street <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="street"
+                              value={formData.street}
+                              onChange={(e) => handleInputChange("street", e.target.value)}
+                              placeholder="Enter street name"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="pinCode" className="text-xs sm:text-sm font-medium">
+                              Pin Code <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="pinCode"
+                              value={formData.pinCode}
+                              onChange={(e) => handleInputChange("pinCode", e.target.value)}
+                              placeholder="Enter pin code"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              maxLength={6}
+                              pattern="[0-9]{6}"
+                              required
+                            />
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                           <div className="space-y-1.5 sm:space-y-2">
                             <Label htmlFor="mobileNumber" className="text-xs sm:text-sm font-medium">
-                              Mobile Number (मोबाईल क्रमांक)
+                              Mobile Number <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="mobileNumber"
@@ -418,114 +667,179 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                               onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
                               placeholder="Enter mobile number"
                               className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
                             />
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">
-                            <Label htmlFor="landlineNumber" className="text-xs sm:text-sm font-medium">
-                              Landline (दूरध्वनी क्रमांक)
+                            <Label htmlFor="email" className="text-xs sm:text-sm font-medium">
+                              Email Address <span className="text-destructive">*</span>
                             </Label>
                             <Input
-                              id="landlineNumber"
-                              type="tel"
-                              value={formData.landlineNumber}
-                              onChange={(e) => handleInputChange("landlineNumber", e.target.value)}
-                              placeholder="Enter landline number"
+                              id="email"
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => handleInputChange("email", e.target.value)}
+                              placeholder="Enter email address"
                               className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
                             />
                           </div>
-                        </div>
-
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <Label htmlFor="emailId" className="text-xs sm:text-sm font-medium">
-                            Email ID (ई मेल पत्ता)
-                          </Label>
-                          <Input
-                            id="emailId"
-                            type="email"
-                            value={formData.emailId}
-                            onChange={(e) => handleInputChange("emailId", e.target.value)}
-                            placeholder="Enter email address"
-                            className="h-11 sm:h-10 text-sm sm:text-base"
-                          />
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="aadhaarNumber" className="text-xs sm:text-sm font-medium">
+                              Aadhar No. <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="aadhaarNumber"
+                              value={formData.aadhaarNumber}
+                              onChange={(e) => handleInputChange("aadhaarNumber", e.target.value)}
+                              placeholder="Enter 12-digit Aadhaar number"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              maxLength={12}
+                              pattern="[0-9]{12}"
+                              required
+                            />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
                   </TabsContent>
 
-                  {/* Elector Registration Tab */}
-                  <TabsContent value="elector" className="mt-0 space-y-4 sm:space-y-6">
+                  {/* Name Change Tab */}
+                  <TabsContent value="namechange" className="mt-0 space-y-4 sm:space-y-6">
                     <Card className="border-0 shadow-sm">
                       <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
                         <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                           <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                          Elector Registration
+                          Name Change Details
                         </CardTitle>
                         <CardDescription className="text-xs sm:text-sm">
-                          Previous electoral registration information
+                          Information about name changes and supporting documents
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-6 pb-3 sm:pb-6">
                         <div className="space-y-2">
                           <Label className="text-xs sm:text-sm font-medium">
-                            Whether registered as an Elector for any assembly constituency?
+                            Have you changed your name? <span className="text-destructive">*</span>
                           </Label>
                           <RadioGroup
-                            value={formData.registeredElector}
-                            onValueChange={(value) => handleInputChange("registeredElector", value)}
+                            value={formData.haveChangedName}
+                            onValueChange={(value) => handleInputChange("haveChangedName", value)}
                             className="flex flex-col sm:flex-row gap-3 sm:gap-4"
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id="elector-yes" />
-                              <Label htmlFor="elector-yes" className="text-xs sm:text-sm">
+                              <RadioGroupItem value="yes" id="namechange-yes" />
+                              <Label htmlFor="namechange-yes" className="text-xs sm:text-sm">
                                 Yes
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id="elector-no" />
-                              <Label htmlFor="elector-no" className="text-xs sm:text-sm">
+                              <RadioGroupItem value="no" id="namechange-no" />
+                              <Label htmlFor="namechange-no" className="text-xs sm:text-sm">
                                 No
                               </Label>
                             </div>
                           </RadioGroup>
                         </div>
 
-                        {formData.registeredElector === "yes" && (
-                          <div className="space-y-3 p-3 sm:p-4 border border-primary/20 rounded-lg bg-primary/5">
-                            <div className="space-y-1.5 sm:space-y-2">
-                              <Label htmlFor="assemblyConstituency" className="text-xs sm:text-sm font-medium">
-                                Number and Name of the Assembly Constituency
-                              </Label>
-                              <Input
-                                id="assemblyConstituency"
-                                value={formData.assemblyConstituency}
-                                onChange={(e) => handleInputChange("assemblyConstituency", e.target.value)}
-                                placeholder="Enter constituency details"
-                                className="h-11 sm:h-10 text-sm sm:text-base"
-                              />
-                            </div>
-                            <div className="space-y-1.5 sm:space-y-2">
-                              <Label htmlFor="pollingStationNo" className="text-xs sm:text-sm font-medium">
-                                Part/Polling Station No. (if known)
-                              </Label>
-                              <Input
-                                id="pollingStationNo"
-                                value={formData.pollingStationNo}
-                                onChange={(e) => handleInputChange("pollingStationNo", e.target.value)}
-                                placeholder="Enter polling station number"
-                                className="h-11 sm:h-10 text-sm sm:text-base"
-                              />
-                            </div>
-                            <div className="space-y-1.5 sm:space-y-2">
-                              <Label htmlFor="epicNumber" className="text-xs sm:text-sm font-medium">
-                                EPIC Number (if any)
-                              </Label>
-                              <Input
-                                id="epicNumber"
-                                value={formData.epicNumber}
-                                onChange={(e) => handleInputChange("epicNumber", e.target.value)}
-                                placeholder="Enter EPIC number"
-                                className="h-11 sm:h-10 text-sm sm:text-base"
-                              />
+                        {formData.haveChangedName === "yes" && (
+                          <div className="space-y-4 p-3 sm:p-4 border border-primary/20 rounded-lg bg-primary/5">
+                            <h4 className="text-sm font-medium text-muted-foreground">Attachments for Name Change:</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                              <div className="space-y-1.5 sm:space-y-2">
+                                <Label className="text-xs sm:text-sm font-medium">
+                                  Marriage certificate
+                                </Label>
+                                <div className="border-2 border-dashed border-primary/20 rounded-lg p-3 sm:p-4 text-center hover:border-primary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                  >
+                                    <label htmlFor="marriageCertificate" className="cursor-pointer">
+                                      <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                      Upload Certificate
+                                    </label>
+                                  </Button>
+                                  <input
+                                    id="marriageCertificate"
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange("marriageCertificate", e.target.files?.[0] || null)}
+                                  />
+                                  {files.marriageCertificate && (
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                      {files.marriageCertificate.name}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5 sm:space-y-2">
+                                <Label className="text-xs sm:text-sm font-medium">
+                                  Gazette notification
+                                </Label>
+                                <div className="border-2 border-dashed border-secondary/20 rounded-lg p-3 sm:p-4 text-center hover:border-secondary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                  >
+                                    <label htmlFor="gazetteNotification" className="cursor-pointer">
+                                      <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                      Upload Notification
+                                    </label>
+                                  </Button>
+                                  <input
+                                    id="gazetteNotification"
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange("gazetteNotification", e.target.files?.[0] || null)}
+                                  />
+                                  {files.gazetteNotification && (
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                      {files.gazetteNotification.name}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
+                                <Label className="text-xs sm:text-sm font-medium">
+                                  PAN card
+                                </Label>
+                                <div className="border-2 border-dashed border-accent/20 rounded-lg p-3 sm:p-4 text-center hover:border-accent/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                  >
+                                    <label htmlFor="panCard" className="cursor-pointer">
+                                      <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                      Upload PAN
+                                    </label>
+                                  </Button>
+                                  <input
+                                    id="panCard"
+                                    type="file"
+                                    accept="image/*,.pdf"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange("panCard", e.target.files?.[0] || null)}
+                                  />
+                                  {files.panCard && (
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                      {files.panCard.name}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -539,30 +853,17 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                       <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
                         <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                           <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
-                          Educational Qualification
+                          Educational Details
                         </CardTitle>
                         <CardDescription className="text-xs sm:text-sm">
                           Academic background information
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-6 pb-3 sm:pb-6">
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <Label htmlFor="university" className="text-xs sm:text-sm font-medium">
-                            University (विद्यापीठाचे नाव)
-                          </Label>
-                          <Input
-                            id="university"
-                            value={formData.university}
-                            onChange={(e) => handleInputChange("university", e.target.value)}
-                            placeholder="Enter university name"
-                            className="h-11 sm:h-10 text-sm sm:text-base"
-                          />
-                        </div>
-
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                           <div className="space-y-1.5 sm:space-y-2">
                             <Label htmlFor="yearOfPassing" className="text-xs sm:text-sm font-medium">
-                              Year of Passing (उत्तीर्ण झाल्याचे वर्ष)
+                              Year of Passing <span className="text-destructive">*</span>
                             </Label>
                             <Input
                               id="yearOfPassing"
@@ -573,17 +874,47 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                               className="h-11 sm:h-10 text-sm sm:text-base"
                               min="1950"
                               max={new Date().getFullYear()}
+                              required
                             />
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">
-                            <Label htmlFor="diplomaCertificateName" className="text-xs sm:text-sm font-medium">
-                              Diploma/Certificate Name
+                            <Label htmlFor="degreeDiploma" className="text-xs sm:text-sm font-medium">
+                              Degree / Diploma <span className="text-destructive">*</span>
                             </Label>
                             <Input
-                              id="diplomaCertificateName"
-                              value={formData.diplomaCertificateName}
-                              onChange={(e) => handleInputChange("diplomaCertificateName", e.target.value)}
-                              placeholder="Enter diploma/certificate name"
+                              id="degreeDiploma"
+                              value={formData.degreeDiploma}
+                              onChange={(e) => handleInputChange("degreeDiploma", e.target.value)}
+                              placeholder="Enter degree/diploma"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="nameOfUniversity" className="text-xs sm:text-sm font-medium">
+                              Name of University <span className="text-destructive">*</span>
+                            </Label>
+                            <Input
+                              id="nameOfUniversity"
+                              value={formData.nameOfUniversity}
+                              onChange={(e) => handleInputChange("nameOfUniversity", e.target.value)}
+                              placeholder="Enter university name"
+                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label htmlFor="nameOfDiploma" className="text-xs sm:text-sm font-medium">
+                              Name of Diploma
+                            </Label>
+                            <Input
+                              id="nameOfDiploma"
+                              value={formData.nameOfDiploma}
+                              onChange={(e) => handleInputChange("nameOfDiploma", e.target.value)}
+                              placeholder="Enter diploma name"
                               className="h-11 sm:h-10 text-sm sm:text-base"
                             />
                           </div>
@@ -598,103 +929,147 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                       <CardHeader className="pb-3 sm:pb-4 px-3 sm:px-6 pt-3 sm:pt-6">
                         <CardTitle className="text-sm sm:text-base md:text-lg flex items-center gap-2">
                           <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary" />
-                          Document Upload
+                          Attachments
                         </CardTitle>
                         <CardDescription className="text-xs sm:text-sm">
                           Upload required documents (PNG, JPG, PDF - Max 5MB each)
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pb-3 sm:pb-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                          <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm font-medium">
-                              Recent Passport Size Photograph <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="border-2 border-dashed border-primary/20 rounded-lg p-3 sm:p-4 text-center hover:border-primary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
-                              <Camera className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                                className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
-                              >
-                                <label htmlFor="photograph" className="cursor-pointer">
-                                  <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                  Upload Photo
-                                </label>
-                              </Button>
-                              <input
-                                id="photograph"
-                                type="file"
-                                accept="image/*,.pdf"
-                                className="hidden"
-                                onChange={(e) => handleFileChange("photograph", e.target.files?.[0] || null)}
-                              />
-                              {files.photograph && (
-                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
-                                  {files.photograph.name}
-                                </p>
-                              )}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">Required Attachments:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                            <div className="space-y-1.5 sm:space-y-2">
+                              <Label className="text-xs sm:text-sm font-medium">
+                                1. Degree Diploma certificate/ markmemo <span className="text-destructive">*</span>
+                              </Label>
+                              <div className="border-2 border-dashed border-primary/20 rounded-lg p-3 sm:p-4 text-center hover:border-primary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                >
+                                  <label htmlFor="degreeDiplomaCertificate" className="cursor-pointer">
+                                    <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    Upload Certificate
+                                  </label>
+                                </Button>
+                                <input
+                                  id="degreeDiplomaCertificate"
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  className="hidden"
+                                  onChange={(e) => handleFileChange("degreeDiplomaCertificate", e.target.files?.[0] || null)}
+                                />
+                                {files.degreeDiplomaCertificate && (
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                    {files.degreeDiplomaCertificate.name}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 sm:space-y-2">
+                              <Label className="text-xs sm:text-sm font-medium">
+                                2. Aadhar card <span className="text-destructive">*</span>
+                              </Label>
+                              <div className="border-2 border-dashed border-secondary/20 rounded-lg p-3 sm:p-4 text-center hover:border-secondary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                >
+                                  <label htmlFor="aadhaarCard" className="cursor-pointer">
+                                    <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    Upload Aadhaar
+                                  </label>
+                                </Button>
+                                <input
+                                  id="aadhaarCard"
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  className="hidden"
+                                  onChange={(e) => handleFileChange("aadhaarCard", e.target.files?.[0] || null)}
+                                />
+                                {files.aadhaarCard && (
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                    {files.aadhaarCard.name}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
+                              <Label className="text-xs sm:text-sm font-medium">
+                                3. Residential proof <span className="text-destructive">*</span>
+                              </Label>
+                              <div className="border-2 border-dashed border-accent/20 rounded-lg p-3 sm:p-4 text-center hover:border-accent/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                >
+                                  <label htmlFor="residentialProof" className="cursor-pointer">
+                                    <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    Upload Proof
+                                  </label>
+                                </Button>
+                                <input
+                                  id="residentialProof"
+                                  type="file"
+                                  accept="image/*,.pdf"
+                                  className="hidden"
+                                  onChange={(e) => handleFileChange("residentialProof", e.target.files?.[0] || null)}
+                                />
+                                {files.residentialProof && (
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                    {files.residentialProof.name}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
+                        </div>
 
-                          <div className="space-y-1.5 sm:space-y-2">
-                            <Label className="text-xs sm:text-sm font-medium">Aadhaar Card</Label>
-                            <div className="border-2 border-dashed border-secondary/20 rounded-lg p-3 sm:p-4 text-center hover:border-secondary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
-                              <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                                className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
-                              >
-                                <label htmlFor="aadhaarCard" className="cursor-pointer">
-                                  <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                  Upload Aadhaar
-                                </label>
-                              </Button>
-                              <input
-                                id="aadhaarCard"
-                                type="file"
-                                accept="image/*,.pdf"
-                                className="hidden"
-                                onChange={(e) => handleFileChange("aadhaarCard", e.target.files?.[0] || null)}
-                              />
-                              {files.aadhaarCard && (
-                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
-                                  {files.aadhaarCard.name}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
-                            <Label className="text-xs sm:text-sm font-medium">PAN Card</Label>
-                            <div className="border-2 border-dashed border-accent/20 rounded-lg p-3 sm:p-4 text-center hover:border-accent/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
-                              <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                asChild
-                                className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
-                              >
-                                <label htmlFor="panCard" className="cursor-pointer">
-                                  <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                                  Upload PAN
-                                </label>
-                              </Button>
-                              <input
-                                id="panCard"
-                                type="file"
-                                accept="image/*,.pdf"
-                                className="hidden"
-                                onChange={(e) => handleFileChange("panCard", e.target.files?.[0] || null)}
-                              />
-                              {files.panCard && (
-                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
-                                  {files.panCard.name}
-                                </p>
-                              )}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-medium text-muted-foreground">Signature Photo:</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                            <div className="space-y-1.5 sm:space-y-2">
+                              <Label className="text-xs sm:text-sm font-medium">
+                                Signature photo <span className="text-destructive">*</span>
+                              </Label>
+                              <div className="border-2 border-dashed border-primary/20 rounded-lg p-3 sm:p-4 text-center hover:border-primary/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
+                                <Camera className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="text-xs sm:text-sm h-8 sm:h-9 bg-transparent"
+                                >
+                                  <label htmlFor="signaturePhoto" className="cursor-pointer">
+                                    <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                    Upload Signature
+                                  </label>
+                                </Button>
+                                <input
+                                  id="signaturePhoto"
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleFileChange("signaturePhoto", e.target.files?.[0] || null)}
+                                />
+                                {files.signaturePhoto && (
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 break-all px-1">
+                                    {files.signaturePhoto.name}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -779,23 +1154,27 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                  resetForm()
+                  onOpenChange(false)
+                }}
                 className="w-full sm:w-auto order-2 sm:order-1 h-11 sm:h-10 text-sm bg-background/90 hover:bg-background focus-ring transition-all duration-200 hover:shadow-soft"
               >
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
               <Button
-                type={formCompletion === 100 ? "button" : "submit"}
-                onClick={formCompletion === 100 ? handleCompletionClick : undefined}
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                 className="w-full sm:w-auto order-1 sm:order-2 h-11 sm:h-10 text-sm relative overflow-hidden group shadow-lg border-2 border-primary/20"
                 style={{
-                  background: "hsl(var(--muted))",
-                  color: "hsl(var(--muted-foreground))",
+                  background: formCompletion === 100 ? "hsl(var(--primary))" : "hsl(var(--muted))",
+                  color: formCompletion === 100 ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
                 }}
               >
                 <div
-                  className="absolute left-0 top-0 h-full transition-all duration-700 ease-out border-r-2 border-green-500/50"
+                  className="absolute left-0 top-0 h-full transition-all duration-700 ease-out border-r-2 border-green-500/50 pointer-events-none"
                   style={{
                     width: `${formCompletion}%`,
                     background:
@@ -812,7 +1191,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 />
 
                 <div
-                  className="absolute inset-0 bg-gradient-to-r from-muted/50 to-muted/30"
+                  className="absolute inset-0 bg-gradient-to-r from-muted/50 to-muted/30 pointer-events-none"
                   style={{
                     backgroundImage:
                       "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)",
@@ -820,21 +1199,28 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 />
 
                 {formCompletion === 100 && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse duration-1000" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse duration-1000 pointer-events-none" />
                 )}
 
                 <div
-                  className="relative z-10 flex items-center font-medium transition-colors duration-300"
+                  className="relative z-10 flex items-center font-medium transition-colors duration-300 pointer-events-none"
                   style={{
                     color: formCompletion > 30 ? "#ffffff" : "hsl(var(--muted-foreground))",
                     textShadow: formCompletion > 30 ? "0 1px 2px rgba(0,0,0,0.5)" : "none",
                   }}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  <span>{formCompletion === 100 ? "Complete Registration" : `${formCompletion}% Complete`}</span>
+                  <span>
+                    {isSubmitting 
+                      ? "Submitting..." 
+                      : formCompletion === 100 
+                        ? "Complete Registration" 
+                        : `Submit Form (${formCompletion}%)`
+                    }
+                  </span>
                 </div>
 
-                <div className="absolute bottom-1 left-2 right-2 flex justify-between z-10">
+                <div className="absolute bottom-1 left-2 right-2 flex justify-between z-10 pointer-events-none">
                   {[20, 40, 60, 80, 100].map((threshold) => (
                     <div
                       key={threshold}
@@ -848,7 +1234,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                 </div>
 
                 {formCompletion > 80 && formCompletion < 100 && (
-                  <div className="absolute inset-0 bg-primary/10 animate-pulse rounded-md border border-primary/20" />
+                  <div className="absolute inset-0 bg-primary/10 animate-pulse rounded-md border border-primary/20 pointer-events-none" />
                 )}
               </Button>
             </div>
@@ -865,7 +1251,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
             Thank You! 🎉
           </DialogTitle>
           <DialogDescription className="text-center text-base">
-            Your voter registration form has been successfully submitted.
+            Your student registration form has been successfully submitted.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -876,11 +1262,14 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Registration Complete!</h3>
+            <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <p className="text-sm font-medium text-blue-800">Registration ID: {submissionId}</p>
+            </div>
             <p className="text-gray-600 mb-4">
-              You will receive an email shortly with confirmation details and next steps for your voter registration.
+              You will receive an Email  confirmation shortly with your registration details and next steps.
             </p>
             <p className="text-sm text-gray-500">
-              Please check your email (including spam folder) within the next 24 hours.
+              Please keep your Registration ID safe for future reference.
             </p>
           </div>
           <div className="flex justify-center pt-4">

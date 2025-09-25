@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { SidebarLayout } from "@/components/sidebar-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,9 +28,106 @@ import {
   ArrowRight,
 } from "lucide-react"
 
+interface Submission {
+  id: string
+  submittedAt: string
+  surname: string
+  firstName: string
+  fathersHusbandName: string
+  fathersHusbandFullName: string
+  sex: string
+  qualification: string
+  occupation: string
+  dateOfBirth: string
+  ageYears: string
+  ageMonths: string
+  district: string
+  taluka: string
+  villageName: string
+  houseNo: string
+  street: string
+  pinCode: string
+  mobileNumber: string
+  aadhaarNumber: string
+  yearOfPassing: string
+  degreeDiploma: string
+  nameOfUniversity: string
+  nameOfDiploma: string
+  haveChangedName: string
+  place: string
+  declarationDate: string
+  files: Record<string, any>
+}
+
 export default function TeamDashboard() {
   const [showAddStudentForm, setShowAddStudentForm] = useState(false)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+
+  useEffect(() => {
+    fetchSubmissions()
+    
+    // Listen for form submission events
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'FORM_SUBMITTED') {
+        console.log('🔄 Form submitted, refreshing data...')
+        fetchSubmissions()
+      }
+    }
+    
+    window.addEventListener('message', handleMessage)
+    
+    return () => {
+      window.removeEventListener('message', handleMessage)
+    }
+  }, [])
+
+  const fetchSubmissions = async () => {
+    try {
+      console.log('🔄 Fetching submissions from team page...')
+      const response = await fetch('/api/submit-form')
+      const data = await response.json()
+      console.log('📊 API response:', data)
+      setSubmissions(data.submissions || [])
+      console.log('✅ Submissions set:', data.submissions?.length || 0)
+    } catch (error) {
+      console.error('❌ Error fetching submissions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const filteredSubmissions = submissions.filter(submission => {
+    const matchesSearch = 
+      submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.mobileNumber.includes(searchTerm) ||
+      submission.aadhaarNumber.includes(searchTerm)
+    
+    // For now, all submissions are "pending" - you can add status logic later
+    const matchesStatus = statusFilter === "all" || statusFilter === "pending"
+    
+    return matchesSearch && matchesStatus
+  })
+
+  const totalSubmissions = submissions.length
+  const pendingSubmissions = submissions.length // All are pending for now
+  const verifiedSubmissions = 0 // You can add verification logic later
+  const followUpRequired = 0 // You can add follow-up logic later
 
   return (
     <SidebarLayout>
@@ -45,12 +142,12 @@ export default function TeamDashboard() {
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="bg-chart-4/10 text-chart-4 border-chart-4/20 text-xs sm:text-sm">
               <AlertCircle className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline">89 Pending</span>
-              <span className="sm:hidden">89</span>
+              <span className="hidden sm:inline">{pendingSubmissions} Pending</span>
+              <span className="sm:hidden">{pendingSubmissions}</span>
             </Badge>
             <Button onClick={() => setShowAddStudentForm(true)} className="text-xs sm:text-sm h-8 sm:h-9">
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Add Voter</span>
+              <span className="hidden sm:inline">Add Student</span>
               <span className="sm:hidden">Add</span>
             </Button>
           </div>
@@ -61,8 +158,8 @@ export default function TeamDashboard() {
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Voters Contacted</p>
-                      <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight">1,247</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Students Registered</p>
+                      <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight">{totalSubmissions}</p>
                     </div>
                     <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-300 group-hover:scale-105">
                       <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-chart-1" />
@@ -81,7 +178,7 @@ export default function TeamDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Pending Verification</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2">89</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2">{pendingSubmissions}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-2" />
@@ -97,8 +194,8 @@ export default function TeamDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Verified Voters</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">1,089</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Verified Students</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">{verifiedSubmissions}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
@@ -116,7 +213,7 @@ export default function TeamDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Follow-up Required</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive">69</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive">{followUpRequired}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-destructive/20 rounded-lg flex items-center justify-center">
                   <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-destructive" />
@@ -166,7 +263,7 @@ export default function TeamDashboard() {
                   </div>
                   <Button onClick={() => setShowAddStudentForm(true)}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Voter
+                    Add Student
                   </Button>
                 </div>
               </CardHeader>
@@ -175,130 +272,185 @@ export default function TeamDashboard() {
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="Search voters..." className="pl-10" />
+                    <Input 
+                      placeholder="Search students..." 
+                      className="pl-10" 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
-                  <Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Voters</SelectItem>
+                      <SelectItem value="all">All Students</SelectItem>
                       <SelectItem value="pending">Pending Verification</SelectItem>
                       <SelectItem value="approved">Verified</SelectItem>
                       <SelectItem value="rejected">Follow-up Required</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={fetchSubmissions}>
                     <Filter className="w-4 h-4 mr-2" />
-                    More Filters
+                    Refresh Data
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/test-submission', { method: 'POST' })
+                        const result = await response.json()
+                        if (result.success) {
+                          alert('Test submission created!')
+                          fetchSubmissions()
+                        }
+                      } catch (error) {
+                        console.error('Test submission failed:', error)
+                      }
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Test Data
                   </Button>
                 </div>
 
-                {/* Students Table */}
-                <div className="border border-border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Voter</TableHead>
-                        <TableHead>Voter ID</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Contacted</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow className="hover:bg-muted/30">
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">Rajesh Kumar Sharma</div>
-                            <div className="text-sm text-muted-foreground">rajesh.sharma@gmail.com</div>
+                {/* Students Table - Mobile Friendly */}
+                <div className="border border-border rounded-lg overflow-hidden">
+                  {/* Desktop Table */}
+                  <div className="hidden sm:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Student</TableHead>
+                          <TableHead>Registration ID</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Submitted</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {loading ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8">
+                              Loading submissions...
+                            </TableCell>
+                          </TableRow>
+                        ) : filteredSubmissions.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8">
+                              <div className="flex flex-col items-center gap-2">
+                                <Users className="w-8 h-8 text-muted-foreground" />
+                                <p className="text-muted-foreground">No student registrations found</p>
+                                <p className="text-sm text-muted-foreground">Students will appear here once they start registering</p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredSubmissions.map((submission) => (
+                            <TableRow key={submission.id} className="hover:bg-muted/30">
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{submission.firstName} {submission.surname}</div>
+                                  <div className="text-sm text-muted-foreground">{submission.mobileNumber}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">{submission.id}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Pending
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">{formatDate(submission.submittedAt)}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setSelectedSubmission(submission)}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setSelectedSubmission(submission)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="sm:hidden">
+                    {loading ? (
+                      <div className="text-center py-8">
+                        Loading submissions...
+                      </div>
+                    ) : filteredSubmissions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users className="w-8 h-8 text-muted-foreground" />
+                          <p className="text-muted-foreground">No student registrations found</p>
+                          <p className="text-sm text-muted-foreground">Students will appear here once they start registering</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 p-3">
+                        {filteredSubmissions.map((submission) => (
+                          <div key={submission.id} className="border rounded-lg p-4 bg-card hover:bg-muted/30 transition-colors">
+                            <div className="space-y-3">
+                              <div>
+                                <div className="font-medium text-lg">{submission.firstName} {submission.surname}</div>
+                                <div className="text-sm text-muted-foreground">{submission.mobileNumber}</div>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs text-muted-foreground font-mono">
+                                  ID: {submission.id}
+                                </div>
+                                <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Pending
+                                </Badge>
+                              </div>
+                              
+                              <div className="text-xs text-muted-foreground">
+                                Submitted: {formatDate(submission.submittedAt)}
+                              </div>
+                              
+                              <div className="flex gap-2 pt-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setSelectedSubmission(submission)}
+                                  className="flex-1"
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Details
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setSelectedSubmission(submission)}
+                                  className="flex-1"
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell>VOT-2024-001247</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
-                            <Clock className="w-3 h-3 mr-1" />
-                            Under Verification
-                          </Badge>
-                        </TableCell>
-                        <TableCell>Mar 10, 2024</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setShowPdfPreview(true)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="hover:bg-muted/30">
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">Priya Singh Patel</div>
-                            <div className="text-sm text-muted-foreground">priya.patel@gmail.com</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>VOT-2024-001248</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-chart-1/10 text-chart-1 border-chart-1/20">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Verified
-                          </Badge>
-                        </TableCell>
-                        <TableCell>Mar 9, 2024</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setShowPdfPreview(true)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="hover:bg-muted/30">
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">Amit Kumar Verma</div>
-                            <div className="text-sm text-muted-foreground">amit.verma@gmail.com</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>VOT-2024-001249</TableCell>
-                        <TableCell>
-                          <Badge variant="destructive">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Follow-up Required
-                          </Badge>
-                        </TableCell>
-                        <TableCell>Mar 8, 2024</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setShowPdfPreview(true)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -588,6 +740,228 @@ export default function TeamDashboard() {
       </div>
 
       <AddStudentForm open={showAddStudentForm} onOpenChange={setShowAddStudentForm} />
+
+      {/* Student Details Dialog - Mobile Friendly */}
+      <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0 sm:p-6">
+          <DialogHeader className="p-4 sm:p-6 pb-2">
+            <DialogTitle className="text-lg sm:text-xl font-bold">
+              Student Registration Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedSubmission && (
+            <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+              {/* Personal Details */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Personal Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Name:</span>
+                      <span>{selectedSubmission.firstName} {selectedSubmission.surname}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Father's/Husband:</span>
+                      <span>{selectedSubmission.fathersHusbandName}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Sex:</span>
+                      <span>{selectedSubmission.sex}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">DOB:</span>
+                      <span>{selectedSubmission.dateOfBirth}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Age:</span>
+                      <span>{selectedSubmission.ageYears} years {selectedSubmission.ageMonths} months</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Qualification:</span>
+                      <span>{selectedSubmission.qualification || 'Not specified'}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Occupation:</span>
+                      <span>{selectedSubmission.occupation || 'Not specified'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Address</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">District:</span>
+                      <span>{selectedSubmission.district}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Taluka:</span>
+                      <span>{selectedSubmission.taluka}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Village:</span>
+                      <span>{selectedSubmission.villageName}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">House No:</span>
+                      <span>{selectedSubmission.houseNo}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Street:</span>
+                      <span>{selectedSubmission.street}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Pin Code:</span>
+                      <span>{selectedSubmission.pinCode}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact & Education */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Contact Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Mobile:</span>
+                      <span className="font-mono">{selectedSubmission.mobileNumber}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Aadhaar:</span>
+                      <span className="font-mono">{selectedSubmission.aadhaarNumber}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Education</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Year of Passing:</span>
+                      <span>{selectedSubmission.yearOfPassing}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Degree/Diploma:</span>
+                      <span>{selectedSubmission.degreeDiploma}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">University:</span>
+                      <span>{selectedSubmission.nameOfUniversity}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Diploma Name:</span>
+                      <span>{selectedSubmission.nameOfDiploma || 'Not specified'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Files - Mobile Friendly */}
+              {selectedSubmission.files && Object.keys(selectedSubmission.files).length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Uploaded Documents</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {Object.entries(selectedSubmission.files).map(([key, file]) => {
+                      // Skip if file is null, undefined, or empty object
+                      if (!file || typeof file !== 'object' || !file.fileName) {
+                        return null
+                      }
+                      
+                      return (
+                        <div key={key} className="p-3 border rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium truncate">{file.fileName}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => window.open(`/api/files/${file.savedAs}`, '_blank')}
+                              className="text-xs h-8"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                const link = document.createElement('a')
+                                link.href = `/api/files/${file.savedAs}`
+                                link.download = file.fileName
+                                link.click()
+                              }}
+                              className="text-xs h-8"
+                            >
+                              <Download className="w-3 h-3 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Name Change Info */}
+              {selectedSubmission.haveChangedName === 'yes' && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Name Change Information</h4>
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      This student has indicated they changed their name and provided supporting documents.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Registration Info */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Registration Information</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                    <span className="font-medium text-muted-foreground min-w-[120px]">Registration ID:</span>
+                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{selectedSubmission.id}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                    <span className="font-medium text-muted-foreground min-w-[120px]">Submitted:</span>
+                    <span>{formatDate(selectedSubmission.submittedAt)}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                    <span className="font-medium text-muted-foreground min-w-[120px]">Place:</span>
+                    <span>{selectedSubmission.place}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                    <span className="font-medium text-muted-foreground min-w-[120px]">Declaration Date:</span>
+                    <span>{selectedSubmission.declarationDate}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions - Mobile Friendly */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t">
+                <Button className="w-full sm:w-auto">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Approve Registration
+                </Button>
+                <Button variant="destructive" className="w-full sm:w-auto">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Request Follow-up
+                </Button>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download All Documents
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* PDF Preview Dialog */}
       <Dialog open={showPdfPreview} onOpenChange={setShowPdfPreview}>
