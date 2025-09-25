@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AddStudentForm } from "@/components/forms/add-student-form"
-import { generateStudentPDF, generateAllStudentsPDF } from "@/lib/pdf-generator"
 import { generateSimpleStudentPDF, generateSimpleAllStudentsPDF } from "@/lib/simple-pdf-generator"
 import {
   Users,
@@ -28,6 +27,7 @@ import {
   Upload,
   TrendingUp,
   ArrowRight,
+  X
 } from "lucide-react"
 
 interface Submission {
@@ -150,35 +150,19 @@ export default function TeamDashboard() {
 
   const handleDownloadStudentPDF = (submission: Submission) => {
     try {
-      // Try the advanced PDF generator first
-      const pdf = generateStudentPDF(submission)
-      pdf.save(`student-${submission.id}-${submission.firstName}-${submission.surname}.pdf`)
+      generateSimpleStudentPDF(submission)
     } catch (error) {
-      console.error('Advanced PDF generation failed, trying simple method:', error)
-      try {
-        // Fallback to simple PDF generator
-        generateSimpleStudentPDF(submission)
-      } catch (fallbackError) {
-        console.error('Simple PDF generation also failed:', fallbackError)
-        alert('Error generating PDF. Please try again.')
-      }
+      console.error('PDF generation failed:', error)
+      alert('Error generating PDF. Please try again.')
     }
   }
 
   const handleDownloadAllStudentsPDF = () => {
     try {
-      // Try the advanced PDF generator first
-      const pdf = generateAllStudentsPDF(submissions)
-      pdf.save(`all-students-${new Date().toISOString().split('T')[0]}.pdf`)
+      generateSimpleAllStudentsPDF(submissions)
     } catch (error) {
-      console.error('Advanced PDF generation failed, trying simple method:', error)
-      try {
-        // Fallback to simple PDF generator
-        generateSimpleAllStudentsPDF(submissions)
-      } catch (fallbackError) {
-        console.error('Simple PDF generation also failed:', fallbackError)
-        alert('Error generating PDF. Please try again.')
-      }
+      console.error('PDF generation failed:', error)
+      alert('Error generating PDF. Please try again.')
     }
   }
 
@@ -809,21 +793,31 @@ export default function TeamDashboard() {
               <DialogTitle className="text-lg sm:text-xl font-bold">
                 Student Registration Details
               </DialogTitle>
-              {!isEditing ? (
-                <Button onClick={() => handleEdit(selectedSubmission!)} size="sm">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
+              <div className="flex items-center gap-2">
+                {!isEditing ? (
+                  <Button onClick={() => handleEdit(selectedSubmission!)} size="sm">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button onClick={handleSave} size="sm">
+                      Save
+                    </Button>
+                    <Button onClick={handleCancel} variant="outline" size="sm">
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                <Button 
+                  onClick={() => setSelectedSubmission(null)} 
+                  variant="ghost" 
+                  size="sm"
+                  className="p-2"
+                >
+                  <X className="w-4 h-4" />
                 </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button onClick={handleSave} size="sm">
-                    Save
-                  </Button>
-                  <Button onClick={handleCancel} variant="outline" size="sm">
-                    Cancel
-                  </Button>
-                </div>
-              )}
+              </div>
             </div>
           </DialogHeader>
           {selectedSubmission && (
