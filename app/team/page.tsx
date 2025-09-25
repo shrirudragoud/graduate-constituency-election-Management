@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AddStudentForm } from "@/components/forms/add-student-form"
+import { SimpleStudentForm } from "@/components/forms/simple-student-form"
 import { generateSimpleStudentPDF, generateSimpleAllStudentsPDF } from "@/lib/simple-pdf-generator"
 import {
   Users,
@@ -783,7 +783,7 @@ export default function TeamDashboard() {
         </Tabs>
       </div>
 
-      <AddStudentForm open={showAddStudentForm} onOpenChange={setShowAddStudentForm} />
+      <SimpleStudentForm open={showAddStudentForm} onOpenChange={setShowAddStudentForm} />
 
       {/* Student Details Dialog - Mobile Friendly */}
       <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>

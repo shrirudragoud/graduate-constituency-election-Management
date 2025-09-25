@@ -1,19 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useMemo } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, User, MapPin, FileText, GraduationCap, Camera, Save, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { SimpleStudentForm } from "./simple-student-form"
 
 interface AddStudentFormProps {
   open: boolean
