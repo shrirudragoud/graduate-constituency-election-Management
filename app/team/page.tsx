@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AddStudentForm } from "@/components/forms/add-student-form"
+import { generateStudentPDF, generateAllStudentsPDF } from "@/lib/pdf-generator"
+import { generateSimpleStudentPDF, generateSimpleAllStudentsPDF } from "@/lib/simple-pdf-generator"
 import {
   Users,
   FileText,
@@ -65,6 +67,8 @@ export default function TeamDashboard() {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedSubmission, setEditedSubmission] = useState<Submission | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
@@ -111,18 +115,90 @@ export default function TeamDashboard() {
     })
   }
 
-  const filteredSubmissions = submissions.filter(submission => {
-    const matchesSearch = 
-      submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.mobileNumber.includes(searchTerm) ||
-      submission.aadhaarNumber.includes(searchTerm)
+  const handleEdit = (submission: Submission) => {
+    setSelectedSubmission(submission)
+    setEditedSubmission({ ...submission })
+    setIsEditing(true)
+  }
+
+  const handleSave = async () => {
+    if (!editedSubmission) return
     
-    // For now, all submissions are "pending" - you can add status logic later
-    const matchesStatus = statusFilter === "all" || statusFilter === "pending"
-    
-    return matchesSearch && matchesStatus
-  })
+    try {
+      // Update the submission in the local state
+      setSubmissions(prev => 
+        prev.map(sub => 
+          sub.id === editedSubmission.id ? editedSubmission : sub
+        )
+      )
+      
+      // Here you would typically send the update to your API
+      // For now, we'll just update the local state
+      console.log('Saving submission:', editedSubmission)
+      
+      setIsEditing(false)
+      setEditedSubmission(null)
+    } catch (error) {
+      console.error('Error saving submission:', error)
+    }
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    setEditedSubmission(null)
+  }
+
+  const handleDownloadStudentPDF = (submission: Submission) => {
+    try {
+      // Try the advanced PDF generator first
+      const pdf = generateStudentPDF(submission)
+      pdf.save(`student-${submission.id}-${submission.firstName}-${submission.surname}.pdf`)
+    } catch (error) {
+      console.error('Advanced PDF generation failed, trying simple method:', error)
+      try {
+        // Fallback to simple PDF generator
+        generateSimpleStudentPDF(submission)
+      } catch (fallbackError) {
+        console.error('Simple PDF generation also failed:', fallbackError)
+        alert('Error generating PDF. Please try again.')
+      }
+    }
+  }
+
+  const handleDownloadAllStudentsPDF = () => {
+    try {
+      // Try the advanced PDF generator first
+      const pdf = generateAllStudentsPDF(submissions)
+      pdf.save(`all-students-${new Date().toISOString().split('T')[0]}.pdf`)
+    } catch (error) {
+      console.error('Advanced PDF generation failed, trying simple method:', error)
+      try {
+        // Fallback to simple PDF generator
+        generateSimpleAllStudentsPDF(submissions)
+      } catch (fallbackError) {
+        console.error('Simple PDF generation also failed:', fallbackError)
+        alert('Error generating PDF. Please try again.')
+      }
+    }
+  }
+
+  const filteredSubmissions = submissions
+    .filter(submission => {
+      const matchesSearch = 
+        submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        submission.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        submission.mobileNumber.includes(searchTerm) ||
+        submission.aadhaarNumber.includes(searchTerm)
+      
+      // For now, all submissions are "pending" - you can add status logic later
+      const matchesStatus = statusFilter === "all" || statusFilter === "pending"
+      
+      return matchesSearch && matchesStatus
+    })
+    .sort((a, b) => {
+      // Sort by submittedAt in descending order (newest first)
+      return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    })
 
   const totalSubmissions = submissions.length
   const pendingSubmissions = submissions.length // All are pending for now
@@ -318,17 +394,17 @@ export default function TeamDashboard() {
                 <div className="border border-border rounded-lg overflow-hidden">
                   {/* Desktop Table */}
                   <div className="hidden sm:block">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
                           <TableHead>Student</TableHead>
                           <TableHead>Registration ID</TableHead>
-                          <TableHead>Status</TableHead>
+                        <TableHead>Status</TableHead>
                           <TableHead>Submitted</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {loading ? (
                           <TableRow>
                             <TableCell colSpan={5} className="text-center py-8">
@@ -348,39 +424,39 @@ export default function TeamDashboard() {
                         ) : (
                           filteredSubmissions.map((submission) => (
                             <TableRow key={submission.id} className="hover:bg-muted/30">
-                              <TableCell>
-                                <div>
+                        <TableCell>
+                          <div>
                                   <div className="font-medium">{submission.firstName} {submission.surname}</div>
                                   <div className="text-sm text-muted-foreground">{submission.mobileNumber}</div>
-                                </div>
-                              </TableCell>
+                          </div>
+                        </TableCell>
                               <TableCell className="font-mono text-sm">{submission.id}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
-                                  <Clock className="w-3 h-3 mr-1" />
+                        <TableCell>
+                          <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+                            <Clock className="w-3 h-3 mr-1" />
                                   Pending
-                                </Badge>
-                              </TableCell>
+                          </Badge>
+                        </TableCell>
                               <TableCell className="text-sm">{formatDate(submission.submittedAt)}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                                    onClick={() => setSelectedSubmission(submission)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
                                   <Button 
                                     variant="outline" 
                                     size="sm"
-                                    onClick={() => setSelectedSubmission(submission)}
+                                    onClick={() => handleEdit(submission)}
                                   >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => setSelectedSubmission(submission)}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                           ))
                         )}
                       </TableBody>
@@ -406,10 +482,10 @@ export default function TeamDashboard() {
                         {filteredSubmissions.map((submission) => (
                           <div key={submission.id} className="border rounded-lg p-4 bg-card hover:bg-muted/30 transition-colors">
                             <div className="space-y-3">
-                              <div>
+                          <div>
                                 <div className="font-medium text-lg">{submission.firstName} {submission.surname}</div>
                                 <div className="text-sm text-muted-foreground">{submission.mobileNumber}</div>
-                              </div>
+                          </div>
                               
                               <div className="flex items-center justify-between">
                                 <div className="text-xs text-muted-foreground font-mono">
@@ -418,7 +494,7 @@ export default function TeamDashboard() {
                                 <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs">
                                   <Clock className="w-3 h-3 mr-1" />
                                   Pending
-                                </Badge>
+                          </Badge>
                               </div>
                               
                               <div className="text-xs text-muted-foreground">
@@ -426,25 +502,25 @@ export default function TeamDashboard() {
                               </div>
                               
                               <div className="flex gap-2 pt-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
+                            <Button 
+                              variant="outline" 
+                              size="sm"
                                   onClick={() => setSelectedSubmission(submission)}
                                   className="flex-1"
-                                >
+                            >
                                   <Eye className="w-4 h-4 mr-2" />
                                   View Details
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setSelectedSubmission(submission)}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                                  onClick={() => handleEdit(submission)}
                                   className="flex-1"
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit
-                                </Button>
-                              </div>
+                            </Button>
+                          </div>
                             </div>
                           </div>
                         ))}
@@ -519,16 +595,6 @@ export default function TeamDashboard() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                      <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Verify Voter</span>
-                        <span className="sm:hidden">Verify</span>
-                      </Button>
-                      <Button variant="destructive" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
-                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Request Follow-up</span>
-                        <span className="sm:hidden">Follow-up</span>
-                      </Button>
                       <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">View Details</span>
@@ -588,11 +654,6 @@ export default function TeamDashboard() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                      <Button variant="destructive" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
-                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Request Follow-up</span>
-                        <span className="sm:hidden">Follow-up</span>
-                      </Button>
                       <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                         <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">View Details</span>
@@ -661,13 +722,12 @@ export default function TeamDashboard() {
                   <h3 className="font-semibold mb-3">Bulk Actions</h3>
                   <p className="text-sm text-muted-foreground mb-4">Perform actions on multiple selected voters</p>
                   <div className="flex flex-wrap gap-3">
-                    <Button>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Verify Selected
-                    </Button>
-                    <Button variant="secondary">
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      Request Follow-up
+                    <Button 
+                      variant="outline"
+                      onClick={handleDownloadAllStudentsPDF}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download All Students PDF
                     </Button>
                     <Button variant="outline">
                       <FileText className="w-4 h-4 mr-2" />
@@ -745,9 +805,26 @@ export default function TeamDashboard() {
       <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0 sm:p-6">
           <DialogHeader className="p-4 sm:p-6 pb-2">
-            <DialogTitle className="text-lg sm:text-xl font-bold">
-              Student Registration Details
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg sm:text-xl font-bold">
+                Student Registration Details
+              </DialogTitle>
+              {!isEditing ? (
+                <Button onClick={() => handleEdit(selectedSubmission!)} size="sm">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button onClick={handleSave} size="sm">
+                    Save
+                  </Button>
+                  <Button onClick={handleCancel} variant="outline" size="sm">
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
           </DialogHeader>
           {selectedSubmission && (
             <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
@@ -758,19 +835,69 @@ export default function TeamDashboard() {
                   <div className="space-y-2 text-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">Name:</span>
-                      <span>{selectedSubmission.firstName} {selectedSubmission.surname}</span>
+                      {isEditing && editedSubmission ? (
+                        <div className="flex gap-2">
+                          <Input
+                            value={editedSubmission.firstName}
+                            onChange={(e) => setEditedSubmission({...editedSubmission, firstName: e.target.value})}
+                            className="h-8 text-sm"
+                            placeholder="First Name"
+                          />
+                          <Input
+                            value={editedSubmission.surname}
+                            onChange={(e) => setEditedSubmission({...editedSubmission, surname: e.target.value})}
+                            className="h-8 text-sm"
+                            placeholder="Surname"
+                          />
+                        </div>
+                      ) : (
+                        <span>{selectedSubmission.firstName} {selectedSubmission.surname}</span>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">Father's/Husband:</span>
-                      <span>{selectedSubmission.fathersHusbandName}</span>
+                      {isEditing && editedSubmission ? (
+                        <Input
+                          value={editedSubmission.fathersHusbandName}
+                          onChange={(e) => setEditedSubmission({...editedSubmission, fathersHusbandName: e.target.value})}
+                          className="h-8 text-sm"
+                          placeholder="Father's/Husband Name"
+                        />
+                      ) : (
+                        <span>{selectedSubmission.fathersHusbandName}</span>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">Sex:</span>
-                      <span>{selectedSubmission.sex}</span>
+                      {isEditing && editedSubmission ? (
+                        <Select
+                          value={editedSubmission.sex}
+                          onValueChange={(value) => setEditedSubmission({...editedSubmission, sex: value})}
+                        >
+                          <SelectTrigger className="h-8 text-sm w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="M">Male</SelectItem>
+                            <SelectItem value="F">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span>{selectedSubmission.sex}</span>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">DOB:</span>
-                      <span>{selectedSubmission.dateOfBirth}</span>
+                      {isEditing && editedSubmission ? (
+                        <Input
+                          type="date"
+                          value={editedSubmission.dateOfBirth}
+                          onChange={(e) => setEditedSubmission({...editedSubmission, dateOfBirth: e.target.value})}
+                          className="h-8 text-sm"
+                        />
+                      ) : (
+                        <span>{selectedSubmission.dateOfBirth}</span>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">Age:</span>
@@ -778,11 +905,29 @@ export default function TeamDashboard() {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">Qualification:</span>
-                      <span>{selectedSubmission.qualification || 'Not specified'}</span>
+                      {isEditing && editedSubmission ? (
+                        <Input
+                          value={editedSubmission.qualification || ''}
+                          onChange={(e) => setEditedSubmission({...editedSubmission, qualification: e.target.value})}
+                          className="h-8 text-sm"
+                          placeholder="Qualification"
+                        />
+                      ) : (
+                        <span>{selectedSubmission.qualification || 'Not specified'}</span>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1">
                       <span className="font-medium text-muted-foreground min-w-[120px]">Occupation:</span>
-                      <span>{selectedSubmission.occupation || 'Not specified'}</span>
+                      {isEditing && editedSubmission ? (
+                        <Input
+                          value={editedSubmission.occupation || ''}
+                          onChange={(e) => setEditedSubmission({...editedSubmission, occupation: e.target.value})}
+                          className="h-8 text-sm"
+                          placeholder="Occupation"
+                        />
+                      ) : (
+                        <span>{selectedSubmission.occupation || 'Not specified'}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -945,17 +1090,13 @@ export default function TeamDashboard() {
 
               {/* Actions - Mobile Friendly */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t">
-                <Button className="w-full sm:w-auto">
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Approve Registration
-                </Button>
-                <Button variant="destructive" className="w-full sm:w-auto">
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Request Follow-up
-                </Button>
-                <Button variant="outline" className="w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto"
+                  onClick={() => handleDownloadStudentPDF(selectedSubmission)}
+                >
                   <Download className="w-4 h-4 mr-2" />
-                  Download All Documents
+                  Download Student PDF
                 </Button>
               </div>
             </div>

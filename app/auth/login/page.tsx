@@ -108,20 +108,20 @@ export default function LoginPage() {
 
         <Card className="shadow-lg">
           <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">Welcome Back</CardTitle>
-            <CardDescription>Choose your role and sign in</CardDescription>
+            <CardTitle className="text-xl">Welcome </CardTitle>
+            <CardDescription></CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Role Selection Buttons */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">Select Role</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="flex gap-2">
                 {roles.map((role) => (
                   <Button
                     key={role.id}
                     variant={selectedRole === role.id ? "default" : "outline"}
                     onClick={() => setSelectedRole(role.id)}
-                    className="h-10 text-xs sm:text-sm px-2"
+                    className="flex-1 h-10 text-xs sm:text-sm px-2"
                   >
                     {role.name}
                   </Button>
@@ -132,11 +132,11 @@ export default function LoginPage() {
             {/* Login Type Selection */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">Login with</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex gap-2">
                 <Button
                   variant={loginType === "number" ? "default" : "outline"}
                   onClick={() => setLoginType("number")}
-                  className="h-10 text-xs sm:text-sm"
+                  className="flex-1 h-10 text-xs sm:text-sm"
                 >
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Phone Number</span>
@@ -145,7 +145,7 @@ export default function LoginPage() {
                 <Button
                   variant={loginType === "email" ? "default" : "outline"}
                   onClick={() => setLoginType("email")}
-                  className="h-10 text-xs sm:text-sm"
+                  className="flex-1 h-10 text-xs sm:text-sm"
                 >
                   <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Email

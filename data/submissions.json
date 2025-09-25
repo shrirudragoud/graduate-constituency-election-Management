@@ -583,5 +583,61 @@
     },
     "id": "1758797230569",
     "submittedAt": "2025-09-25T10:47:10.569Z"
+  },
+  {
+    "surname": "Rudragoud",
+    "firstName": "Shridhar",
+    "fathersHusbandName": "qwd",
+    "fathersHusbandFullName": "Shridhar Rudragoud",
+    "sex": "M",
+    "qualification": "wx",
+    "occupation": "PROGRAMMER",
+    "dateOfBirth": "2025-09-18",
+    "ageYears": "0",
+    "ageMonths": "0",
+    "district": "qewfdqewf",
+    "taluka": "fwefwe",
+    "villageName": "fwefwe",
+    "houseNo": "fwef",
+    "street": "fwefew",
+    "pinCode": "wefwef",
+    "mobileNumber": "fewfew",
+    "email": "fewfew",
+    "aadhaarNumber": "23r23r32",
+    "yearOfPassing": "",
+    "degreeDiploma": "fewfw",
+    "nameOfUniversity": "efwef",
+    "nameOfDiploma": "efwef",
+    "haveChangedName": "",
+    "place": "ftrh",
+    "declarationDate": "2025-09-18",
+    "files": {
+      "degreeDiplomaCertificate": {
+        "fileName": "1758796263391-Untitled diagram _ Mermaid Chart-2025-08-31-182601.png",
+        "savedAs": "1758799600579-1758796263391-Untitled diagram _ Mermaid Chart-2025-08-31-182601.png",
+        "size": 179328,
+        "type": "image/png"
+      },
+      "aadhaarCard": {
+        "fileName": "1758796263391-Untitled diagram _ Mermaid Chart-2025-08-31-182601.png",
+        "savedAs": "1758799600616-1758796263391-Untitled diagram _ Mermaid Chart-2025-08-31-182601.png",
+        "size": 179328,
+        "type": "image/png"
+      },
+      "residentialProof": {
+        "fileName": "1758796263391-Untitled diagram _ Mermaid Chart-2025-08-31-182601.png",
+        "savedAs": "1758799600678-1758796263391-Untitled diagram _ Mermaid Chart-2025-08-31-182601.png",
+        "size": 179328,
+        "type": "image/png"
+      },
+      "signaturePhoto": {
+        "fileName": "BJP-logo.png",
+        "savedAs": "1758799600710-BJP-logo.png",
+        "size": 62617,
+        "type": "image/png"
+      }
+    },
+    "id": "1758799603326",
+    "submittedAt": "2025-09-25T11:26:43.326Z"
   }
 ]

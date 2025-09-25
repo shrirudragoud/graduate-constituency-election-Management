@@ -13,10 +13,17 @@ export default function StudentOnboardingPage() {
     <>
       <div className="min-h-screen relative overflow-hidden" style={{backgroundImage: 'linear-gradient(135deg, #F37115 0%,rgb(240, 238, 238) 25%, #00A34E 50%, #FFFFFF 75%, #494849 100%)', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed'}}>
         {/* Logo text at the top */}
-        <div className="absolute top-8 left-8 z-20">
-          <h1 className="text-3xl sm:text-4xl font-black text-white drop-shadow-2xl" style={{fontFamily: 'Arial Black, sans-serif', textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-          Bharatiya Janata Party
-          </h1>
+        <div className="absolute top-4 sm:top-6 left-4 sm:left-8 z-20">
+          <div className="bg-gradient-to-r from-orange-500/90 to-green-600/90 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/30 shadow-2xl">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+              <span className="block text-sm sm:text-base font-medium text-white/95 mb-1 drop-shadow-lg">
+                भारतीय जनता पार्टी
+              </span>
+              <span className="block font-black text-white drop-shadow-lg">
+                Bharatiya Janata Party
+              </span>
+            </h1>
+          </div>
         </div>
 
         {/* Main content positioned at bottom */}
