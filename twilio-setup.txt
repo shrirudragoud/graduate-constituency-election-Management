@@ -1,0 +1,29 @@
+# Twilio WhatsApp Setup Instructions
+
+## Step 1: Get Twilio Credentials
+1. Go to https://console.twilio.com/
+2. Sign up for a free account
+3. Get your Account SID and Auth Token from the dashboard
+
+## Step 2: Set up WhatsApp Sandbox
+1. Go to https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn
+2. Click "Set up WhatsApp sandbox"
+3. You'll get a sandbox number like +1 415 523 8886
+4. Send "join <sandbox-code>" to this number from your WhatsApp
+
+## Step 3: Create .env.local file
+Create a file called .env.local in your project root with:
+
+TWILIO_ACCOUNT_SID=your_actual_account_sid_here
+TWILIO_AUTH_TOKEN=your_actual_auth_token_here
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+
+## Step 4: Test
+1. Start your app: npm run dev
+2. Submit a registration form
+3. Check if WhatsApp message is sent to the mobile number
+
+## Note
+- The app will work without Twilio (it will just skip WhatsApp notifications)
+- WhatsApp messages will only be sent when Twilio is properly configured
+- Sandbox is free for testing
