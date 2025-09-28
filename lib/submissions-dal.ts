@@ -212,18 +212,7 @@ class SubmissionsDataAccessLayer {
         files: submission.files || {}
       }
 
-      // Check for duplicate mobile number or Aadhaar number
-      const duplicateCheck = await client.query(
-        `SELECT id FROM submissions 
-         WHERE (mobile_number = $1 OR aadhaar_number = $2) 
-         AND status != 'deleted'
-         LIMIT 1`,
-        [submission.mobileNumber, submission.aadhaarNumber]
-      )
-
-      if (duplicateCheck.rows.length > 0) {
-        throw new Error('A submission with this mobile number or Aadhaar number already exists')
-      }
+      // Duplicate check removed for high concurrency - allow multiple submissions
 
       // Insert submission
       const res = await client.query(

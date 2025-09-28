@@ -5,6 +5,7 @@ import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
 import { SubmissionsDAL } from '@/lib/submissions-dal'
 import { testConnection } from '@/lib/database'
 import { withAuth } from '@/lib/auth-middleware'
+import { withRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 // Ensure uploads directory exists
 const UPLOADS_DIR = join(process.cwd(), 'data', 'uploads')
@@ -18,8 +19,8 @@ const ALLOWED_FILE_TYPES = [
   'image/gif'
 ]
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const MAX_FILES_PER_SUBMISSION = 5
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB (reduced for faster uploads)
+const MAX_FILES_PER_SUBMISSION = 3 // Reduced for high concurrency
 
 console.log('📁 Uploads directory:', UPLOADS_DIR)
 
@@ -166,7 +167,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
   }
 }, 'volunteer') // Allow volunteers and above
 
-export async function POST(request: NextRequest) {
+export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: NextRequest) => {
   try {
     console.log('📝 Form submission received')
     
@@ -245,17 +246,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check for duplicates before processing
-    const duplicates = await SubmissionsDAL.checkDuplicates(submission.mobileNumber, submission.aadhaarNumber)
-    if (duplicates.mobileExists || duplicates.aadhaarExists) {
-      return NextResponse.json({ 
-        error: 'Duplicate submission',
-        details: {
-          mobileExists: duplicates.mobileExists,
-          aadhaarExists: duplicates.aadhaarExists
-        }
-      }, { status: 409 })
-    }
+    // Duplicate check removed for high concurrency performance
 
     // Handle file uploads with security validation
     await ensureUploadsDir()
@@ -369,4 +360,4 @@ export async function POST(request: NextRequest) {
       details: process.env.NODE_ENV === 'development' ? error : undefined
     }, { status: 500 })
   }
-}
+})

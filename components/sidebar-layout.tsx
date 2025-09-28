@@ -30,6 +30,13 @@ const navigation = [
     roles: ["volunteer", "manager", "admin"]
   },
   {
+    name: "User Management",
+    href: "/team/users",
+    icon: Shield,
+    description: "Manage users and roles",
+    roles: ["admin"]
+  },
+  {
     name: "Manager Dashboard",
     href: "/manager",
     icon: BarChart3,

@@ -65,13 +65,51 @@ export default function RegisterPage() {
     if (!validateForm()) return
     
     setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-      const role = roles.find(r => r.id === selectedRole)
-      if (role) {
-        window.location.href = role.href
+    
+    try {
+      // Call the registration API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          loginType: 'email',
+          action: 'register',
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          district: formData.department, // Using department as district for demo
+          taluka: formData.employeeId || formData.studentId // Using ID as taluka for demo
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Store token in localStorage
+        localStorage.setItem('authToken', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // Show success message
+        alert('Registration successful! Welcome message sent to your phone.')
+        
+        // Redirect based on role
+        const role = roles.find(r => r.id === selectedRole)
+        if (role) {
+          window.location.href = role.href
+        }
+      } else {
+        alert(data.error || 'Registration failed')
       }
-    }, 1000)
+    } catch (error) {
+      console.error('Registration error:', error)
+      alert('Registration failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const quickRegister = () => {

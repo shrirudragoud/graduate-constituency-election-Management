@@ -253,7 +253,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
         }
       })
       
-      const response = await fetch('/api/submit-form', {
+      const response = await fetch('/api/public/submit-form', {
         method: 'POST',
         body: submitData
       })
@@ -279,6 +279,20 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
         // Reset form after successful submission
         resetForm()
       } else {
+        const errorData = await response.json()
+        console.error('Submission failed:', errorData)
+        
+        // Handle specific error cases
+        if (response.status === 400) {
+          // Validation error
+          if (errorData.missingFields) {
+            alert(`Please fill in all required fields: ${errorData.missingFields.join(', ')}`)
+          } else {
+            alert(`Validation Error: ${errorData.error}`)
+          }
+        } else {
+          alert(`Submission Error: ${errorData.error || 'Please try again.'}`)
+        }
         throw new Error('Submission failed')
       }
     } catch (error) {

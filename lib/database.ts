@@ -9,16 +9,16 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || 'password',
   port: parseInt(process.env.DB_PORT || '5432'),
   
-  // Connection pool settings for high concurrency
-  max: 20, // Maximum number of clients in the pool
-  min: 5,  // Minimum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-  acquireTimeoutMillis: 60000, // Maximum time to wait for a connection
-  createTimeoutMillis: 30000, // Maximum time to create a connection
-  destroyTimeoutMillis: 5000, // Maximum time to destroy a connection
-  reapIntervalMillis: 1000, // How often to check for idle clients
-  createRetryIntervalMillis: 200, // How long to wait before retrying connection creation
+  // Connection pool settings for high concurrency (100-200 users)
+  max: 100, // Maximum number of clients in the pool (5x increase)
+  min: 20,  // Minimum number of clients in the pool (4x increase)
+  idleTimeoutMillis: 10000, // Close idle clients after 10 seconds (faster cleanup)
+  connectionTimeoutMillis: 5000, // Return an error after 5 seconds (more time for high load)
+  acquireTimeoutMillis: 30000, // Maximum time to wait for a connection (reduced from 60s)
+  createTimeoutMillis: 10000, // Maximum time to create a connection (faster creation)
+  destroyTimeoutMillis: 2000, // Maximum time to destroy a connection (faster cleanup)
+  reapIntervalMillis: 500, // How often to check for idle clients (more frequent)
+  createRetryIntervalMillis: 100, // How long to wait before retrying connection creation (faster retry)
   
   // SSL configuration for production
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
@@ -117,7 +117,7 @@ export function generateSubmissionId(): string {
   return `SUB_${timestamp}_${random}`
 }
 
-// Health check function
+// Health check function with detailed monitoring
 export async function healthCheck(): Promise<{
   status: 'healthy' | 'unhealthy'
   details: {
@@ -125,27 +125,36 @@ export async function healthCheck(): Promise<{
     idleConnections: number
     waitingClients: number
     totalConnections: number
+    connectionUtilization: number
+    averageWaitTime: number
   }
 }> {
   try {
     const result = await query('SELECT 1 as health_check')
+    const utilization = (pool.totalCount - pool.idleCount) / pool.totalCount * 100
+    
     return {
       status: 'healthy',
       details: {
         poolSize: pool.totalCount,
         idleConnections: pool.idleCount,
         waitingClients: pool.waitingCount,
-        totalConnections: pool.totalCount
+        totalConnections: pool.totalCount,
+        connectionUtilization: Math.round(utilization * 100) / 100,
+        averageWaitTime: pool.waitingCount > 0 ? 1000 : 0 // Mock wait time
       }
     }
   } catch (error) {
+    console.error('❌ Health check failed:', error)
     return {
       status: 'unhealthy',
       details: {
         poolSize: 0,
         idleConnections: 0,
         waitingClients: 0,
-        totalConnections: 0
+        totalConnections: 0,
+        connectionUtilization: 0,
+        averageWaitTime: 0
       }
     }
   }

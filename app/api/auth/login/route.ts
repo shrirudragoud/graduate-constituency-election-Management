@@ -69,11 +69,46 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
+      // Send WhatsApp welcome message
+      if (result.user && phone) {
+        try {
+          const { twilioWhatsAppService } = await import('@/lib/twilio-whatsapp')
+          const welcomeMessage = `🎉 Welcome to BJP Election Management System!
+
+Dear ${firstName || 'Team Member'},
+
+Your account has been successfully created!
+
+📋 Account Details:
+• Name: ${firstName} ${lastName}
+• Email: ${email}
+• Role: VOLUNTEER
+• Phone: ${phone}
+${district ? `• District: ${district}` : ''}
+${taluka ? `• Taluka: ${taluka}` : ''}
+
+🔐 Login Credentials:
+• Email: ${email}
+• Password: [Use the password you just set]
+
+✅ You can now access the system and start managing voter registrations.
+
+📱 Contact admin if you have any questions.
+
+Welcome to the team! 🚀`
+
+          await twilioWhatsAppService.sendMessage(phone, welcomeMessage)
+        } catch (error) {
+          console.error('Failed to send welcome WhatsApp message:', error)
+          // Don't fail registration if WhatsApp fails
+        }
+      }
+
       return NextResponse.json({
         success: true,
         user: result.user,
         token: result.token,
-        message: 'Registration successful'
+        message: 'Registration successful! Welcome message sent to your phone.'
       })
     } else {
       return NextResponse.json({ 

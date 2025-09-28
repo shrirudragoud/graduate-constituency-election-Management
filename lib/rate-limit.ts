@@ -85,10 +85,10 @@ export const RATE_LIMITS = {
     maxRequests: 100
   },
   
-  // Form submissions
+  // Form submissions - relaxed for high concurrency
   formSubmission: {
-    windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 10
+    windowMs: 15 * 60 * 1000, // 15 minutes (reduced from 1 hour)
+    maxRequests: 50 // Increased from 10 for high concurrency
   },
   
   // Authentication attempts

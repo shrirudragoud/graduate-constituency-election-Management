@@ -294,6 +294,12 @@ export default function LoginPage() {
               <Link href="/auth/register" className="text-sm text-primary hover:underline">
                 Don't have an account? Register here
               </Link>
+              <div className="text-xs text-muted-foreground">
+                or{" "}
+                <Link href="/team-signup" className="text-primary hover:underline font-medium">
+                  Join as Team Member
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

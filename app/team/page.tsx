@@ -72,9 +72,12 @@ export default function TeamDashboard() {
   const [editedSubmission, setEditedSubmission] = useState<Submission | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    fetchSubmissions()
+    // Check authentication first
+    checkAuthentication()
     
     // Listen for form submission events
     const handleMessage = (event: MessageEvent) => {
@@ -90,6 +93,33 @@ export default function TeamDashboard() {
       window.removeEventListener('message', handleMessage)
     }
   }, [])
+
+  const checkAuthentication = () => {
+    const token = localStorage.getItem('authToken')
+    const userData = localStorage.getItem('user')
+    
+    if (!token || !userData) {
+      // Redirect to login if not authenticated
+      window.location.href = '/team/login'
+      return
+    }
+
+    try {
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+      setIsAuthenticated(true)
+      fetchSubmissions()
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+      window.location.href = '/team/login'
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('user')
+    window.location.href = '/team/login'
+  }
 
   const fetchSubmissions = async () => {
     try {
@@ -190,6 +220,18 @@ export default function TeamDashboard() {
   const verifiedSubmissions = 0 // You can add verification logic later
   const followUpRequired = 0 // You can add follow-up logic later
 
+  // Show loading while checking authentication
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <SidebarLayout>
       <div className="space-y-6">
@@ -197,7 +239,7 @@ export default function TeamDashboard() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Volunteer Portal</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Reach out to voters, collect voter information, and coordinate constituency outreach efforts.
+              Welcome back, {user?.firstName}! Reach out to voters, collect voter information, and coordinate constituency outreach efforts.
             </p>
           </div>
           <div className="flex items-center space-x-2">
@@ -210,6 +252,11 @@ export default function TeamDashboard() {
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Add Student</span>
               <span className="sm:hidden">Add</span>
+            </Button>
+            <Button onClick={handleLogout} variant="outline" className="text-xs sm:text-sm h-8 sm:h-9">
+              <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Logout</span>
+              <span className="sm:hidden">Exit</span>
             </Button>
           </div>
         </div>
