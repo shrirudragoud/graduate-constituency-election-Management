@@ -41,22 +41,29 @@ async function saveSubmission(submission: any) {
 
 async function sendEmailNotification(submission: any) {
   try {
+    console.log('📧 Email notification disabled - will be configured later')
+    return // Skip email sending for now
+    
+    // Email functionality will be added later when environment variables are configured
+    /*
     console.log('📧 Starting email notification for:', submission.email)
     
     // Create transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'shridharrudragoud6@gmail.com',
-        pass: 'bqcb kgdx fvca quum'
+        user: process.env.EMAIL_USER || 'your-email@gmail.com',
+        pass: process.env.EMAIL_PASS || 'your-app-password'
       }
     })
     
     console.log('📧 Transporter created successfully')
+    */
 
+    /*
     // Email content
     const mailOptions = {
-      from: 'shridharrudragoud6@gmail.com',
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
       to: submission.email,
       subject: 'Student Registration Confirmation - Voter ID Application',
       html: `
@@ -95,6 +102,9 @@ async function sendEmailNotification(submission: any) {
     console.log('📧 Email sent successfully:', info.messageId)
     
     return { success: true, message: 'Email sent successfully', messageId: info.messageId }
+    */
+    
+    return { success: true, message: 'Email functionality disabled - will be configured later' }
   } catch (error) {
     console.error('❌ Email sending failed:', error)
     return { success: false, message: 'Failed to send email', error: error.message }
