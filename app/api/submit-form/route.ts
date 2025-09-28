@@ -52,8 +52,8 @@ async function sendEmailNotification(submission: any) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-app-password'
+        user: 'your-email@gmail.com',
+        pass: 'your-app-password'
       }
     })
     
@@ -63,7 +63,7 @@ async function sendEmailNotification(submission: any) {
     /*
     // Email content
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      from: 'your-email@gmail.com',
       to: submission.email,
       subject: 'Student Registration Confirmation - Voter ID Application',
       html: `
