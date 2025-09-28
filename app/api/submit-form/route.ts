@@ -1,81 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, readFile, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { writeFile, mkdir } from 'fs/promises'
+import path from 'path'
 import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
+import { SubmissionsDAL } from '@/lib/submissions-dal'
+import { testConnection } from '@/lib/database'
 
 // Ensure data directory exists
-const DATA_DIR = join(process.cwd(), 'data')
-const SUBMISSIONS_FILE = join(DATA_DIR, 'submissions.json')
+const DATA_DIR = path.join(process.cwd(), 'data')
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads')
 
 console.log('📁 Data directory:', DATA_DIR)
-console.log('📄 Submissions file:', SUBMISSIONS_FILE)
+console.log('📁 Uploads directory:', UPLOADS_DIR)
 
 async function ensureDataDir() {
   try {
     await mkdir(DATA_DIR, { recursive: true })
+    await mkdir(UPLOADS_DIR, { recursive: true })
   } catch (error) {
-    // Directory might already exist
+    console.error('Error creating directories:', error)
   }
 }
 
-async function getSubmissions() {
-  try {
-    const data = await readFile(SUBMISSIONS_FILE, 'utf8')
-    return JSON.parse(data)
-  } catch (error) {
-    return []
+// WhatsApp notification function with retry logic
+async function sendWhatsAppNotification(submission: any, submissionId: string) {
+  const maxRetries = 3
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📱 WhatsApp notification attempt ${attempt}/${maxRetries} for:`, submission.mobileNumber)
+      
+      // Validate mobile number
+      if (!submission.mobileNumber || submission.mobileNumber.trim() === '') {
+        console.log('⚠️ No mobile number provided, skipping WhatsApp notification')
+        return { success: false, message: 'No mobile number provided' }
+      }
+
+      // Check if Twilio service is ready
+      if (!twilioWhatsAppService.isReady()) {
+        console.log('⚠️ Twilio WhatsApp service not ready, skipping notification')
+        return { success: false, message: 'WhatsApp service not configured' }
+      }
+
+      const result = await twilioWhatsAppService.sendFormSubmissionNotification(submission, submissionId)
+      console.log('📱 WhatsApp notification result:', result)
+      
+      return { 
+        success: true, 
+        message: 'Thank you message sent successfully to your mobile number!',
+        messageId: result.messageId
+      }
+    } catch (error) {
+      lastError = error as Error
+      console.error(`❌ WhatsApp notification attempt ${attempt} failed:`, error)
+      
+      if (attempt < maxRetries) {
+        // Wait before retry (exponential backoff)
+        const delay = Math.pow(2, attempt) * 1000
+        console.log(`⏳ Retrying in ${delay}ms...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  // All retries failed
+  console.error('❌ All WhatsApp notification attempts failed')
+  return { 
+    success: false, 
+    message: 'Thank you message could not be sent, but your registration is successful', 
+    error: lastError?.message || 'Unknown error'
   }
 }
 
-async function saveSubmission(submission: any) {
-  const submissions = await getSubmissions()
-  submissions.push(submission)
-  await writeFile(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2))
-  return submission
-}
-
-// WhatsApp notification function
-async function sendWhatsAppNotification(submission: any) {
-  try {
-    console.log('📱 Starting WhatsApp notification for:', submission.mobileNumber)
-    
-    // Validate mobile number
-    if (!submission.mobileNumber || submission.mobileNumber.trim() === '') {
-      console.log('⚠️ No mobile number provided, skipping WhatsApp notification')
-      return { success: false, message: 'No mobile number provided' }
-    }
-
-    // Check if Twilio service is ready
-    if (!twilioWhatsAppService.isReady()) {
-      console.log('⚠️ Twilio WhatsApp service not ready, skipping notification')
-      return { success: false, message: 'WhatsApp service not configured' }
-    }
-
-    const result = await twilioWhatsAppService.sendFormSubmissionNotification(submission, submission.id)
-    console.log('📱 WhatsApp notification result:', result)
-    
-    return { 
-      success: true, 
-      message: 'Thank you message sent successfully to your mobile number!',
-      messageId: result.messageId
-    }
-  } catch (error) {
-    console.error('❌ WhatsApp notification failed:', error)
-    return { 
-      success: false, 
-      message: 'Thank you message could not be sent, but your registration is successful', 
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
-  }
-}
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log('📖 Fetching submissions...')
-    const submissions = await getSubmissions()
-    console.log('📊 Found submissions:', submissions.length)
     
-    return NextResponse.json({ submissions })
+    // Test database connection first
+    const dbConnected = await testConnection()
+    if (!dbConnected) {
+      console.error('❌ Database connection failed')
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
+
+    // Parse query parameters
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100 per page
+    const status = searchParams.get('status') || undefined
+    const district = searchParams.get('district') || undefined
+    const taluka = searchParams.get('taluka') || undefined
+
+    const offset = (page - 1) * limit
+
+    const result = await SubmissionsDAL.getAll({
+      limit,
+      offset,
+      status,
+      district,
+      taluka
+    })
+
+    console.log(`📊 Found ${result.submissions.length} submissions (page ${page}, total: ${result.total})`)
+    
+    return NextResponse.json({ 
+      submissions: result.submissions,
+      pagination: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit)
+      }
+    })
   } catch (error) {
     console.error('❌ Error fetching submissions:', error)
     return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 })
@@ -86,55 +122,84 @@ export async function POST(request: NextRequest) {
   try {
     console.log('📝 Form submission received')
     
+    // Test database connection first
+    const dbConnected = await testConnection()
+    if (!dbConnected) {
+      console.error('❌ Database connection failed')
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
+    
     const formData = await request.formData()
     console.log('📋 Content-Type:', request.headers.get('content-type'))
     console.log('📋 Form data keys:', Array.from(formData.keys()))
 
-    // Extract form fields
+    // Extract form fields with proper validation
     const submission = {
-      id: Date.now().toString(),
-      submittedAt: new Date().toISOString(),
-      
       // Personal Details
-      surname: formData.get('surname'),
-      firstName: formData.get('firstName'),
-      fathersHusbandName: formData.get('fathersHusbandName'),
-      sex: formData.get('sex'),
-      qualification: formData.get('qualification'),
-      occupation: formData.get('occupation'),
-      dateOfBirth: formData.get('dateOfBirth'),
-      ageYears: formData.get('ageYears'),
-      ageMonths: formData.get('ageMonths'),
+      surname: (formData.get('surname') as string) || '',
+      firstName: (formData.get('firstName') as string) || '',
+      fathersHusbandName: (formData.get('fathersHusbandName') as string) || '',
+      fathersHusbandFullName: (formData.get('fathersHusbandFullName') as string) || undefined,
+      sex: (formData.get('sex') as 'M' | 'F') || 'M',
+      qualification: (formData.get('qualification') as string) || undefined,
+      occupation: (formData.get('occupation') as string) || undefined,
+      dateOfBirth: (formData.get('dateOfBirth') as string) || '',
+      ageYears: parseInt(formData.get('ageYears') as string) || 0,
+      ageMonths: parseInt(formData.get('ageMonths') as string) || 0,
 
       // Address Details
-      district: formData.get('district'),
-      taluka: formData.get('taluka'),
-      villageName: formData.get('villageName'),
-      houseNo: formData.get('houseNo'),
-      street: formData.get('street'),
-      pinCode: formData.get('pinCode'),
-      mobileNumber: formData.get('mobileNumber'),
-      email: formData.get('email'),
-      aadhaarNumber: formData.get('aadhaarNumber'),
+      district: (formData.get('district') as string) || '',
+      taluka: (formData.get('taluka') as string) || '',
+      villageName: (formData.get('villageName') as string) || '',
+      houseNo: (formData.get('houseNo') as string) || '',
+      street: (formData.get('street') as string) || '',
+      pinCode: (formData.get('pinCode') as string) || '',
+
+      // Contact and Identification
+      mobileNumber: (formData.get('mobileNumber') as string) || '',
+      email: (formData.get('email') as string) || undefined,
+      aadhaarNumber: (formData.get('aadhaarNumber') as string) || '',
       
-      // Educational Details
-      yearOfPassing: formData.get('yearOfPassing'),
-      degreeDiploma: formData.get('degreeDiploma'),
-      nameOfUniversity: formData.get('nameOfUniversity'),
-      nameOfDiploma: formData.get('nameOfDiploma'),
+      // Education Details
+      yearOfPassing: (formData.get('yearOfPassing') as string) || undefined,
+      degreeDiploma: (formData.get('degreeDiploma') as string) || undefined,
+      nameOfUniversity: (formData.get('nameOfUniversity') as string) || undefined,
+      nameOfDiploma: (formData.get('nameOfDiploma') as string) || undefined,
       
       // Additional Information
-      haveChangedName: formData.get('haveChangedName'),
-      place: formData.get('place'),
-      declarationDate: formData.get('declarationDate'),
+      haveChangedName: (formData.get('haveChangedName') as 'Yes' | 'No') || 'No',
+      place: (formData.get('place') as string) || '',
+      declarationDate: (formData.get('declarationDate') as string) || '',
       
       // Files will be handled separately
       files: {} as Record<string, any>
     }
 
+    // Validate required fields
+    const requiredFields = ['surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka']
+    const missingFields = requiredFields.filter(field => !submission[field as keyof typeof submission])
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json({ 
+        error: 'Missing required fields', 
+        missingFields 
+      }, { status: 400 })
+    }
+
+    // Check for duplicates before processing
+    const duplicates = await SubmissionsDAL.checkDuplicates(submission.mobileNumber, submission.aadhaarNumber)
+    if (duplicates.mobileExists || duplicates.aadhaarExists) {
+      return NextResponse.json({ 
+        error: 'Duplicate submission',
+        details: {
+          mobileExists: duplicates.mobileExists,
+          aadhaarExists: duplicates.aadhaarExists
+        }
+      }, { status: 409 })
+    }
+
     // Handle file uploads
-    const uploadsDir = join(DATA_DIR, 'uploads')
-    await mkdir(uploadsDir, { recursive: true })
+    await ensureDataDir()
 
     const fileFields = [
       'degreeCertificate',
@@ -149,7 +214,7 @@ export async function POST(request: NextRequest) {
       if (file && file.size > 0) {
         const timestamp = Date.now()
         const filename = `${timestamp}-${file.name}`
-        const filepath = join(uploadsDir, filename)
+        const filepath = path.join(UPLOADS_DIR, filename)
         
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
@@ -160,57 +225,57 @@ export async function POST(request: NextRequest) {
           originalName: file.name,
           filename: filename,
           size: file.size,
-          path: filepath
+          path: filepath,
+          uploadedAt: new Date().toISOString()
         }
       }
     }
 
-    console.log('💾 Saving submission:', {
+    console.log('💾 Saving submission to database:', {
       surname: submission.surname,
       firstName: submission.firstName,
-      fathersHusbandName: submission.fathersHusbandName,
-      sex: submission.sex,
-      qualification: submission.qualification,
-      occupation: submission.occupation,
-      dateOfBirth: submission.dateOfBirth,
-      ageYears: submission.ageYears,
-      ageMonths: submission.ageMonths,
+      mobileNumber: submission.mobileNumber,
       district: submission.district,
       taluka: submission.taluka,
-      villageName: submission.villageName,
-      houseNo: submission.houseNo,
-      street: submission.street,
-      pinCode: submission.pinCode,
-      mobileNumber: submission.mobileNumber,
-      email: submission.email,
-      aadhaarNumber: submission.aadhaarNumber,
-      yearOfPassing: submission.yearOfPassing,
-      degreeDiploma: submission.degreeDiploma,
-      nameOfUniversity: submission.nameOfUniversity,
-      nameOfDiploma: submission.nameOfDiploma,
-      haveChangedName: submission.haveChangedName,
-      place: submission.place,
-      declarationDate: submission.declarationDate,
-      files: submission.files
+      filesCount: Object.keys(submission.files).length
     })
 
-    await ensureDataDir()
-    const savedSubmission = await saveSubmission(submission)
+    // Save to database with transaction safety
+    const savedSubmission = await SubmissionsDAL.create(submission)
     console.log('✅ Submission saved with ID:', savedSubmission.id)
     
-    // Send WhatsApp notification
-    const whatsappResult = await sendWhatsAppNotification(savedSubmission)
+    // Send WhatsApp notification asynchronously (don't block response)
+    const whatsappPromise = sendWhatsAppNotification(savedSubmission, savedSubmission.id)
     
+    // Return response immediately
     return NextResponse.json({
       success: true,
       submissionId: savedSubmission.id,
-      whatsappSent: whatsappResult.success,
-      whatsappMessage: whatsappResult.message,
-      message: 'Registration submitted successfully!'
+      message: 'Registration submitted successfully!',
+      whatsappStatus: 'processing' // WhatsApp is being sent in background
     })
 
   } catch (error) {
     console.error('❌ Error processing submission:', error)
-    return NextResponse.json({ error: 'Failed to process submission' }, { status: 500 })
+    
+    // Handle specific database errors
+    if (error instanceof Error) {
+      if (error.message.includes('duplicate')) {
+        return NextResponse.json({ 
+          error: 'A submission with this information already exists' 
+        }, { status: 409 })
+      }
+      
+      if (error.message.includes('constraint')) {
+        return NextResponse.json({ 
+          error: 'Invalid data provided. Please check your input.' 
+        }, { status: 400 })
+      }
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to process submission',
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    }, { status: 500 })
   }
 }
