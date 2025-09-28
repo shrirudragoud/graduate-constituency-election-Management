@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,10 +30,13 @@ import {
   ArrowRight,
   ArrowLeft
 } from "lucide-react"
+import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
 
 export function EnhancedStudentForm() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<FieldValidation>({})
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: "",
@@ -99,6 +102,20 @@ export function EnhancedStudentForm() {
 
   const handleInputChange = (field: string, value: string | boolean | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    
+    // Mark field as touched
+    setTouchedFields(prev => new Set(prev).add(field))
+    
+    // Real-time validation for string values
+    if (typeof value === 'string') {
+      const fieldError = validateField(field, value, formData)
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: fieldError
+      }))
+    }
+    
+    // Clear old errors
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }))
     }
@@ -163,6 +180,71 @@ export function EnhancedStudentForm() {
 
   const handleFileUpload = (field: string, file: File | null) => {
     handleInputChange(field, file)
+    
+    // File validation
+    if (file) {
+      const maxSizeMB = field.includes('photo') || field.includes('signature') ? 5 : 5
+      const fieldError = validateFile(file, field, maxSizeMB)
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: fieldError
+      }))
+    } else {
+      // Clear error if file is removed
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+  }
+
+  // Helper component for validation error display
+  const ValidationError = ({ field }: { field: string }) => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched || !error || error.isValid) return null
+    
+    return (
+      <div className="flex items-center gap-1 mt-1 text-red-600 text-xs">
+        <AlertCircle className="w-3 h-3 flex-shrink-0" />
+        <span>{error.error}</span>
+      </div>
+    )
+  }
+
+  // Helper component for validation success indicator
+  const ValidationSuccess = ({ field }: { field: string }) => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched || !error || !error.isValid) return null
+    
+    return (
+      <div className="flex items-center gap-1 mt-1 text-green-600 text-xs">
+        <CheckCircle className="w-3 h-3 flex-shrink-0" />
+        <span>Valid</span>
+      </div>
+    )
+  }
+
+  // Helper function to get input className with validation state
+  const getInputClassName = (field: string, baseClassName: string = "") => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched) return baseClassName
+    
+    if (error && !error.isValid) {
+      return `${baseClassName} border-red-500 focus:border-red-500 focus:ring-red-500`
+    }
+    
+    if (error && error.isValid) {
+      return `${baseClassName} border-green-500 focus:border-green-500 focus:ring-green-500`
+    }
+    
+    return baseClassName
   }
 
   return (
@@ -221,8 +303,10 @@ export function EnhancedStudentForm() {
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className={errors.firstName ? "border-destructive" : ""}
+                    className={getInputClassName("firstName", errors.firstName ? "border-destructive" : "")}
                   />
+                  <ValidationError field="firstName" />
+                  <ValidationSuccess field="firstName" />
                   {errors.firstName && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="w-4 h-4" />
@@ -237,8 +321,10 @@ export function EnhancedStudentForm() {
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className={errors.lastName ? "border-destructive" : ""}
+                    className={getInputClassName("lastName", errors.lastName ? "border-destructive" : "")}
                   />
+                  <ValidationError field="lastName" />
+                  <ValidationSuccess field="lastName" />
                   {errors.lastName && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="w-4 h-4" />
@@ -263,8 +349,10 @@ export function EnhancedStudentForm() {
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className={errors.dateOfBirth ? "border-destructive" : ""}
+                    className={getInputClassName("dateOfBirth", errors.dateOfBirth ? "border-destructive" : "")}
                   />
+                  <ValidationError field="dateOfBirth" />
+                  <ValidationSuccess field="dateOfBirth" />
                   {errors.dateOfBirth && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="w-4 h-4" />

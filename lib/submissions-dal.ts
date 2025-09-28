@@ -1,10 +1,56 @@
 import { query, transaction } from './database'
 
+// Database row interface for type safety
+interface DatabaseRow {
+  id: string
+  user_id?: number
+  surname: string
+  first_name: string
+  fathers_husband_name: string
+  fathers_husband_full_name?: string
+  sex: 'M' | 'F'
+  qualification?: string
+  occupation?: string
+  date_of_birth: string
+  age_years: number
+  age_months: number
+  district: string
+  taluka: string
+  village_name: string
+  house_no: string
+  street: string
+  pin_code: string
+  mobile_number: string
+  email?: string
+  aadhaar_number: string
+  year_of_passing?: string
+  degree_diploma?: string
+  name_of_university?: string
+  name_of_diploma?: string
+  have_changed_name?: 'Yes' | 'No'
+  place: string
+  declaration_date: string
+  status: 'pending' | 'approved' | 'rejected' | 'deleted'
+  submitted_at: string
+  updated_at?: string
+  approved_by?: number
+  approved_at?: string
+  rejection_reason?: string
+  files: Record<string, any>
+  ip_address?: string
+  user_agent?: string
+  source: string
+  user_first_name?: string
+  user_last_name?: string
+  user_email?: string
+}
+
+// Main Submission interface matching the form structure
 export interface Submission {
   id: string
   userId?: number
   
-  // Personal Details
+  // Personal Details (Required)
   surname: string
   firstName: string
   fathersHusbandName: string
@@ -16,7 +62,7 @@ export interface Submission {
   ageYears: number
   ageMonths: number
   
-  // Address Details
+  // Address Details (Required)
   district: string
   taluka: string
   villageName: string
@@ -24,18 +70,18 @@ export interface Submission {
   street: string
   pinCode: string
   
-  // Contact Details
+  // Contact Details (Required)
   mobileNumber: string
   email?: string
   aadhaarNumber: string
   
-  // Education Details
+  // Education Details (Required)
   yearOfPassing?: string
   degreeDiploma?: string
   nameOfUniversity?: string
   nameOfDiploma?: string
   
-  // Additional Information
+  // Additional Information (Required)
   haveChangedName?: 'Yes' | 'No'
   place: string
   declarationDate: string
@@ -57,10 +103,11 @@ export interface Submission {
   source?: string
 }
 
+// Filter interface for queries
 export interface SubmissionFilters {
   limit?: number
   offset?: number
-  status?: string
+  status?: 'pending' | 'approved' | 'rejected' | 'deleted'
   district?: string
   taluka?: string
   userId?: number
@@ -69,6 +116,7 @@ export interface SubmissionFilters {
   search?: string
 }
 
+// Statistics interface
 export interface SubmissionStats {
   total: number
   pending: number
@@ -81,10 +129,77 @@ export interface SubmissionStats {
   byTaluka: Array<{ taluka: string; count: number }>
 }
 
-class SubmissionsDAL {
-  // Create submission with transaction safety and duplicate prevention
+// Validation result interface
+export interface ValidationResult {
+  isValid: boolean
+  errors: string[]
+}
+
+class SubmissionsDataAccessLayer {
+  // Validate submission data based on form requirements
+  private validateSubmission(submission: Partial<Submission>): ValidationResult {
+    const errors: string[] = []
+    
+    // Required personal details
+    if (!submission.surname?.trim()) errors.push('Surname is required')
+    if (!submission.firstName?.trim()) errors.push('First name is required')
+    if (!submission.fathersHusbandName?.trim()) errors.push('Father/Husband name is required')
+    if (!submission.sex || !['M', 'F'].includes(submission.sex)) errors.push('Valid sex selection is required')
+    if (!submission.dateOfBirth) errors.push('Date of birth is required')
+    if (submission.ageYears === undefined || submission.ageYears < 0 || submission.ageYears > 150) {
+      errors.push('Valid age in years is required')
+    }
+    if (submission.ageMonths === undefined || submission.ageMonths < 0 || submission.ageMonths > 11) {
+      errors.push('Valid age in months is required')
+    }
+    
+    // Required address details
+    if (!submission.district?.trim()) errors.push('District is required')
+    if (!submission.taluka?.trim()) errors.push('Taluka is required')
+    if (!submission.villageName?.trim()) errors.push('Village name is required')
+    if (!submission.houseNo?.trim()) errors.push('House number is required')
+    if (!submission.street?.trim()) errors.push('Street is required')
+    if (!submission.pinCode?.trim() || !/^[0-9]{6}$/.test(submission.pinCode)) {
+      errors.push('Valid 6-digit PIN code is required')
+    }
+    
+    // Required contact details
+    if (!submission.mobileNumber?.trim() || !/^[0-9]{10}$/.test(submission.mobileNumber)) {
+      errors.push('Valid 10-digit mobile number is required')
+    }
+    if (!submission.aadhaarNumber?.trim() || !/^[0-9]{12}$/.test(submission.aadhaarNumber)) {
+      errors.push('Valid 12-digit Aadhaar number is required')
+    }
+    
+    // Required education details
+    if (!submission.yearOfPassing?.trim()) errors.push('Year of passing is required')
+    if (!submission.degreeDiploma?.trim()) errors.push('Degree/Diploma is required')
+    if (!submission.nameOfUniversity?.trim()) errors.push('University name is required')
+    
+    // Required additional information
+    if (!submission.place?.trim()) errors.push('Place is required')
+    if (!submission.declarationDate) errors.push('Declaration date is required')
+    
+    // Email validation if provided
+    if (submission.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submission.email)) {
+      errors.push('Valid email address is required')
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    }
+  }
+
+  // Create submission with comprehensive validation and transaction safety
   async create(submission: Omit<Submission, 'id' | 'submittedAt' | 'status' | 'updatedAt'>): Promise<Submission> {
     return await transaction(async (client) => {
+      // Validate submission data
+      const validation = this.validateSubmission(submission)
+      if (!validation.isValid) {
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`)
+      }
+
       const submissionId = this.generateSubmissionId()
       const now = new Date().toISOString()
       
@@ -120,7 +235,7 @@ class SubmissionsDAL {
           year_of_passing, degree_diploma, name_of_university, name_of_diploma,
           have_changed_name, place, declaration_date, status, submitted_at, updated_at, files,
           ip_address, user_agent, source
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
         RETURNING *`,
         [
           newSubmission.id, newSubmission.userId, newSubmission.surname, newSubmission.firstName, 
@@ -138,7 +253,7 @@ class SubmissionsDAL {
         ]
       )
       
-      return this.mapRowToSubmission(res.rows[0])
+      return this.mapRowToSubmission(res.rows[0] as DatabaseRow)
     })
   }
 
@@ -228,7 +343,7 @@ class SubmissionsDAL {
     )
 
     return {
-      submissions: res.rows.map(row => this.mapRowToSubmission(row)),
+      submissions: res.rows.map((row: DatabaseRow) => this.mapRowToSubmission(row)),
       total
     }
   }
@@ -243,7 +358,7 @@ class SubmissionsDAL {
        WHERE s.id = $1 ${lockClause}`,
       [id]
     )
-    return res.rows[0] ? this.mapRowToSubmission(res.rows[0]) : null
+    return res.rows[0] ? this.mapRowToSubmission(res.rows[0] as DatabaseRow) : null
   }
 
   // Update submission status with audit trail
@@ -303,7 +418,7 @@ class SubmissionsDAL {
         ]
       )
 
-      return this.mapRowToSubmission(res.rows[0])
+      return this.mapRowToSubmission(res.rows[0] as DatabaseRow)
     })
   }
 
@@ -325,7 +440,7 @@ class SubmissionsDAL {
              WHERE id = $2 AND status != $1`,
             [status, id, updatedBy]
           )
-          if (res.rowCount > 0) {
+          if (res.rowCount && res.rowCount > 0) {
             updated++
           }
         } catch (error) {
@@ -354,7 +469,7 @@ class SubmissionsDAL {
        LIMIT $2`,
       [queryText, limit]
     )
-    return res.rows.map(row => this.mapRowToSubmission(row))
+    return res.rows.map((row: DatabaseRow) => this.mapRowToSubmission(row))
   }
 
   // Get comprehensive statistics
@@ -399,11 +514,11 @@ class SubmissionsDAL {
       today: parseInt(stats.today),
       thisWeek: parseInt(stats.this_week),
       thisMonth: parseInt(stats.this_month),
-      byDistrict: districtStats.rows.map(row => ({
+      byDistrict: districtStats.rows.map((row: any) => ({
         district: row.district,
         count: parseInt(row.count)
       })),
-      byTaluka: talukaStats.rows.map(row => ({
+      byTaluka: talukaStats.rows.map((row: any) => ({
         taluka: row.taluka,
         count: parseInt(row.count)
       }))
@@ -438,14 +553,14 @@ class SubmissionsDAL {
         'UPDATE submissions SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         ['deleted', id]
       )
-      return res.rowCount > 0
+      return res.rowCount ? res.rowCount > 0 : false
     })
   }
 
   // Hard delete (permanent removal)
   async hardDelete(id: string): Promise<boolean> {
     const res = await query('DELETE FROM submissions WHERE id = $1', [id])
-    return res.rowCount > 0
+    return res.rowCount ? res.rowCount > 0 : false
   }
 
   // Generate unique submission ID
@@ -455,8 +570,8 @@ class SubmissionsDAL {
     return `SUB_${timestamp}_${random}`
   }
 
-  // Map database row to Submission object
-  private mapRowToSubmission(row: any): Submission {
+  // Map database row to Submission object with proper type safety
+  private mapRowToSubmission(row: DatabaseRow): Submission {
     return {
       id: row.id,
       userId: row.user_id,
@@ -500,4 +615,4 @@ class SubmissionsDAL {
   }
 }
 
-export const SubmissionsDAL = new SubmissionsDAL()
+export const SubmissionsDAL = new SubmissionsDataAccessLayer()

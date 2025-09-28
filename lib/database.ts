@@ -82,17 +82,16 @@ export async function query(text: string, params?: any[]): Promise<any> {
   }
 }
 
-// Transaction function with proper isolation levels
+// Transaction function with proper error handling
 export async function transaction<T>(
-  callback: (client: PoolClient) => Promise<T>,
-  isolationLevel: 'READ_UNCOMMITTED' | 'READ_COMMITTED' | 'REPEATABLE_READ' | 'SERIALIZABLE' = 'READ_COMMITTED'
+  callback: (client: PoolClient) => Promise<T>
 ): Promise<T> {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
     
-    // Set isolation level for the transaction
-    await client.query(`SET TRANSACTION ISOLATION LEVEL ${isolationLevel}`)
+    // Use default isolation level (READ COMMITTED) - no need to set explicitly
+    // This avoids SQL syntax issues and is sufficient for this application
     
     const result = await callback(client)
     await client.query('COMMIT')

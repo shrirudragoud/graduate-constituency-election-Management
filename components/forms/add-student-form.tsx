@@ -1,7 +1,10 @@
 "use client"
 
 import type React from "react"
+import { useState, useMemo, useEffect } from "react"
 import { SimpleStudentForm } from "./simple-student-form"
+import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
+import { AlertCircle, CheckCircle, X } from "lucide-react"
 
 interface AddStudentFormProps {
   open: boolean

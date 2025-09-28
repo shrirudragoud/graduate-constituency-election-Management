@@ -4,11 +4,46 @@ import { join } from 'path'
 import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
 import { SubmissionsDAL } from '@/lib/submissions-dal'
 import { testConnection } from '@/lib/database'
+import { withAuth } from '@/lib/auth-middleware'
 
 // Ensure uploads directory exists
 const UPLOADS_DIR = join(process.cwd(), 'data', 'uploads')
 
+// File upload security configuration
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/jpg', 
+  'image/png',
+  'application/pdf',
+  'image/gif'
+]
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILES_PER_SUBMISSION = 5
+
 console.log('📁 Uploads directory:', UPLOADS_DIR)
+
+// File validation function
+function validateFile(file: File): { valid: boolean; error?: string } {
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: `File ${file.name} is too large. Maximum size is 5MB.` }
+  }
+
+  // Check file type
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return { valid: false, error: `File type ${file.type} is not allowed.` }
+  }
+
+  // Check file name for security
+  const fileName = file.name.toLowerCase()
+  const dangerousExtensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com']
+  if (dangerousExtensions.some(ext => fileName.endsWith(ext))) {
+    return { valid: false, error: `File ${file.name} has a dangerous extension.` }
+  }
+
+  return { valid: true }
+}
 
 async function ensureUploadsDir() {
   try {
@@ -69,7 +104,7 @@ async function sendWhatsAppNotification(submission: any, submissionId: string) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
     console.log('📖 Fetching submissions...')
     
@@ -92,14 +127,26 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit
 
+    // Filter by user permissions
+    let filteredUserId = userId
+    if (request.user.role === 'volunteer') {
+      // Volunteers can only see their own submissions
+      filteredUserId = request.user.id
+    } else if (request.user.role === 'supervisor') {
+      // Supervisors can see their district/taluka submissions
+      if (request.user.district) {
+        // Filter by district if supervisor has district assigned
+      }
+    }
+
     const result = await SubmissionsDAL.getAll({
       limit,
       offset,
       status,
-      district,
-      taluka,
+      district: request.user.role === 'supervisor' ? request.user.district : district,
+      taluka: request.user.role === 'supervisor' ? request.user.taluka : taluka,
       search,
-      userId
+      userId: filteredUserId
     })
 
     console.log(`📊 Found ${result.submissions.length} submissions (page ${page}, total: ${result.total})`)
@@ -117,7 +164,7 @@ export async function GET(request: NextRequest) {
     console.error('❌ Error fetching submissions:', error)
     return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 })
   }
-}
+}, 'volunteer') // Allow volunteers and above
 
 export async function POST(request: NextRequest) {
   try {
@@ -176,7 +223,13 @@ export async function POST(request: NextRequest) {
       files: {} as Record<string, any>,
       
       // Additional metadata
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      ipAddress: (() => {
+        const forwarded = request.headers.get('x-forwarded-for')
+        const realIp = request.headers.get('x-real-ip')
+        const ip = forwarded || realIp || '127.0.0.1'
+        // Extract first IP if comma-separated (load balancer case)
+        return ip.split(',')[0].trim()
+      })(),
       userAgent: request.headers.get('user-agent') || 'unknown',
       source: 'web'
     }
@@ -204,7 +257,7 @@ export async function POST(request: NextRequest) {
       }, { status: 409 })
     }
 
-    // Handle file uploads
+    // Handle file uploads with security validation
     await ensureUploadsDir()
 
     const fileFields = [
@@ -215,26 +268,58 @@ export async function POST(request: NextRequest) {
       'signaturePhoto'
     ]
 
+    let fileCount = 0
+    const fileErrors: string[] = []
+
     for (const field of fileFields) {
       const file = formData.get(field) as File
       if (file && file.size > 0) {
-        const timestamp = Date.now()
-        const filename = `${timestamp}-${file.name}`
-        const filepath = join(UPLOADS_DIR, filename)
-        
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        await writeFile(filepath, buffer)
-        
-        const filesObj = submission.files as Record<string, any>
-        filesObj[field] = {
-          originalName: file.name,
-          filename: filename,
-          size: file.size,
-          path: filepath,
-          uploadedAt: new Date().toISOString()
+        // Validate file
+        const validation = validateFile(file)
+        if (!validation.valid) {
+          fileErrors.push(validation.error!)
+          continue
+        }
+
+        // Check file count limit
+        if (fileCount >= MAX_FILES_PER_SUBMISSION) {
+          fileErrors.push(`Maximum ${MAX_FILES_PER_SUBMISSION} files allowed per submission`)
+          break
+        }
+
+        try {
+          const timestamp = Date.now()
+          const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+          const filename = `${timestamp}-${sanitizedFileName}`
+          const filepath = join(UPLOADS_DIR, filename)
+          
+          const bytes = await file.arrayBuffer()
+          const buffer = Buffer.from(bytes)
+          await writeFile(filepath, buffer)
+          
+          const filesObj = submission.files as Record<string, any>
+          filesObj[field] = {
+            originalName: file.name,
+            filename: filename,
+            size: file.size,
+            path: filepath,
+            uploadedAt: new Date().toISOString()
+          }
+          
+          fileCount++
+        } catch (error) {
+          console.error(`Error uploading file ${file.name}:`, error)
+          fileErrors.push(`Failed to upload ${file.name}`)
         }
       }
+    }
+
+    // Return file validation errors if any
+    if (fileErrors.length > 0) {
+      return NextResponse.json({ 
+        error: 'File upload validation failed', 
+        fileErrors 
+      }, { status: 400 })
     }
 
     console.log('💾 Saving submission to database:', {

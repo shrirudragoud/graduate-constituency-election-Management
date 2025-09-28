@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { AlertCircle, CheckCircle, X } from "lucide-react"
+import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
 
 interface SimpleStudentFormProps {
   open: boolean
@@ -21,6 +23,8 @@ interface SimpleStudentFormProps {
 
 export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: SimpleStudentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<FieldValidation>({})
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState({
     // Personal Details
     surname: "",
@@ -97,10 +101,46 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
         ageMonths: months.toString()
       }))
     }
+    
+    // Mark field as touched
+    setTouchedFields(prev => new Set(prev).add(field))
+    
+    // Real-time validation
+    const newFormData = { ...formData, [field]: value }
+    if (field === "dateOfBirth") {
+      newFormData.ageYears = calculateAge(value).years.toString()
+      newFormData.ageMonths = calculateAge(value).months.toString()
+    }
+    
+    const fieldError = validateField(field, value, newFormData)
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: fieldError
+    }))
   }
 
   const handleFileChange = (field: string, file: File | null) => {
     setFiles(prev => ({ ...prev, [field]: file }))
+    
+    // Mark field as touched
+    setTouchedFields(prev => new Set(prev).add(field))
+    
+    // File validation
+    if (file) {
+      const maxSizeMB = field.includes('photo') || field.includes('signature') ? 5 : 5
+      const fieldError = validateFile(file, field, maxSizeMB)
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: fieldError
+      }))
+    } else {
+      // Clear error if file is removed
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
   }
 
   // Calculate form completion percentage
@@ -157,8 +197,33 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
     return totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0
   }, [formData, files])
 
+  // Check if form is valid
+  const isFormValidState = useMemo(() => {
+    const allErrors = validateStudentForm(formData, files)
+    return isFormValid(allErrors)
+  }, [formData, files])
+
   const handleSubmit = async () => {
     if (isSubmitting) return
+    
+    // Mark all fields as touched to show validation errors
+    const allFields = [
+      'surname', 'firstName', 'fathersHusbandName', 'sex', 'dateOfBirth',
+      'district', 'taluka', 'villageName', 'houseNo', 'street', 'pinCode',
+      'mobileNumber', 'aadhaarNumber', 'email', 'yearOfPassing', 'degreeDiploma',
+      'nameOfUniversity', 'place', 'declarationDate'
+    ]
+    setTouchedFields(new Set(allFields))
+    
+    // Validate entire form
+    const allErrors = validateStudentForm(formData, files)
+    setValidationErrors(allErrors)
+    
+    if (!isFormValid(allErrors)) {
+      const errorMessages = getErrorMessages(allErrors)
+      alert(`Please fix the following errors:\n\n${errorMessages.join('\n')}`)
+      return
+    }
     
     // Show confirmation dialog
     const confirmMessage = formCompletion < 100 
@@ -259,12 +324,62 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
       marriageCertificate: null,
       signaturePhoto: null
     })
+    setValidationErrors({})
+    setTouchedFields(new Set())
   }
 
   const handleClose = () => {
     if (!isSubmitting) {
       onOpenChange(false)
     }
+  }
+
+  // Helper component for validation error display
+  const ValidationError = ({ field }: { field: string }) => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched || !error || error.isValid) return null
+    
+    return (
+      <div className="flex items-center gap-1 mt-1 text-red-600 text-xs">
+        <AlertCircle className="w-3 h-3 flex-shrink-0" />
+        <span>{error.error}</span>
+      </div>
+    )
+  }
+
+  // Helper component for validation success indicator
+  const ValidationSuccess = ({ field }: { field: string }) => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched || !error || !error.isValid) return null
+    
+    return (
+      <div className="flex items-center gap-1 mt-1 text-green-600 text-xs">
+        <CheckCircle className="w-3 h-3 flex-shrink-0" />
+        <span>Valid</span>
+      </div>
+    )
+  }
+
+  // Helper function to get input className with validation state
+  const getInputClassName = (field: string, baseClassName: string = "") => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched) return baseClassName
+    
+    if (error && !error.isValid) {
+      return `${baseClassName} border-red-500 focus:border-red-500 focus:ring-red-500`
+    }
+    
+    if (error && error.isValid) {
+      return `${baseClassName} border-green-500 focus:border-green-500 focus:ring-green-500`
+    }
+    
+    return baseClassName
   }
 
   return (
@@ -302,8 +417,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     value={formData.surname}
                     onChange={(e) => handleInputChange("surname", e.target.value)}
                     placeholder="Enter surname"
-                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
+                    className={getInputClassName("surname", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
                   />
+                  <ValidationError field="surname" />
+                  <ValidationSuccess field="surname" />
                 </div>
                 <div>
                   <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First Name *</Label>
@@ -312,8 +429,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
                     placeholder="Enter first name"
-                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
+                    className={getInputClassName("firstName", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
                   />
+                  <ValidationError field="firstName" />
+                  <ValidationSuccess field="firstName" />
                 </div>
                 <div>
                   <Label htmlFor="fathersHusbandName" className="text-sm font-semibold text-gray-700">Father's/Husband Name *</Label>
@@ -322,8 +441,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     value={formData.fathersHusbandName}
                     onChange={(e) => handleInputChange("fathersHusbandName", e.target.value)}
                     placeholder="Enter father's/husband name"
-                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
+                    className={getInputClassName("fathersHusbandName", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
                   />
+                  <ValidationError field="fathersHusbandName" />
+                  <ValidationSuccess field="fathersHusbandName" />
                 </div>
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Sex *</Label>
@@ -343,6 +464,8 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                       </div>
                     </div>
                   </RadioGroup>
+                  <ValidationError field="sex" />
+                  <ValidationSuccess field="sex" />
                 </div>
                 <div>
                   <Label htmlFor="qualification" className="text-sm font-semibold text-gray-700">Qualifications</Label>
@@ -371,8 +494,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
+                    className={getInputClassName("dateOfBirth", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
                   />
+                  <ValidationError field="dateOfBirth" />
+                  <ValidationSuccess field="dateOfBirth" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -382,8 +507,9 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                       value={formData.ageYears}
                       placeholder="Years"
                       readOnly
-                      className="mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg"
+                      className={getInputClassName("ageYears", "mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg")}
                     />
+                    <ValidationError field="ageYears" />
                   </div>
                   <div>
                     <Label htmlFor="ageMonths" className="text-sm font-semibold text-gray-700">Age (Months) *</Label>
@@ -392,8 +518,9 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                       value={formData.ageMonths}
                       placeholder="Months"
                       readOnly
-                      className="mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg"
+                      className={getInputClassName("ageMonths", "mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg")}
                     />
+                    <ValidationError field="ageMonths" />
                   </div>
                 </div>
               </div>
@@ -477,8 +604,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     value={formData.mobileNumber}
                     onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
                     placeholder="Enter mobile number"
-                    className="mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg"
+                    className={getInputClassName("mobileNumber", "mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg")}
                   />
+                  <ValidationError field="mobileNumber" />
+                  <ValidationSuccess field="mobileNumber" />
                 </div>
                 <div>
                   <Label htmlFor="aadhaarNumber" className="text-sm font-semibold text-gray-700">Aadhaar No. *</Label>
@@ -487,8 +616,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     value={formData.aadhaarNumber}
                     onChange={(e) => handleInputChange("aadhaarNumber", e.target.value)}
                     placeholder="Enter Aadhaar number"
-                    className="mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg"
+                    className={getInputClassName("aadhaarNumber", "mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg")}
                   />
+                  <ValidationError field="aadhaarNumber" />
+                  <ValidationSuccess field="aadhaarNumber" />
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email Address *</Label>
@@ -498,8 +629,10 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     placeholder="Enter email address"
-                    className="mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg"
+                    className={getInputClassName("email", "mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg")}
                   />
+                  <ValidationError field="email" />
+                  <ValidationSuccess field="email" />
                 </div>
               </div>
             </div>
@@ -668,15 +801,27 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold w-full sm:w-auto min-w-[200px]"
+              className={`px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold w-full sm:w-auto min-w-[200px] ${
+                isFormValidState 
+                  ? "bg-green-600 hover:bg-green-700 text-white" 
+                  : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"
+              }`}
             >
               {isSubmitting ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>Submitting...</span>
                 </div>
+              ) : isFormValidState ? (
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Submit Registration</span>
+                </div>
               ) : (
-                "Submit Registration"
+                <div className="flex items-center space-x-2">
+                  <X className="w-4 h-4" />
+                  <span>Fix Errors to Submit</span>
+                </div>
               )}
             </Button>
           </div>

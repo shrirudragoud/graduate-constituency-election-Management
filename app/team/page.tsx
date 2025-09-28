@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { SidebarLayout } from "@/components/sidebar-layout"
+import { apiRequest, getCurrentUser, logout } from "@/lib/auth-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"

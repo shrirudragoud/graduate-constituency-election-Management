@@ -71,13 +71,47 @@ export default function LoginPage() {
     }
     
     setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-      const role = roles.find(r => r.id === selectedRole)
-      if (role) {
-        window.location.href = role.href
+    
+    try {
+      // Call the authentication API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          loginField: loginValue,
+          password: formData.password,
+          loginType: loginType,
+          action: 'login'
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Store token in localStorage
+        localStorage.setItem('authToken', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // Redirect based on role
+        const role = roles.find(r => r.id === selectedRole)
+        if (role) {
+          window.location.href = role.href
+        }
+      } else {
+        setErrors({ 
+          [loginField]: data.error || 'Login failed' 
+        })
       }
-    }, 1000)
+    } catch (error) {
+      console.error('Login error:', error)
+      setErrors({ 
+        [loginField]: 'Network error. Please try again.' 
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Pre-fill demo values on component mount
