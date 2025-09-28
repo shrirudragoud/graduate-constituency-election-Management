@@ -43,6 +43,11 @@ interface DatabaseRow {
   user_first_name?: string
   user_last_name?: string
   user_email?: string
+  filled_by_user_id?: number
+  filled_by_name?: string
+  filled_by_phone?: string
+  form_source?: string
+  filled_for_self?: boolean
 }
 
 // Main Submission interface matching the form structure
@@ -101,6 +106,13 @@ export interface Submission {
   ipAddress?: string
   userAgent?: string
   source?: string
+  
+  // Team member tracking
+  filledByUserId?: number
+  filledByName?: string
+  filledByPhone?: string
+  formSource?: 'public' | 'team'
+  filledForSelf?: boolean
 }
 
 // Filter interface for queries
@@ -111,6 +123,7 @@ export interface SubmissionFilters {
   district?: string
   taluka?: string
   userId?: number
+  filledByUserId?: number
   dateFrom?: string
   dateTo?: string
   search?: string
@@ -192,7 +205,13 @@ class SubmissionsDataAccessLayer {
   }
 
   // Create submission with comprehensive validation and transaction safety
-  async create(submission: Omit<Submission, 'id' | 'submittedAt' | 'status' | 'updatedAt'>): Promise<Submission> {
+  async create(submission: Omit<Submission, 'id' | 'submittedAt' | 'status' | 'updatedAt'>, teamMemberInfo?: {
+    filledByUserId?: number
+    filledByName?: string
+    filledByPhone?: string
+    formSource?: 'public' | 'team'
+    filledForSelf?: boolean
+  }): Promise<Submission> {
     return await transaction(async (client) => {
       // Validate submission data
       const validation = this.validateSubmission(submission)
@@ -209,7 +228,12 @@ class SubmissionsDataAccessLayer {
         status: 'pending',
         submittedAt: now,
         updatedAt: now,
-        files: submission.files || {}
+        files: submission.files || {},
+        filledByUserId: teamMemberInfo?.filledByUserId,
+        filledByName: teamMemberInfo?.filledByName,
+        filledByPhone: teamMemberInfo?.filledByPhone,
+        formSource: teamMemberInfo?.formSource || 'public',
+        filledForSelf: teamMemberInfo?.filledForSelf || false
       }
 
       // Duplicate check removed for high concurrency - allow multiple submissions
@@ -223,8 +247,8 @@ class SubmissionsDataAccessLayer {
           mobile_number, email, aadhaar_number,
           year_of_passing, degree_diploma, name_of_university, name_of_diploma,
           have_changed_name, place, declaration_date, status, submitted_at, updated_at, files,
-          ip_address, user_agent, source
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
+          ip_address, user_agent, source, filled_by_user_id, filled_by_name, filled_by_phone, form_source, filled_for_self
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)
         RETURNING *`,
         [
           newSubmission.id, newSubmission.userId, newSubmission.surname, newSubmission.firstName, 
@@ -238,7 +262,9 @@ class SubmissionsDataAccessLayer {
           newSubmission.nameOfDiploma, newSubmission.haveChangedName, newSubmission.place, 
           newSubmission.declarationDate, newSubmission.status, newSubmission.submittedAt, 
           newSubmission.updatedAt, newSubmission.files,
-          newSubmission.ipAddress, newSubmission.userAgent, newSubmission.source
+          newSubmission.ipAddress, newSubmission.userAgent, newSubmission.source,
+          newSubmission.filledByUserId, newSubmission.filledByName, newSubmission.filledByPhone, 
+          newSubmission.formSource, newSubmission.filledForSelf
         ]
       )
       
@@ -255,6 +281,7 @@ class SubmissionsDataAccessLayer {
       district,
       taluka,
       userId,
+      filledByUserId,
       dateFrom,
       dateTo,
       search
@@ -286,6 +313,12 @@ class SubmissionsDataAccessLayer {
       paramCount++
       whereClause += ` AND s.user_id = $${paramCount}`
       params.push(userId)
+    }
+
+    if (filledByUserId) {
+      paramCount++
+      whereClause += ` AND s.filled_by_user_id = $${paramCount}`
+      params.push(filledByUserId)
     }
 
     if (dateFrom) {
@@ -599,7 +632,12 @@ class SubmissionsDataAccessLayer {
       files: row.files || {},
       ipAddress: row.ip_address,
       userAgent: row.user_agent,
-      source: row.source
+      source: row.source,
+      filledByUserId: row.filled_by_user_id,
+      filledByName: row.filled_by_name,
+      filledByPhone: row.filled_by_phone,
+      formSource: row.form_source as 'public' | 'team' || 'public',
+      filledForSelf: row.filled_for_self || false
     }
   }
 }

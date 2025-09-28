@@ -19,9 +19,11 @@ interface SimpleStudentFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmissionSuccess?: (submissionId: string) => void
+  apiEndpoint?: string
+  isTeamForm?: boolean
 }
 
-export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: SimpleStudentFormProps) {
+export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, apiEndpoint = '/api/public/submit-form', isTeamForm = false }: SimpleStudentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<FieldValidation>({})
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
@@ -253,8 +255,18 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
         }
       })
       
-      const response = await fetch('/api/public/submit-form', {
+      // Prepare headers
+      const headers: HeadersInit = {}
+      if (isTeamForm) {
+        const token = localStorage.getItem('authToken')
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
+        }
+      }
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
+        headers,
         body: submitData
       })
       
@@ -401,9 +413,14 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader className="pb-4">
-            <DialogTitle className="text-xl sm:text-2xl font-bold text-center">Student Registration Form</DialogTitle>
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
+              {isTeamForm ? 'Add Voter Registration (Team)' : 'Student Registration Form'}
+            </DialogTitle>
             <DialogDescription className="text-center text-sm sm:text-base">
-              Please fill in all the required information below
+              {isTeamForm 
+                ? 'Fill in voter information on behalf of a citizen' 
+                : 'Please fill in all the required information below'
+              }
             </DialogDescription>
           </DialogHeader>
 
@@ -829,7 +846,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess }: S
               ) : isFormValidState ? (
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4" />
-                  <span>Submit Registration</span>
+                  <span>{isTeamForm ? 'Add Voter Registration' : 'Submit Registration'}</span>
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">

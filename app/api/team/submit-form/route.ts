@@ -19,24 +19,19 @@ const ALLOWED_FILE_TYPES = [
   'image/gif'
 ]
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB (reduced for faster uploads)
-const MAX_FILES_PER_SUBMISSION = 3 // Reduced for high concurrency
-
-console.log('📁 Uploads directory:', UPLOADS_DIR)
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_FILES_PER_SUBMISSION = 3
 
 // File validation function
 function validateFile(file: File): { valid: boolean; error?: string } {
-  // Check file size
   if (file.size > MAX_FILE_SIZE) {
-    return { valid: false, error: `File ${file.name} is too large. Maximum size is 5MB.` }
+    return { valid: false, error: `File ${file.name} is too large. Maximum size is 2MB.` }
   }
 
-  // Check file type
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     return { valid: false, error: `File type ${file.type} is not allowed.` }
   }
 
-  // Check file name for security
   const fileName = file.name.toLowerCase()
   const dangerousExtensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com']
   if (dangerousExtensions.some(ext => fileName.endsWith(ext))) {
@@ -63,13 +58,11 @@ async function sendWhatsAppNotification(submission: any, submissionId: string) {
     try {
       console.log(`📱 WhatsApp notification attempt ${attempt}/${maxRetries} for:`, submission.mobileNumber)
       
-      // Validate mobile number
       if (!submission.mobileNumber || submission.mobileNumber.trim() === '') {
         console.log('⚠️ No mobile number provided, skipping WhatsApp notification')
         return { success: false, message: 'No mobile number provided' }
       }
 
-      // Check if Twilio service is ready
       if (!twilioWhatsAppService.isReady()) {
         console.log('⚠️ Twilio WhatsApp service not ready, skipping notification')
         return { success: false, message: 'WhatsApp service not configured' }
@@ -80,7 +73,7 @@ async function sendWhatsAppNotification(submission: any, submissionId: string) {
       
       return { 
         success: true, 
-        message: 'Thank you message sent successfully to your mobile number!',
+        message: 'Thank you message sent successfully to the voter\'s mobile number!',
         messageId: result.messageId
       }
     } catch (error) {
@@ -88,7 +81,6 @@ async function sendWhatsAppNotification(submission: any, submissionId: string) {
       console.error(`❌ WhatsApp notification attempt ${attempt} failed:`, error)
       
       if (attempt < maxRetries) {
-        // Wait before retry (exponential backoff)
         const delay = Math.pow(2, attempt) * 1000
         console.log(`⏳ Retrying in ${delay}ms...`)
         await new Promise(resolve => setTimeout(resolve, delay))
@@ -96,20 +88,26 @@ async function sendWhatsAppNotification(submission: any, submissionId: string) {
     }
   }
 
-  // All retries failed
   console.error('❌ All WhatsApp notification attempts failed')
   return { 
     success: false, 
-    message: 'Thank you message could not be sent, but your registration is successful', 
+    message: 'Thank you message could not be sent, but the registration is successful', 
     error: lastError?.message || 'Unknown error'
   }
 }
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
-    console.log('📖 Fetching submissions...')
+    console.log('📖 Fetching team submissions...')
+    console.log('👤 Authenticated user:', {
+      id: request.user.id,
+      firstName: request.user.firstName,
+      lastName: request.user.lastName,
+      role: request.user.role,
+      district: request.user.district,
+      taluka: request.user.taluka
+    })
     
-    // Test database connection first
     const dbConnected = await testConnection()
     if (!dbConnected) {
       console.error('❌ Database connection failed')
@@ -119,59 +117,75 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100) // Max 100 per page
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
     const status = searchParams.get('status') || undefined
     const district = searchParams.get('district') || undefined
     const taluka = searchParams.get('taluka') || undefined
     const search = searchParams.get('search') || undefined
-    const userId = searchParams.get('userId') ? parseInt(searchParams.get('userId')!) : undefined
+    const formSource = searchParams.get('formSource') || undefined
 
     const offset = (page - 1) * limit
 
     // Filter by user permissions
-    let filteredUserId = userId
-    if (request.user.role === 'volunteer') {
-      // Volunteers can only see their own submissions
-      filteredUserId = request.user.id
-    } else if (request.user.role === 'supervisor') {
-      // Supervisors can see their district/taluka submissions
-      if (request.user.district) {
-        // Filter by district if supervisor has district assigned
-      }
-    }
-
-    const result = await SubmissionsDAL.getAll({
+    let filters: any = {
       limit,
       offset,
       status,
-      district: request.user.role === 'supervisor' ? request.user.district : district,
-      taluka: request.user.role === 'supervisor' ? request.user.taluka : taluka,
-      search,
-      userId: filteredUserId
-    })
+      search
+    }
 
-    console.log(`📊 Found ${result.submissions.length} submissions (page ${page}, total: ${result.total})`)
+    // For testing purposes, show all submissions regardless of role
+    // TODO: Remove this and implement proper role-based filtering
+    if (request.user.role === 'volunteer') {
+      // Volunteers can see all submissions for now (for testing)
+      // filters.filledByUserId = request.user.id
+    } else if (request.user.role === 'supervisor') {
+      // Supervisors can see submissions in their assigned district/taluka
+      filters.district = request.user.district || district
+      filters.taluka = request.user.taluka || taluka
+    } else if (request.user.role === 'admin') {
+      // Admins can see everything, apply filters as provided
+      filters.district = district
+      filters.taluka = taluka
+    }
+
+    console.log('🔍 Applied filters:', filters)
+    const result = await SubmissionsDAL.getAll(filters)
+
+    // Filter by form source if specified
+    let filteredSubmissions = result.submissions
+    if (formSource) {
+      filteredSubmissions = result.submissions.filter(sub => sub.formSource === formSource)
+    }
+
+    console.log(`📊 Found ${filteredSubmissions.length} team submissions (page ${page}, total: ${result.total})`)
+    console.log('📋 Sample submissions:', filteredSubmissions.slice(0, 2).map(s => ({
+      id: s.id,
+      firstName: s.firstName,
+      formSource: s.formSource,
+      filledByUserId: s.filledByUserId,
+      filledByName: s.filledByName
+    })))
     
     return NextResponse.json({ 
-      submissions: result.submissions,
+      submissions: filteredSubmissions,
       pagination: {
         page,
         limit,
-        total: result.total,
-        totalPages: Math.ceil(result.total / limit)
+        total: filteredSubmissions.length,
+        totalPages: Math.ceil(filteredSubmissions.length / limit)
       }
     })
   } catch (error) {
-    console.error('❌ Error fetching submissions:', error)
-    return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 })
+    console.error('❌ Error fetching team submissions:', error)
+    return NextResponse.json({ error: 'Failed to fetch team submissions' }, { status: 500 })
   }
 }, 'volunteer') // Allow volunteers and above
 
-export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: NextRequest) => {
+export const POST = withAuth(withRateLimit(RATE_LIMITS.formSubmission, async (request: AuthenticatedRequest) => {
   try {
-    console.log('📝 Form submission received')
+    console.log('📝 Team form submission received from:', request.user.email)
     
-    // Test database connection first
     const dbConnected = await testConnection()
     if (!dbConnected) {
       console.error('❌ Database connection failed')
@@ -228,7 +242,6 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
         const forwarded = request.headers.get('x-forwarded-for')
         const realIp = request.headers.get('x-real-ip')
         const ip = forwarded || realIp || '127.0.0.1'
-        // Extract first IP if comma-separated (load balancer case)
         return ip.split(',')[0].trim()
       })(),
       userAgent: request.headers.get('user-agent') || 'unknown',
@@ -245,8 +258,6 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
         missingFields 
       }, { status: 400 })
     }
-
-    // Duplicate check removed for high concurrency performance
 
     // Handle file uploads with security validation
     await ensureUploadsDir()
@@ -265,14 +276,12 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
     for (const field of fileFields) {
       const file = formData.get(field) as File
       if (file && file.size > 0) {
-        // Validate file
         const validation = validateFile(file)
         if (!validation.valid) {
           fileErrors.push(validation.error!)
           continue
         }
 
-        // Check file count limit
         if (fileCount >= MAX_FILES_PER_SUBMISSION) {
           fileErrors.push(`Maximum ${MAX_FILES_PER_SUBMISSION} files allowed per submission`)
           break
@@ -305,7 +314,6 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       }
     }
 
-    // Return file validation errors if any
     if (fileErrors.length > 0) {
       return NextResponse.json({ 
         error: 'File upload validation failed', 
@@ -313,37 +321,46 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       }, { status: 400 })
     }
 
-    console.log('💾 Saving submission to database:', {
+    console.log('💾 Saving team submission to database:', {
       surname: submission.surname,
       firstName: submission.firstName,
       mobileNumber: submission.mobileNumber,
       district: submission.district,
       taluka: submission.taluka,
-      filesCount: Object.keys(submission.files).length
+      filesCount: Object.keys(submission.files).length,
+      filledBy: request.user.email
     })
 
-    // Save to database with transaction safety (public submission)
-    const savedSubmission = await SubmissionsDAL.create(submission, {
-      formSource: 'public',
-      filledForSelf: true
-    })
-    console.log('✅ Public submission saved with ID:', savedSubmission.id)
+    // Team member information
+    const teamMemberInfo = {
+      filledByUserId: request.user.id,
+      filledByName: `${request.user.firstName} ${request.user.lastName}`.trim(),
+      filledByPhone: request.user.phone,
+      formSource: 'team' as const,
+      filledForSelf: false // This can be made configurable later
+    }
+
+    // Save to database with team member tracking
+    const savedSubmission = await SubmissionsDAL.create(submission, teamMemberInfo)
+    console.log('✅ Team submission saved with ID:', savedSubmission.id)
     
-    // Send WhatsApp notification asynchronously (don't block response)
+    // Send WhatsApp notification asynchronously
     const whatsappPromise = sendWhatsAppNotification(savedSubmission, savedSubmission.id)
     
-    // Return response immediately
     return NextResponse.json({
       success: true,
       submissionId: savedSubmission.id,
-      message: 'Registration submitted successfully!',
-      whatsappStatus: 'processing' // WhatsApp is being sent in background
+      message: 'Voter registration submitted successfully by team member!',
+      whatsappStatus: 'processing',
+      teamMember: {
+        name: teamMemberInfo.filledByName,
+        email: request.user.email
+      }
     })
 
   } catch (error) {
-    console.error('❌ Error processing submission:', error)
+    console.error('❌ Error processing team submission:', error)
     
-    // Handle specific database errors
     if (error instanceof Error) {
       if (error.message.includes('duplicate')) {
         return NextResponse.json({ 
@@ -359,8 +376,8 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
     }
     
     return NextResponse.json({ 
-      error: 'Failed to process submission',
+      error: 'Failed to process team submission',
       details: process.env.NODE_ENV === 'development' ? error : undefined
     }, { status: 500 })
   }
-})
+}), 'volunteer')

@@ -126,7 +126,14 @@ async function setupDatabase() {
         -- Additional metadata
         ip_address INET,
         user_agent TEXT,
-        source VARCHAR(50) DEFAULT 'web'
+        source VARCHAR(50) DEFAULT 'web',
+        
+        -- Team member tracking
+        filled_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        filled_by_name VARCHAR(255),
+        filled_by_phone VARCHAR(20),
+        form_source VARCHAR(50) DEFAULT 'public' CHECK (form_source IN ('public', 'team')),
+        filled_for_self BOOLEAN DEFAULT false
       );
     `)
     console.log('✅ Submissions table created')
@@ -196,6 +203,11 @@ async function setupDatabase() {
       CREATE INDEX IF NOT EXISTS idx_submissions_status_submitted_at ON submissions(status, submitted_at);
       CREATE INDEX IF NOT EXISTS idx_submissions_district_taluka ON submissions(district, taluka);
       CREATE INDEX IF NOT EXISTS idx_submissions_status_district ON submissions(status, district);
+      
+      -- Team member tracking indexes
+      CREATE INDEX IF NOT EXISTS idx_submissions_filled_by_user_id ON submissions(filled_by_user_id);
+      CREATE INDEX IF NOT EXISTS idx_submissions_form_source ON submissions(form_source);
+      CREATE INDEX IF NOT EXISTS idx_submissions_filled_for_self ON submissions(filled_for_self);
       
       -- Full-text search index
       CREATE INDEX IF NOT EXISTS idx_submissions_search ON submissions USING gin(

@@ -60,6 +60,11 @@ interface Submission {
   place: string
   declarationDate: string
   files: Record<string, any>
+  filledByUserId?: number
+  filledByName?: string
+  filledByPhone?: string
+  formSource?: 'public' | 'team'
+  filledForSelf?: boolean
 }
 
 export default function TeamDashboard() {
@@ -124,13 +129,35 @@ export default function TeamDashboard() {
   const fetchSubmissions = async () => {
     try {
       console.log('🔄 Fetching submissions from team page...')
-      const response = await fetch('/api/submit-form')
+      const token = localStorage.getItem('authToken')
+      
+      if (!token) {
+        console.error('❌ No auth token found')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/team/submit-form', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        console.error('❌ API response not ok:', response.status, response.statusText)
+        const errorData = await response.json()
+        console.error('❌ Error data:', errorData)
+        setLoading(false)
+        return
+      }
+
       const data = await response.json()
-      console.log('📊 API response:', data)
+      console.log('📊 Team API response:', data)
       setSubmissions(data.submissions || [])
-      console.log('✅ Submissions set:', data.submissions?.length || 0)
+      console.log('✅ Team submissions set:', data.submissions?.length || 0)
     } catch (error) {
-      console.error('❌ Error fetching submissions:', error)
+      console.error('❌ Error fetching team submissions:', error)
     } finally {
       setLoading(false)
     }
@@ -179,9 +206,46 @@ export default function TeamDashboard() {
     setEditedSubmission(null)
   }
 
+  const convertToSimpleSubmissionData = (submission: Submission) => {
+    return {
+      id: submission.id,
+      firstName: submission.firstName,
+      surname: submission.surname,
+      fathersHusbandName: submission.fathersHusbandName,
+      fathersHusbandFullName: submission.fathersHusbandFullName || '',
+      sex: submission.sex,
+      qualification: submission.qualification || '',
+      occupation: submission.occupation || '',
+      dateOfBirth: submission.dateOfBirth,
+      ageYears: parseInt(submission.ageYears.toString()),
+      ageMonths: parseInt(submission.ageMonths.toString()),
+      address: {
+        district: submission.district,
+        taluka: submission.taluka,
+        villageName: submission.villageName,
+        houseNo: submission.houseNo,
+        street: submission.street,
+        pinCode: submission.pinCode
+      },
+      mobileNumber: submission.mobileNumber,
+      aadhaarNumber: submission.aadhaarNumber,
+      yearOfPassing: submission.yearOfPassing || '',
+      degreeDiploma: submission.degreeDiploma || '',
+      nameOfUniversity: submission.nameOfUniversity || '',
+      nameOfDiploma: submission.nameOfDiploma || '',
+      haveChangedName: submission.haveChangedName || '',
+      place: submission.place,
+      declarationDate: submission.declarationDate,
+      email: (submission as any).email || '',
+      files: submission.files,
+      submittedAt: submission.submittedAt
+    }
+  }
+
   const handleDownloadStudentPDF = (submission: Submission) => {
     try {
-      generateSimpleStudentPDF(submission)
+      const simpleData = convertToSimpleSubmissionData(submission)
+      generateSimpleStudentPDF(simpleData)
     } catch (error) {
       console.error('PDF generation failed:', error)
       alert('Error generating PDF. Please try again.')
@@ -190,7 +254,8 @@ export default function TeamDashboard() {
 
   const handleDownloadAllStudentsPDF = () => {
     try {
-      generateSimpleAllStudentsPDF(submissions)
+      const simpleData = submissions.map(convertToSimpleSubmissionData)
+      generateSimpleAllStudentsPDF(simpleData)
     } catch (error) {
       console.error('PDF generation failed:', error)
       alert('Error generating PDF. Please try again.')
@@ -219,6 +284,11 @@ export default function TeamDashboard() {
   const pendingSubmissions = submissions.length // All are pending for now
   const verifiedSubmissions = 0 // You can add verification logic later
   const followUpRequired = 0 // You can add follow-up logic later
+  
+  // Calculate form source breakdown
+  const publicSubmissions = submissions.filter(sub => sub.formSource === 'public').length
+  const teamSubmissions = submissions.filter(sub => sub.formSource === 'team').length
+  const selfRegisteredSubmissions = submissions.filter(sub => !sub.filledByName).length
 
   // Show loading while checking authentication
   if (!isAuthenticated) {
@@ -334,6 +404,56 @@ export default function TeamDashboard() {
           </Card>
         </div>
 
+        {/* Form Source Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-800">Public Registrations</p>
+                  <p className="text-2xl font-bold text-blue-900">{publicSubmissions}</p>
+                </div>
+                <div className="w-10 h-10 bg-blue-200 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-700" />
+                </div>
+              </div>
+              <p className="text-xs text-blue-600 mt-1">Self-registered by citizens</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-800">Team Registrations</p>
+                  <p className="text-2xl font-bold text-green-900">{teamSubmissions}</p>
+                </div>
+                <div className="w-10 h-10 bg-green-200 rounded-lg flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-green-700" />
+                </div>
+              </div>
+              <p className="text-xs text-green-600 mt-1">Filled by team members</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-800">Your Team's Work</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {submissions.filter(sub => sub.filledByUserId === user?.id).length}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-purple-200 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-purple-700" />
+                </div>
+              </div>
+              <p className="text-xs text-purple-600 mt-1">Registrations you filled</p>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
           <TabsList className="grid w-full grid-cols-4 h-10 sm:h-12 bg-muted">
             <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
@@ -402,6 +522,9 @@ export default function TeamDashboard() {
                     <Filter className="w-4 h-4 mr-2" />
                     Refresh Data
                   </Button>
+                  <div className="text-xs text-muted-foreground bg-yellow-50 px-2 py-1 rounded">
+                    🧪 Testing Mode: Showing all submissions
+                  </div>
                   <Button 
                     variant="outline" 
                     onClick={async () => {
@@ -432,6 +555,8 @@ export default function TeamDashboard() {
                           <TableHead>Student</TableHead>
                           <TableHead>Registration ID</TableHead>
                         <TableHead>Status</TableHead>
+                          <TableHead>Form Source</TableHead>
+                          <TableHead>Filled By</TableHead>
                           <TableHead>Submitted</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -439,13 +564,13 @@ export default function TeamDashboard() {
                     <TableBody>
                         {loading ? (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
+                            <TableCell colSpan={7} className="text-center py-8">
                               Loading submissions...
                             </TableCell>
                           </TableRow>
                         ) : filteredSubmissions.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
+                            <TableCell colSpan={7} className="text-center py-8">
                               <div className="flex flex-col items-center gap-2">
                                 <Users className="w-8 h-8 text-muted-foreground" />
                                 <p className="text-muted-foreground">No student registrations found</p>
@@ -468,6 +593,25 @@ export default function TeamDashboard() {
                             <Clock className="w-3 h-3 mr-1" />
                                   Pending
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={submission.formSource === 'team' ? 'default' : 'secondary'}>
+                            {submission.formSource === 'team' ? 'Team' : 'Public'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {submission.filledByName ? (
+                              <div>
+                                <div className="font-medium">{submission.filledByName}</div>
+                                {submission.filledByPhone && (
+                                  <div className="text-muted-foreground text-xs">{submission.filledByPhone}</div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Self-registered</span>
+                            )}
+                          </div>
                         </TableCell>
                               <TableCell className="text-sm">{formatDate(submission.submittedAt)}</TableCell>
                         <TableCell>
@@ -523,15 +667,27 @@ export default function TeamDashboard() {
                                 <div className="text-xs text-muted-foreground font-mono">
                                   ID: {submission.id}
                                 </div>
-                                <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  Pending
-                          </Badge>
+                                <div className="flex gap-2">
+                                  <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Pending
+                                  </Badge>
+                                  <Badge variant={submission.formSource === 'team' ? 'default' : 'secondary'} className="text-xs">
+                                    {submission.formSource === 'team' ? 'Team' : 'Public'}
+                                  </Badge>
+                                </div>
                               </div>
                               
                               <div className="text-xs text-muted-foreground">
                                 Submitted: {formatDate(submission.submittedAt)}
                               </div>
+                              
+                              {submission.filledByName && (
+                                <div className="text-xs text-muted-foreground">
+                                  Filled by: {submission.filledByName}
+                                  {submission.filledByPhone && ` (${submission.filledByPhone})`}
+                                </div>
+                              )}
                               
                               <div className="flex gap-2 pt-2">
                             <Button 
@@ -831,7 +987,16 @@ export default function TeamDashboard() {
         </Tabs>
       </div>
 
-      <SimpleStudentForm open={showAddStudentForm} onOpenChange={setShowAddStudentForm} />
+      <SimpleStudentForm 
+        open={showAddStudentForm} 
+        onOpenChange={setShowAddStudentForm}
+        apiEndpoint="/api/team/submit-form"
+        isTeamForm={true}
+        onSubmissionSuccess={(id) => {
+          console.log('Team form submitted successfully:', id)
+          fetchSubmissions() // Refresh the list
+        }}
+      />
 
       {/* Student Details Dialog - Mobile Friendly */}
       <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>

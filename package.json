@@ -11,6 +11,7 @@
     "db:migrate": "node scripts/migrate-json-to-postgres.js",
     "db:reset": "node scripts/reset-database.js",
     "db:test": "node scripts/test-database.js",
+    "db:add-team-tracking": "node scripts/add-team-tracking-columns.js",
     "setup:ubuntu": "chmod +x scripts/ubuntu-setup.sh && ./scripts/ubuntu-setup.sh",
     "deploy:production": "chmod +x scripts/deploy-production.sh && ./scripts/deploy-production.sh"
   },
