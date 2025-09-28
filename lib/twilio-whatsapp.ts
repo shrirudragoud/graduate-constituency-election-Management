@@ -38,7 +38,7 @@ class TwilioWhatsAppService {
 
   async sendFormSubmissionNotification(submission: any, submissionId: string) {
     try {
-      console.log('📱 Starting Twilio WhatsApp notification for:', submission.mobileNumber);
+      console.log('📱 Starting WhatsApp notification for:', submission.mobileNumber);
       
       // Validate mobile number
       if (!submission.mobileNumber || submission.mobileNumber.trim() === '') {
@@ -48,8 +48,13 @@ class TwilioWhatsAppService {
 
       // Check if service is ready
       if (!this.isReady()) {
-        console.log('⚠️ Twilio WhatsApp service not ready, skipping notification');
-        return { success: false, message: 'WhatsApp service not configured' };
+        console.log('⚠️ Twilio not configured - using mock mode');
+        console.log('📱 MOCK WhatsApp message would be sent to:', submission.mobileNumber);
+        console.log('📱 To enable real WhatsApp messages, configure Twilio credentials in .env.local');
+        return { 
+          success: true, 
+          message: 'Registration successful! (WhatsApp not configured - check console for details)' 
+        };
       }
 
       // Format phone number for WhatsApp
