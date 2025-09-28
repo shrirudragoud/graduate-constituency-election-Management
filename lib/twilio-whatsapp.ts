@@ -1,12 +1,28 @@
 import twilio from 'twilio';
 
-// Twilio configuration
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER; // Format: whatsapp:+14155238886
+// Twilio configuration - load at runtime
+let accountSid: string | undefined;
+let authToken: string | undefined;
+let whatsappNumber: string | undefined;
+let client: any;
 
 // Initialize Twilio client
-const client = twilio(accountSid, authToken);
+function initializeTwilio() {
+  accountSid = process.env.TWILIO_ACCOUNT_SID;
+  authToken = process.env.TWILIO_AUTH_TOKEN;
+  whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER; // Format: whatsapp:+14155238886
+  
+  console.log('🔍 Environment variables check:');
+  console.log('TWILIO_ACCOUNT_SID:', accountSid ? '✅ Set' : '❌ Missing');
+  console.log('TWILIO_AUTH_TOKEN:', authToken ? '✅ Set' : '❌ Missing');
+  console.log('TWILIO_WHATSAPP_NUMBER:', whatsappNumber ? '✅ Set' : '❌ Missing');
+  
+  if (accountSid && authToken) {
+    client = twilio(accountSid, authToken);
+    return true;
+  }
+  return false;
+}
 
 class TwilioWhatsAppService {
   private isInitialized: boolean = false;
@@ -16,16 +32,15 @@ class TwilioWhatsAppService {
   }
 
   private initialize() {
-    if (!accountSid || !authToken || !whatsappNumber) {
-      console.log('⚠️ Twilio WhatsApp service not configured - missing environment variables');
-      this.isInitialized = false;
-      return;
-    }
-
     try {
-      // Test the client
-      console.log('📱 Twilio WhatsApp service initialized');
-      this.isInitialized = true;
+      const twilioReady = initializeTwilio();
+      if (twilioReady) {
+        console.log('📱 Twilio WhatsApp service initialized successfully');
+        this.isInitialized = true;
+      } else {
+        console.log('⚠️ Twilio WhatsApp service not configured - missing environment variables');
+        this.isInitialized = false;
+      }
     } catch (error) {
       console.error('❌ Failed to initialize Twilio WhatsApp service:', error);
       this.isInitialized = false;
@@ -44,6 +59,12 @@ class TwilioWhatsAppService {
       if (!submission.mobileNumber || submission.mobileNumber.trim() === '') {
         console.log('⚠️ No mobile number provided, skipping WhatsApp notification');
         return { success: false, message: 'No mobile number provided' };
+      }
+
+      // Reinitialize Twilio to ensure environment variables are loaded
+      if (!this.isReady()) {
+        console.log('🔄 Reinitializing Twilio service...');
+        this.initialize();
       }
 
       // Check if service is ready
@@ -86,7 +107,20 @@ Your voter registration has been submitted successfully!
 
 Thank you for registering with BJP!`;
 
+      // Ensure client is initialized
+      if (!client) {
+        console.log('⚠️ Twilio client not initialized, reinitializing...');
+        initializeTwilio();
+        if (!client) {
+          throw new Error('Failed to initialize Twilio client');
+        }
+      }
+
       // Send WhatsApp message
+      console.log('📱 Sending REAL WhatsApp message via Twilio...');
+      console.log('📱 From:', whatsappNumber);
+      console.log('📱 To:', phoneNumber);
+      
       const result = await client.messages.create({
         body: message,
         from: whatsappNumber,
