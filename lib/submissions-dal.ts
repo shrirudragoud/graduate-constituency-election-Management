@@ -1,4 +1,4 @@
-import { query, transaction, generateSubmissionId } from './database'
+import { query, transaction } from './database'
 
 export interface Submission {
   id: string
@@ -41,87 +41,51 @@ export interface Submission {
   declarationDate: string
   
   // Status and Metadata
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'deleted'
   submittedAt: string
   updatedAt?: string
+  approvedBy?: number
+  approvedAt?: string
+  rejectionReason?: string
   
   // File attachments
   files: Record<string, any>
+  
+  // Additional metadata
+  ipAddress?: string
+  userAgent?: string
+  source?: string
+}
+
+export interface SubmissionFilters {
+  limit?: number
+  offset?: number
+  status?: string
+  district?: string
+  taluka?: string
+  userId?: number
+  dateFrom?: string
+  dateTo?: string
+  search?: string
+}
+
+export interface SubmissionStats {
+  total: number
+  pending: number
+  approved: number
+  rejected: number
+  today: number
+  thisWeek: number
+  thisMonth: number
+  byDistrict: Array<{ district: string; count: number }>
+  byTaluka: Array<{ taluka: string; count: number }>
 }
 
 class SubmissionsDAL {
-  // Create tables with proper indexes for concurrency
-  async createTable() {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS submissions (
-        id VARCHAR(255) PRIMARY KEY,
-        user_id INTEGER,
-        surname VARCHAR(255) NOT NULL,
-        first_name VARCHAR(255) NOT NULL,
-        fathers_husband_name VARCHAR(255) NOT NULL,
-        fathers_husband_full_name VARCHAR(255),
-        sex VARCHAR(10) NOT NULL,
-        qualification VARCHAR(255),
-        occupation VARCHAR(255),
-        date_of_birth VARCHAR(255) NOT NULL,
-        age_years INTEGER NOT NULL,
-        age_months INTEGER NOT NULL,
-        district VARCHAR(255) NOT NULL,
-        taluka VARCHAR(255) NOT NULL,
-        village_name VARCHAR(255) NOT NULL,
-        house_no VARCHAR(255) NOT NULL,
-        street VARCHAR(255) NOT NULL,
-        pin_code VARCHAR(10) NOT NULL,
-        mobile_number VARCHAR(20) NOT NULL,
-        email VARCHAR(255),
-        aadhaar_number VARCHAR(255) NOT NULL,
-        year_of_passing VARCHAR(255),
-        degree_diploma VARCHAR(255),
-        name_of_university VARCHAR(255),
-        name_of_diploma VARCHAR(255),
-        have_changed_name VARCHAR(5),
-        place VARCHAR(255) NOT NULL,
-        declaration_date VARCHAR(255) NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending',
-        submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        files JSONB DEFAULT '{}',
-        
-        -- Add constraints for data integrity
-        CONSTRAINT valid_sex CHECK (sex IN ('M', 'F')),
-        CONSTRAINT valid_status CHECK (status IN ('pending', 'approved', 'rejected')),
-        CONSTRAINT valid_age_years CHECK (age_years >= 0 AND age_years <= 150),
-        CONSTRAINT valid_age_months CHECK (age_months >= 0 AND age_months <= 11),
-        CONSTRAINT valid_pin_code CHECK (pin_code ~ '^[0-9]{6}$'),
-        CONSTRAINT valid_mobile_number CHECK (mobile_number ~ '^[0-9]{10}$'),
-        CONSTRAINT valid_aadhaar_number CHECK (aadhaar_number ~ '^[0-9]{12}$')
-      );
-    `
-    
-    const createIndexesQuery = `
-      -- Create indexes for better query performance and concurrency
-      CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
-      CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON submissions(submitted_at);
-      CREATE INDEX IF NOT EXISTS idx_submissions_mobile_number ON submissions(mobile_number);
-      CREATE INDEX IF NOT EXISTS idx_submissions_aadhaar_number ON submissions(aadhaar_number);
-      CREATE INDEX IF NOT EXISTS idx_submissions_district ON submissions(district);
-      CREATE INDEX IF NOT EXISTS idx_submissions_taluka ON submissions(taluka);
-      CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON submissions(user_id);
-      
-      -- Composite indexes for common queries
-      CREATE INDEX IF NOT EXISTS idx_submissions_status_submitted_at ON submissions(status, submitted_at);
-      CREATE INDEX IF NOT EXISTS idx_submissions_district_taluka ON submissions(district, taluka);
-    `
-    
-    await query(createTableQuery)
-    await query(createIndexesQuery)
-    console.log('✅ Submissions table and indexes created')
-  }
-
-  // Create submission with transaction safety
-  async create(submission: Omit<Submission, 'id' | 'submittedAt' | 'status'>): Promise<Submission> {
+  // Create submission with transaction safety and duplicate prevention
+  async create(submission: Omit<Submission, 'id' | 'submittedAt' | 'status' | 'updatedAt'>): Promise<Submission> {
     return await transaction(async (client) => {
-      const submissionId = generateSubmissionId()
+      const submissionId = this.generateSubmissionId()
       const now = new Date().toISOString()
       
       const newSubmission: Submission = {
@@ -129,13 +93,15 @@ class SubmissionsDAL {
         id: submissionId,
         status: 'pending',
         submittedAt: now,
-        updatedAt: now
+        updatedAt: now,
+        files: submission.files || {}
       }
 
       // Check for duplicate mobile number or Aadhaar number
       const duplicateCheck = await client.query(
         `SELECT id FROM submissions 
-         WHERE mobile_number = $1 OR aadhaar_number = $2 
+         WHERE (mobile_number = $1 OR aadhaar_number = $2) 
+         AND status != 'deleted'
          LIMIT 1`,
         [submission.mobileNumber, submission.aadhaarNumber]
       )
@@ -144,6 +110,7 @@ class SubmissionsDAL {
         throw new Error('A submission with this mobile number or Aadhaar number already exists')
       }
 
+      // Insert submission
       const res = await client.query(
         `INSERT INTO submissions (
           id, user_id, surname, first_name, fathers_husband_name, fathers_husband_full_name,
@@ -151,8 +118,9 @@ class SubmissionsDAL {
           district, taluka, village_name, house_no, street, pin_code,
           mobile_number, email, aadhaar_number,
           year_of_passing, degree_diploma, name_of_university, name_of_diploma,
-          have_changed_name, place, declaration_date, status, submitted_at, updated_at, files
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
+          have_changed_name, place, declaration_date, status, submitted_at, updated_at, files,
+          ip_address, user_agent, source
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36)
         RETURNING *`,
         [
           newSubmission.id, newSubmission.userId, newSubmission.surname, newSubmission.firstName, 
@@ -165,68 +133,102 @@ class SubmissionsDAL {
           newSubmission.yearOfPassing, newSubmission.degreeDiploma, newSubmission.nameOfUniversity, 
           newSubmission.nameOfDiploma, newSubmission.haveChangedName, newSubmission.place, 
           newSubmission.declarationDate, newSubmission.status, newSubmission.submittedAt, 
-          newSubmission.updatedAt, newSubmission.files
+          newSubmission.updatedAt, newSubmission.files,
+          newSubmission.ipAddress, newSubmission.userAgent, newSubmission.source
         ]
       )
       
-      return res.rows[0]
+      return this.mapRowToSubmission(res.rows[0])
     })
   }
 
-  // Get all submissions with pagination and filtering
-  async getAll(options: {
-    limit?: number
-    offset?: number
-    status?: string
-    district?: string
-    taluka?: string
-  } = {}): Promise<{ submissions: Submission[], total: number }> {
-    const { limit = 50, offset = 0, status, district, taluka } = options
-    
-    let whereClause = 'WHERE 1=1'
+  // Get submissions with advanced filtering and pagination
+  async getAll(filters: SubmissionFilters = {}): Promise<{ submissions: Submission[], total: number }> {
+    const {
+      limit = 50,
+      offset = 0,
+      status,
+      district,
+      taluka,
+      userId,
+      dateFrom,
+      dateTo,
+      search
+    } = filters
+
+    let whereClause = 'WHERE s.status != \'deleted\''
     const params: any[] = []
     let paramCount = 0
 
     if (status) {
       paramCount++
-      whereClause += ` AND status = $${paramCount}`
+      whereClause += ` AND s.status = $${paramCount}`
       params.push(status)
     }
 
     if (district) {
       paramCount++
-      whereClause += ` AND district = $${paramCount}`
+      whereClause += ` AND s.district = $${paramCount}`
       params.push(district)
     }
 
     if (taluka) {
       paramCount++
-      whereClause += ` AND taluka = $${paramCount}`
+      whereClause += ` AND s.taluka = $${paramCount}`
       params.push(taluka)
+    }
+
+    if (userId) {
+      paramCount++
+      whereClause += ` AND s.user_id = $${paramCount}`
+      params.push(userId)
+    }
+
+    if (dateFrom) {
+      paramCount++
+      whereClause += ` AND s.submitted_at >= $${paramCount}`
+      params.push(dateFrom)
+    }
+
+    if (dateTo) {
+      paramCount++
+      whereClause += ` AND s.submitted_at <= $${paramCount}`
+      params.push(dateTo)
+    }
+
+    if (search) {
+      paramCount++
+      whereClause += ` AND to_tsvector('english', 
+        s.surname || ' ' || s.first_name || ' ' || s.mobile_number || ' ' || s.aadhaar_number
+      ) @@ plainto_tsquery('english', $${paramCount})`
+      params.push(search)
     }
 
     // Get total count
     const countResult = await query(
-      `SELECT COUNT(*) as total FROM submissions ${whereClause}`,
+      `SELECT COUNT(*) as total FROM submissions s ${whereClause}`,
       params
     )
     const total = parseInt(countResult.rows[0].total)
 
-    // Get paginated results
+    // Get paginated results with user information
     paramCount++
     const limitParam = `$${paramCount}`
     paramCount++
     const offsetParam = `$${paramCount}`
     
     const res = await query(
-      `SELECT * FROM submissions ${whereClause} 
-       ORDER BY submitted_at DESC 
+      `SELECT s.*, u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email
+       FROM submissions s
+       LEFT JOIN users u ON s.user_id = u.id
+       ${whereClause}
+       ORDER BY s.submitted_at DESC 
        LIMIT ${limitParam} OFFSET ${offsetParam}`,
       [...params, limit, offset]
     )
 
     return {
-      submissions: res.rows,
+      submissions: res.rows.map(row => this.mapRowToSubmission(row)),
       total
     }
   }
@@ -235,20 +237,24 @@ class SubmissionsDAL {
   async getById(id: string, forUpdate = false): Promise<Submission | null> {
     const lockClause = forUpdate ? 'FOR UPDATE' : ''
     const res = await query(
-      `SELECT * FROM submissions WHERE id = $1 ${lockClause}`,
+      `SELECT s.*, u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email
+       FROM submissions s
+       LEFT JOIN users u ON s.user_id = u.id
+       WHERE s.id = $1 ${lockClause}`,
       [id]
     )
-    return res.rows[0] || null
+    return res.rows[0] ? this.mapRowToSubmission(res.rows[0]) : null
   }
 
-  // Update submission status with optimistic locking
+  // Update submission status with audit trail
   async updateStatus(
     id: string, 
-    status: 'pending' | 'approved' | 'rejected',
-    updatedBy?: string
+    status: 'pending' | 'approved' | 'rejected' | 'deleted',
+    updatedBy?: number,
+    rejectionReason?: string
   ): Promise<Submission | null> {
     return await transaction(async (client) => {
-      // First, get the current submission with lock
+      // Get current submission
       const current = await client.query(
         'SELECT * FROM submissions WHERE id = $1 FOR UPDATE',
         [id]
@@ -258,23 +264,54 @@ class SubmissionsDAL {
         throw new Error('Submission not found')
       }
 
-      // Update with new timestamp
+      const now = new Date().toISOString()
+      const updateData: any = {
+        status,
+        updated_at: now
+      }
+
+      if (status === 'approved') {
+        updateData.approved_by = updatedBy
+        updateData.approved_at = now
+        updateData.rejection_reason = null
+      } else if (status === 'rejected') {
+        updateData.rejection_reason = rejectionReason
+        updateData.approved_by = updatedBy
+        updateData.approved_at = now
+      }
+
+      // Update submission
       const res = await client.query(
         `UPDATE submissions 
-         SET status = $1, updated_at = CURRENT_TIMESTAMP 
-         WHERE id = $2 
+         SET ${Object.keys(updateData).map((key, index) => `${key} = $${index + 2}`).join(', ')}
+         WHERE id = $1 
          RETURNING *`,
-        [status, id]
+        [id, ...Object.values(updateData)]
       )
 
-      return res.rows[0] || null
+      // Log audit trail
+      await client.query(
+        `INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          'submissions',
+          id,
+          'UPDATE',
+          JSON.stringify(current.rows[0]),
+          JSON.stringify(res.rows[0]),
+          updatedBy
+        ]
+      )
+
+      return this.mapRowToSubmission(res.rows[0])
     })
   }
 
   // Bulk update status for multiple submissions
   async bulkUpdateStatus(
     ids: string[], 
-    status: 'pending' | 'approved' | 'rejected'
+    status: 'pending' | 'approved' | 'rejected' | 'deleted',
+    updatedBy?: number
   ): Promise<{ updated: number, failed: string[] }> {
     return await transaction(async (client) => {
       const failed: string[] = []
@@ -284,9 +321,9 @@ class SubmissionsDAL {
         try {
           const res = await client.query(
             `UPDATE submissions 
-             SET status = $1, updated_at = CURRENT_TIMESTAMP 
+             SET status = $1, updated_at = CURRENT_TIMESTAMP, approved_by = $3, approved_at = CURRENT_TIMESTAMP
              WHERE id = $2 AND status != $1`,
-            [status, id]
+            [status, id, updatedBy]
           )
           if (res.rowCount > 0) {
             updated++
@@ -301,47 +338,27 @@ class SubmissionsDAL {
     })
   }
 
-  // Delete submission (soft delete by updating status)
-  async delete(id: string): Promise<boolean> {
-    return await transaction(async (client) => {
-      const res = await client.query(
-        'UPDATE submissions SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-        ['deleted', id]
-      )
-      return res.rowCount > 0
-    })
-  }
-
-  // Hard delete (permanent removal)
-  async hardDelete(id: string): Promise<boolean> {
-    const res = await query('DELETE FROM submissions WHERE id = $1', [id])
-    return res.rowCount > 0
-  }
-
   // Search submissions with full-text search
-  async search(query: string, limit = 20): Promise<Submission[]> {
+  async search(queryText: string, limit = 20): Promise<Submission[]> {
     const res = await query(
-      `SELECT * FROM submissions 
-       WHERE to_tsvector('english', 
-         surname || ' ' || first_name || ' ' || mobile_number || ' ' || aadhaar_number
+      `SELECT s.*, u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email
+       FROM submissions s
+       LEFT JOIN users u ON s.user_id = u.id
+       WHERE s.status != 'deleted'
+       AND to_tsvector('english', 
+         s.surname || ' ' || s.first_name || ' ' || s.mobile_number || ' ' || s.aadhaar_number
        ) @@ plainto_tsquery('english', $1)
-       ORDER BY submitted_at DESC 
+       ORDER BY ts_rank(to_tsvector('english', 
+         s.surname || ' ' || s.first_name || ' ' || s.mobile_number || ' ' || s.aadhaar_number
+       ), plainto_tsquery('english', $1)) DESC, s.submitted_at DESC
        LIMIT $2`,
-      [query, limit]
+      [queryText, limit]
     )
-    return res.rows
+    return res.rows.map(row => this.mapRowToSubmission(row))
   }
 
-  // Get statistics for dashboard
-  async getStatistics(): Promise<{
-    total: number
-    pending: number
-    approved: number
-    rejected: number
-    today: number
-    thisWeek: number
-    thisMonth: number
-  }> {
+  // Get comprehensive statistics
+  async getStatistics(): Promise<SubmissionStats> {
     const res = await query(`
       SELECT 
         COUNT(*) as total,
@@ -355,6 +372,24 @@ class SubmissionsDAL {
       WHERE status != 'deleted'
     `)
 
+    const districtStats = await query(`
+      SELECT district, COUNT(*) as count
+      FROM submissions
+      WHERE status != 'deleted'
+      GROUP BY district
+      ORDER BY count DESC
+      LIMIT 10
+    `)
+
+    const talukaStats = await query(`
+      SELECT taluka, COUNT(*) as count
+      FROM submissions
+      WHERE status != 'deleted'
+      GROUP BY taluka
+      ORDER BY count DESC
+      LIMIT 10
+    `)
+
     const stats = res.rows[0]
     return {
       total: parseInt(stats.total),
@@ -363,7 +398,15 @@ class SubmissionsDAL {
       rejected: parseInt(stats.rejected),
       today: parseInt(stats.today),
       thisWeek: parseInt(stats.this_week),
-      thisMonth: parseInt(stats.this_month)
+      thisMonth: parseInt(stats.this_month),
+      byDistrict: districtStats.rows.map(row => ({
+        district: row.district,
+        count: parseInt(row.count)
+      })),
+      byTaluka: talukaStats.rows.map(row => ({
+        taluka: row.taluka,
+        count: parseInt(row.count)
+      }))
     }
   }
 
@@ -385,6 +428,74 @@ class SubmissionsDAL {
     return {
       mobileExists: parseInt(counts.mobile_count) > 0,
       aadhaarExists: parseInt(counts.aadhaar_count) > 0
+    }
+  }
+
+  // Delete submission (soft delete)
+  async delete(id: string, deletedBy?: number): Promise<boolean> {
+    return await transaction(async (client) => {
+      const res = await client.query(
+        'UPDATE submissions SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['deleted', id]
+      )
+      return res.rowCount > 0
+    })
+  }
+
+  // Hard delete (permanent removal)
+  async hardDelete(id: string): Promise<boolean> {
+    const res = await query('DELETE FROM submissions WHERE id = $1', [id])
+    return res.rowCount > 0
+  }
+
+  // Generate unique submission ID
+  private generateSubmissionId(): string {
+    const timestamp = Date.now()
+    const random = Math.random().toString(36).substring(2, 8)
+    return `SUB_${timestamp}_${random}`
+  }
+
+  // Map database row to Submission object
+  private mapRowToSubmission(row: any): Submission {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      surname: row.surname,
+      firstName: row.first_name,
+      fathersHusbandName: row.fathers_husband_name,
+      fathersHusbandFullName: row.fathers_husband_full_name,
+      sex: row.sex,
+      qualification: row.qualification,
+      occupation: row.occupation,
+      dateOfBirth: row.date_of_birth,
+      ageYears: row.age_years,
+      ageMonths: row.age_months,
+      district: row.district,
+      taluka: row.taluka,
+      villageName: row.village_name,
+      houseNo: row.house_no,
+      street: row.street,
+      pinCode: row.pin_code,
+      mobileNumber: row.mobile_number,
+      email: row.email,
+      aadhaarNumber: row.aadhaar_number,
+      yearOfPassing: row.year_of_passing,
+      degreeDiploma: row.degree_diploma,
+      nameOfUniversity: row.name_of_university,
+      nameOfDiploma: row.name_of_diploma,
+      haveChangedName: row.have_changed_name,
+      place: row.place,
+      declarationDate: row.declaration_date,
+      status: row.status,
+      submittedAt: row.submitted_at,
+      updatedAt: row.updated_at,
+      approvedBy: row.approved_by,
+      approvedAt: row.approved_at,
+      rejectionReason: row.rejection_reason,
+      files: row.files || {},
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+      source: row.source
     }
   }
 }

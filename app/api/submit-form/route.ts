@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { join } from 'path'
 import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
 import { SubmissionsDAL } from '@/lib/submissions-dal'
 import { testConnection } from '@/lib/database'
 
-// Ensure data directory exists
-const DATA_DIR = path.join(process.cwd(), 'data')
-const UPLOADS_DIR = path.join(DATA_DIR, 'uploads')
+// Ensure uploads directory exists
+const UPLOADS_DIR = join(process.cwd(), 'data', 'uploads')
 
-console.log('📁 Data directory:', DATA_DIR)
 console.log('📁 Uploads directory:', UPLOADS_DIR)
 
-async function ensureDataDir() {
+async function ensureUploadsDir() {
   try {
-    await mkdir(DATA_DIR, { recursive: true })
     await mkdir(UPLOADS_DIR, { recursive: true })
   } catch (error) {
-    console.error('Error creating directories:', error)
+    console.error('Error creating uploads directory:', error)
   }
 }
 
@@ -90,6 +87,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || undefined
     const district = searchParams.get('district') || undefined
     const taluka = searchParams.get('taluka') || undefined
+    const search = searchParams.get('search') || undefined
+    const userId = searchParams.get('userId') ? parseInt(searchParams.get('userId')!) : undefined
 
     const offset = (page - 1) * limit
 
@@ -98,7 +97,9 @@ export async function GET(request: NextRequest) {
       offset,
       status,
       district,
-      taluka
+      taluka,
+      search,
+      userId
     })
 
     console.log(`📊 Found ${result.submissions.length} submissions (page ${page}, total: ${result.total})`)
@@ -172,7 +173,12 @@ export async function POST(request: NextRequest) {
       declarationDate: (formData.get('declarationDate') as string) || '',
       
       // Files will be handled separately
-      files: {} as Record<string, any>
+      files: {} as Record<string, any>,
+      
+      // Additional metadata
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      source: 'web'
     }
 
     // Validate required fields
@@ -199,7 +205,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle file uploads
-    await ensureDataDir()
+    await ensureUploadsDir()
 
     const fileFields = [
       'degreeCertificate',
@@ -214,7 +220,7 @@ export async function POST(request: NextRequest) {
       if (file && file.size > 0) {
         const timestamp = Date.now()
         const filename = `${timestamp}-${file.name}`
-        const filepath = path.join(UPLOADS_DIR, filename)
+        const filepath = join(UPLOADS_DIR, filename)
         
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)

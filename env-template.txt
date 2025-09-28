@@ -1,0 +1,27 @@
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=election_enrollment
+DB_USER=postgres
+DB_PASSWORD=your_secure_password
+
+# Twilio WhatsApp Configuration
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+
+# Application Configuration
+NODE_ENV=development
+PORT=3000
+
+# Security (for production)
+JWT_SECRET=your_jwt_secret_key
+ENCRYPTION_KEY=your_encryption_key
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+ALLOWED_FILE_TYPES=image/jpeg,image/png,application/pdf
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100

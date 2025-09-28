@@ -1,57 +1,12 @@
-#!/usr/bin/env node
+import { query } from './database'
 
-/**
- * Professional Database Setup Script
- * Sets up PostgreSQL database with proper schema, indexes, and constraints
- * 
- * Usage: node scripts/setup-database.js
- */
-
-const { Pool } = require('pg')
-require('dotenv').config({ path: '.env.local' })
-
-const dbConfig = {
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'election_enrollment',
-  password: process.env.DB_PASSWORD || 'password',
-  port: parseInt(process.env.DB_PORT || '5432'),
-}
-
-async function setupDatabase() {
-  console.log('🚀 Setting up professional PostgreSQL database...')
-  console.log('================================================')
-  
-  // First, connect to postgres database to create our database
-  const adminPool = new Pool({
-    ...dbConfig,
-    database: 'postgres'
-  })
+// Professional database schema with proper constraints and indexes
+export async function createSchema() {
+  console.log('🏗️ Creating professional database schema...')
 
   try {
-    // Create database if it doesn't exist
-    await adminPool.query(`CREATE DATABASE ${dbConfig.database}`)
-    console.log(`✅ Database '${dbConfig.database}' created successfully (if it didn't exist)`)
-  } catch (error) {
-    if (error.code === '42P04') { // Database already exists
-      console.log(`⚠️ Database '${dbConfig.database}' already exists. Skipping creation.`)
-    } else {
-      console.error('❌ Error creating database:', error)
-      process.exit(1)
-    }
-  } finally {
-    await adminPool.end()
-  }
-
-  // Now connect to our specific database to create tables
-  const appPool = new Pool(dbConfig)
-
-  try {
-    await appPool.connect()
-    console.log(`✅ Connected to database '${dbConfig.database}'`)
-
     // Create users table
-    await appPool.query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -68,10 +23,9 @@ async function setupDatabase() {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `)
-    console.log('✅ Users table created')
 
     // Create submissions table with comprehensive fields
-    await appPool.query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS submissions (
         id VARCHAR(255) PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -129,10 +83,9 @@ async function setupDatabase() {
         source VARCHAR(50) DEFAULT 'web'
       );
     `)
-    console.log('✅ Submissions table created')
 
     // Create file attachments table
-    await appPool.query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS file_attachments (
         id SERIAL PRIMARY KEY,
         submission_id VARCHAR(255) REFERENCES submissions(id) ON DELETE CASCADE,
@@ -146,10 +99,9 @@ async function setupDatabase() {
         uploaded_by INTEGER REFERENCES users(id)
       );
     `)
-    console.log('✅ File attachments table created')
 
     // Create audit log table
-    await appPool.query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id SERIAL PRIMARY KEY,
         table_name VARCHAR(255) NOT NULL,
@@ -163,10 +115,9 @@ async function setupDatabase() {
         user_agent TEXT
       );
     `)
-    console.log('✅ Audit logs table created')
 
     // Create statistics table for caching
-    await appPool.query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS statistics (
         id SERIAL PRIMARY KEY,
         metric_name VARCHAR(255) UNIQUE NOT NULL,
@@ -175,13 +126,21 @@ async function setupDatabase() {
         expires_at TIMESTAMP WITH TIME ZONE
       );
     `)
-    console.log('✅ Statistics table created')
 
-    // Create indexes for optimal performance
-    console.log('📊 Creating database indexes...')
-    
+    console.log('✅ Database tables created successfully')
+  } catch (error) {
+    console.error('❌ Error creating database schema:', error)
+    throw error
+  }
+}
+
+// Create indexes for optimal performance
+export async function createIndexes() {
+  console.log('📊 Creating database indexes...')
+
+  try {
     // Submissions table indexes
-    await appPool.query(`
+    await query(`
       CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
       CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON submissions(submitted_at);
       CREATE INDEX IF NOT EXISTS idx_submissions_mobile_number ON submissions(mobile_number);
@@ -204,37 +163,42 @@ async function setupDatabase() {
         )
       );
     `)
-    console.log('✅ Submissions indexes created')
 
     // Users table indexes
-    await appPool.query(`
+    await query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
       CREATE INDEX IF NOT EXISTS idx_users_district ON users(district);
       CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
     `)
-    console.log('✅ Users indexes created')
 
     // File attachments indexes
-    await appPool.query(`
+    await query(`
       CREATE INDEX IF NOT EXISTS idx_file_attachments_submission_id ON file_attachments(submission_id);
       CREATE INDEX IF NOT EXISTS idx_file_attachments_field_name ON file_attachments(field_name);
     `)
-    console.log('✅ File attachments indexes created')
 
     // Audit logs indexes
-    await appPool.query(`
+    await query(`
       CREATE INDEX IF NOT EXISTS idx_audit_logs_table_record ON audit_logs(table_name, record_id);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_changed_at ON audit_logs(changed_at);
       CREATE INDEX IF NOT EXISTS idx_audit_logs_changed_by ON audit_logs(changed_by);
     `)
-    console.log('✅ Audit logs indexes created')
 
-    // Create triggers for automatic updates
-    console.log('⚡ Creating database triggers...')
-    
+    console.log('✅ Database indexes created successfully')
+  } catch (error) {
+    console.error('❌ Error creating database indexes:', error)
+    throw error
+  }
+}
+
+// Create triggers for automatic updates
+export async function createTriggers() {
+  console.log('⚡ Creating database triggers...')
+
+  try {
     // Update timestamp trigger function
-    await appPool.query(`
+    await query(`
       CREATE OR REPLACE FUNCTION update_updated_at_column()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -245,7 +209,7 @@ async function setupDatabase() {
     `)
 
     // Apply triggers
-    await appPool.query(`
+    await query(`
       DROP TRIGGER IF EXISTS update_submissions_updated_at ON submissions;
       CREATE TRIGGER update_submissions_updated_at
         BEFORE UPDATE ON submissions
@@ -253,58 +217,34 @@ async function setupDatabase() {
         EXECUTE FUNCTION update_updated_at_column();
     `)
 
-    await appPool.query(`
+    await query(`
       DROP TRIGGER IF EXISTS update_users_updated_at ON users;
       CREATE TRIGGER update_users_updated_at
         BEFORE UPDATE ON users
         FOR EACH ROW
         EXECUTE FUNCTION update_updated_at_column();
     `)
-    console.log('✅ Database triggers created')
 
-    // Insert default admin user
-    console.log('👤 Creating default admin user...')
-    try {
-      await appPool.query(`
-        INSERT INTO users (email, password, role, first_name, last_name, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (email) DO NOTHING
-      `, [
-        'admin@election.com',
-        '$2b$10$rQZ8K9vL8mN7pQrS5tU6OeX1yA2bC3dE4fG5hI6jK7lM8nO9pQ', // password: admin123
-        'admin',
-        'System',
-        'Administrator',
-        true
-      ])
-      console.log('✅ Default admin user created (email: admin@election.com, password: admin123)')
-    } catch (error) {
-      console.log('⚠️ Default admin user already exists or could not be created')
-    }
-
-    console.log('🎉 Professional database setup complete!')
-    console.log('')
-    console.log('📋 Database Features:')
-    console.log('  ✅ Professional schema with proper constraints')
-    console.log('  ✅ Optimized indexes for high performance')
-    console.log('  ✅ Automatic timestamp updates')
-    console.log('  ✅ Full-text search capabilities')
-    console.log('  ✅ Audit trail logging')
-    console.log('  ✅ Duplicate prevention')
-    console.log('  ✅ Data validation at database level')
-    console.log('')
-    console.log('🔧 Next steps:')
-    console.log('  1. Update .env.local with your database credentials')
-    console.log('  2. Run: npm run dev')
-    console.log('  3. Test form submission')
-    console.log('  4. Check database for stored data')
-
+    console.log('✅ Database triggers created successfully')
   } catch (error) {
-    console.error('❌ Error setting up database:', error)
-    process.exit(1)
-  } finally {
-    await appPool.end()
+    console.error('❌ Error creating database triggers:', error)
+    throw error
   }
 }
 
-setupDatabase()
+// Initialize complete database schema
+export async function initializeDatabase() {
+  console.log('🚀 Initializing professional database...')
+  
+  try {
+    await createSchema()
+    await createIndexes()
+    await createTriggers()
+    
+    console.log('🎉 Database initialization completed successfully!')
+    return true
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error)
+    return false
+  }
+}

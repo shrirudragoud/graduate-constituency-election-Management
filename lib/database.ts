@@ -1,13 +1,14 @@
 import { Pool, PoolClient } from 'pg'
 import { v4 as uuidv4 } from 'uuid'
 
-// Database configuration with connection pooling for concurrency
+// Professional database configuration with connection pooling
 const dbConfig = {
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'election_enrollment',
   password: process.env.DB_PASSWORD || 'password',
   port: parseInt(process.env.DB_PORT || '5432'),
+  
   // Connection pool settings for high concurrency
   max: 20, // Maximum number of clients in the pool
   min: 5,  // Minimum number of clients in the pool
@@ -18,6 +19,7 @@ const dbConfig = {
   destroyTimeoutMillis: 5000, // Maximum time to destroy a connection
   reapIntervalMillis: 1000, // How often to check for idle clients
   createRetryIntervalMillis: 200, // How long to wait before retrying connection creation
+  
   // SSL configuration for production
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 }
