@@ -3,9 +3,9 @@ import { UserManagement } from '@/lib/user-management'
 import { withAuth } from '@/lib/auth-middleware'
 
 // GET /api/users/[id] - Get user by ID
-export const GET = withAuth(async (request: AuthenticatedRequest, { params }: { params: { id: string } }) => {
+export const GET = withAuth(async (request: AuthenticatedRequest, context: { params: { id: string } }) => {
   try {
-    const userId = parseInt(params.id)
+    const userId = parseInt(context.params.id)
     
     if (isNaN(userId)) {
       return NextResponse.json({ 
@@ -34,9 +34,9 @@ export const GET = withAuth(async (request: AuthenticatedRequest, { params }: { 
 }, 'admin') // Only admins can view user details
 
 // PATCH /api/users/[id] - Update user
-export const PATCH = withAuth(async (request: AuthenticatedRequest, { params }: { params: { id: string } }) => {
+export const PATCH = withAuth(async (request: AuthenticatedRequest, context: { params: { id: string } }) => {
   try {
-    const userId = parseInt(params.id)
+    const userId = parseInt(context.params.id)
     
     if (isNaN(userId)) {
       return NextResponse.json({ 
@@ -86,9 +86,9 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest, { params }: 
 }, 'admin') // Only admins can update users
 
 // DELETE /api/users/[id] - Deactivate user
-export const DELETE = withAuth(async (request: AuthenticatedRequest, { params }: { params: { id: string } }) => {
+export const DELETE = withAuth(async (request: AuthenticatedRequest, context: { params: { id: string } }) => {
   try {
-    const userId = parseInt(params.id)
+    const userId = parseInt(context.params.id)
     
     if (isNaN(userId)) {
       return NextResponse.json({ 

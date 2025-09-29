@@ -6,10 +6,10 @@ export interface AuthenticatedRequest extends NextRequest {
 }
 
 export function withAuth(
-  handler: (request: AuthenticatedRequest) => Promise<NextResponse>,
+  handler: (request: AuthenticatedRequest, context?: any) => Promise<NextResponse>,
   requiredRole?: 'admin' | 'volunteer' | 'supervisor'
 ) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
     try {
       const authHeader = request.headers.get('authorization')
       const tokenResult = verifyAuthToken(authHeader)
@@ -40,7 +40,7 @@ export function withAuth(
       const authenticatedRequest = request as AuthenticatedRequest
       authenticatedRequest.user = user
 
-      return await handler(authenticatedRequest)
+      return await handler(authenticatedRequest, context)
     } catch (error) {
       console.error('Auth middleware error:', error)
       return NextResponse.json({ 

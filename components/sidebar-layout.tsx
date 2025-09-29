@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { LayoutDashboard, Users, UserCheck, Settings, BarChart3, FileText, Shield, LogOut, Menu, X } from "lucide-react"
+import { Users, UserCheck, Settings, BarChart3, FileText, Shield, LogOut, Menu, X } from "lucide-react"
 import { useState } from "react"
 
 interface SidebarLayoutProps {
@@ -15,13 +15,6 @@ interface SidebarLayoutProps {
 }
 
 const navigation = [
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    description: "Overview and analytics",
-    roles: ["volunteer", "manager", "admin"]
-  },
   {
     name: "Team Management",
     href: "/team",

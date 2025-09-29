@@ -1,84 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile, access } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { withAuth } from '@/lib/auth-middleware'
-import { withRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
-const UPLOADS_DIR = join(process.cwd(), 'data', 'uploads')
+export const GET = withAuth(async (request: AuthenticatedRequest, context: { params: { filename: string } }) => {
+  try {
+    const { filename } = context.params
+    
+    if (!filename) {
+      return NextResponse.json({ error: 'Filename is required' }, { status: 400 })
+    }
 
-// Security: Only allow specific file extensions
-const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'gif']
+    // Security: Only allow alphanumeric characters, dots, and hyphens in filename
+    if (!/^[a-zA-Z0-9.-]+$/.test(filename)) {
+      return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
+    }
 
-function isAllowedFile(filename: string): boolean {
-  const extension = filename.split('.').pop()?.toLowerCase()
-  return extension ? ALLOWED_EXTENSIONS.includes(extension) : false
-}
+    // Construct the file path
+    const uploadsDir = join(process.cwd(), 'data', 'uploads')
+    const filePath = join(uploadsDir, filename)
 
-function getContentType(filename: string): string {
-  const extension = filename.split('.').pop()?.toLowerCase()
-  
-  switch (extension) {
-    case 'pdf':
-      return 'application/pdf'
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg'
-    case 'png':
-      return 'image/png'
-    case 'gif':
-      return 'image/gif'
-    default:
-      return 'application/octet-stream'
-  }
-}
-
-export const GET = withRateLimit(
-  RATE_LIMITS.fileUpload,
-  withAuth(async (request: AuthenticatedRequest, { params }: { params: { filename: string } }) => {
     try {
-      const filename = params.filename
-      
-      // Security: Validate filename
-      if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-        return new NextResponse('Invalid filename', { status: 400 })
-      }
-      
-      // Security: Check file extension
-      if (!isAllowedFile(filename)) {
-        return new NextResponse('File type not allowed', { status: 403 })
-      }
-      
-      const filePath = join(UPLOADS_DIR, filename)
-      
-      // Security: Check if file exists and is within uploads directory
-      try {
-        await access(filePath)
-      } catch (error) {
-        return new NextResponse('File not found', { status: 404 })
-      }
-      
       // Read the file
       const fileBuffer = await readFile(filePath)
       
-      // Security: Check file size (additional check)
-      if (fileBuffer.length > 10 * 1024 * 1024) { // 10MB max
-        return new NextResponse('File too large', { status: 413 })
+      // Determine content type based on file extension
+      const extension = filename.split('.').pop()?.toLowerCase()
+      let contentType = 'application/octet-stream'
+      
+      switch (extension) {
+        case 'jpg':
+        case 'jpeg':
+          contentType = 'image/jpeg'
+          break
+        case 'png':
+          contentType = 'image/png'
+          break
+        case 'pdf':
+          contentType = 'application/pdf'
+          break
+        case 'gif':
+          contentType = 'image/gif'
+          break
+        default:
+          contentType = 'application/octet-stream'
       }
-      
-      const contentType = getContentType(filename)
-      
+
+      // Return the file with appropriate headers
       return new NextResponse(fileBuffer, {
+        status: 200,
         headers: {
           'Content-Type': contentType,
-          'Content-Disposition': `inline; filename="${filename}"`,
-          'Cache-Control': 'private, max-age=3600', // 1 hour cache for authenticated users
-          'X-Content-Type-Options': 'nosniff',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
         },
       })
-      
-    } catch (error) {
-      console.error('Error serving file:', error)
-      return new NextResponse('Internal server error', { status: 500 })
+
+    } catch (fileError) {
+      console.error('File not found:', fileError)
+      return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
-  }, 'volunteer') // Require authentication
-)
+
+  } catch (error) {
+    console.error('❌ Error serving file:', error)
+    return NextResponse.json({ 
+      error: 'Failed to serve file',
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    }, { status: 500 })
+  }
+}, 'volunteer') // Only authenticated volunteers and above can download files

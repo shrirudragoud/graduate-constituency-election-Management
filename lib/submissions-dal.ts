@@ -585,6 +585,7 @@ class SubmissionsDataAccessLayer {
     return res.rowCount ? res.rowCount > 0 : false
   }
 
+
   // Generate unique submission ID
   private generateSubmissionId(): string {
     const timestamp = Date.now()

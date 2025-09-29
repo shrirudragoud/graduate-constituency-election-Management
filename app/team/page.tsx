@@ -28,7 +28,15 @@ import {
   Upload,
   TrendingUp,
   ArrowRight,
-  X
+  X,
+  FileImage,
+  File,
+  User,
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  CreditCard
 } from "lucide-react"
 
 interface Submission {
@@ -60,6 +68,7 @@ interface Submission {
   place: string
   declarationDate: string
   files: Record<string, any>
+  status?: 'pending' | 'approved' | 'rejected'
   filledByUserId?: number
   filledByName?: string
   filledByPhone?: string
@@ -154,6 +163,11 @@ export default function TeamDashboard() {
 
       const data = await response.json()
       console.log('📊 Team API response:', data)
+      console.log('📊 Sample submission with status:', data.submissions?.[0] ? {
+        id: data.submissions[0].id,
+        firstName: data.submissions[0].firstName,
+        status: data.submissions[0].status
+      } : 'No submissions')
       setSubmissions(data.submissions || [])
       console.log('✅ Team submissions set:', data.submissions?.length || 0)
     } catch (error) {
@@ -171,6 +185,60 @@ export default function TeamDashboard() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const handleStatusUpdate = async (submissionId: string, newStatus: 'approved' | 'rejected') => {
+    try {
+      console.log(`🔄 Updating status for submission ${submissionId} to ${newStatus}`)
+      
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        console.error('No auth token found')
+        alert('Authentication required. Please log in again.')
+        return
+      }
+
+      const response = await fetch(`/api/submissions/${submissionId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Failed to update status:', response.status, errorData)
+        alert(`Failed to update status: ${errorData.error || response.statusText}`)
+        return
+      }
+
+      const result = await response.json()
+      console.log('✅ Status update response:', result)
+
+      // Update the local state
+      setSubmissions(prev => {
+        const updated = prev.map(sub => 
+          sub.id === submissionId 
+            ? { ...sub, status: newStatus }
+            : sub
+        )
+        console.log('🔄 Updated submissions:', updated.map(s => ({ id: s.id, status: s.status })))
+        return updated
+      })
+
+      // Also refresh the data from the server to ensure consistency
+      setTimeout(() => {
+        fetchSubmissions()
+      }, 500)
+
+      console.log(`✅ Status updated to ${newStatus} for submission ${submissionId}`)
+      alert(`Status updated to ${newStatus} successfully!`)
+    } catch (error) {
+      console.error('Error updating status:', error)
+      alert('Error updating status. Please try again.')
+    }
   }
 
   const handleEdit = (submission: Submission) => {
@@ -262,23 +330,6 @@ export default function TeamDashboard() {
     }
   }
 
-  const filteredSubmissions = submissions
-    .filter(submission => {
-      const matchesSearch = 
-        submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        submission.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        submission.mobileNumber.includes(searchTerm) ||
-        submission.aadhaarNumber.includes(searchTerm)
-      
-      // For now, all submissions are "pending" - you can add status logic later
-      const matchesStatus = statusFilter === "all" || statusFilter === "pending"
-      
-      return matchesSearch && matchesStatus
-    })
-    .sort((a, b) => {
-      // Sort by submittedAt in descending order (newest first)
-      return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-    })
 
   const totalSubmissions = submissions.length
   const pendingSubmissions = submissions.length // All are pending for now
@@ -289,6 +340,19 @@ export default function TeamDashboard() {
   const publicSubmissions = submissions.filter(sub => sub.formSource === 'public').length
   const teamSubmissions = submissions.filter(sub => sub.formSource === 'team').length
   const selfRegisteredSubmissions = submissions.filter(sub => !sub.filledByName).length
+
+  // Filter submissions based on search and status
+  const filteredSubmissions = submissions.filter(submission => {
+    const matchesSearch = searchTerm === '' || 
+      submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.mobileNumber.includes(searchTerm) ||
+      submission.id.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === 'all' || submission.status === statusFilter
+    
+    return matchesSearch && matchesStatus
+  })
 
   // Show loading while checking authentication
   if (!isAuthenticated) {
@@ -455,25 +519,16 @@ export default function TeamDashboard() {
         </div>
 
         <Tabs defaultValue="students" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-10 sm:h-12 bg-muted">
+          <TabsList className="grid w-full grid-cols-2 h-10 sm:h-12 bg-muted">
             <TabsTrigger value="students" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Voter Management</span>
-              <span className="sm:hidden">Voters</span>
+              <span className="hidden sm:inline">Voter Registry</span>
+              <span className="sm:hidden">Registry</span>
             </TabsTrigger>
             <TabsTrigger value="review" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Voter Verification</span>
               <span className="sm:hidden">Verify</span>
-            </TabsTrigger>
-            <TabsTrigger value="bulk" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Bulk Operations</span>
-              <span className="sm:hidden">Bulk</span>
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
           </TabsList>
 
@@ -589,9 +644,36 @@ export default function TeamDashboard() {
                         </TableCell>
                               <TableCell className="font-mono text-sm">{submission.id}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
-                            <Clock className="w-3 h-3 mr-1" />
-                                  Pending
+                          <Badge 
+                            variant={
+                              submission.status === 'approved' ? 'default' : 
+                              submission.status === 'rejected' ? 'destructive' : 
+                              'secondary'
+                            }
+                            className={
+                              submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                              submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                              'bg-yellow-100 text-yellow-800 border-yellow-200'
+                            }
+                          >
+                            <div className="flex items-center gap-1">
+                              {submission.status === 'approved' ? (
+                                <>
+                                  <CheckCircle className="w-3 h-3" />
+                                  <span>Approved</span>
+                                </>
+                              ) : submission.status === 'rejected' ? (
+                                <>
+                                  <X className="w-3 h-3" />
+                                  <span>Rejected</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-3 h-3" />
+                                  <span>Pending</span>
+                                </>
+                              )}
+                            </div>
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -668,9 +750,36 @@ export default function TeamDashboard() {
                                   ID: {submission.id}
                                 </div>
                                 <div className="flex gap-2">
-                                  <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    Pending
+                                  <Badge 
+                                    variant={
+                                      submission.status === 'approved' ? 'default' : 
+                                      submission.status === 'rejected' ? 'destructive' : 
+                                      'secondary'
+                                    }
+                                    className={
+                                      submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200 text-xs' :
+                                      submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200 text-xs' :
+                                      'bg-yellow-100 text-yellow-800 border-yellow-200 text-xs'
+                                    }
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      {submission.status === 'approved' ? (
+                                        <>
+                                          <CheckCircle className="w-3 h-3" />
+                                          <span>Approved</span>
+                                        </>
+                                      ) : submission.status === 'rejected' ? (
+                                        <>
+                                          <X className="w-3 h-3" />
+                                          <span>Rejected</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Clock className="w-3 h-3" />
+                                          <span>Pending</span>
+                                        </>
+                                      )}
+                                    </div>
                                   </Badge>
                                   <Badge variant={submission.formSource === 'team' ? 'default' : 'secondary'} className="text-xs">
                                     {submission.formSource === 'team' ? 'Team' : 'Public'}
@@ -720,270 +829,308 @@ export default function TeamDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Application Review Tab */}
+          {/* Voter Verification Tab */}
           <TabsContent value="review" className="space-y-6">
             <Card className="hover:border-primary/20 transition-colors">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Pending Voter Verifications
-                </CardTitle>
-                <CardDescription>Review and verify voter information and constituency data</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-primary" />
+                      Voter Verification
+                    </CardTitle>
+                    <CardDescription>Review and verify voter information and constituency data</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Application Item */}
-                  <div className="border border-chart-1/20 rounded-lg p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-background to-chart-1/5">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-base sm:text-lg">Rajesh Kumar Sharma</h3>
-                        <p className="text-sm text-muted-foreground break-all">VOT-2024-001247 • rajesh.sharma@gmail.com</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Contacted: March 10, 2024</p>
-                      </div>
-                      <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 w-fit">
-                        <Clock className="w-3 h-3 mr-1" />
-                        <span className="text-xs sm:text-sm">Pending Verification</span>
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                      <div className="space-y-1 sm:space-y-2">
-                        <h4 className="font-medium text-xs sm:text-sm">Personal Information</h4>
-                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>DOB: March 15, 1985</p>
-                          <p>Phone: +91 98765 43210</p>
-                          <p>Age: 39 years</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1 sm:space-y-2">
-                        <h4 className="font-medium text-xs sm:text-sm">Constituency Details</h4>
-                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>Location: Delhi Central</p>
-                          <p>Ward: 45</p>
-                          <p>Emergency Contact: Sunita Sharma</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1">
-                        <h4 className="font-medium text-xs sm:text-sm">Documents</h4>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Voter ID</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Aadhaar Card</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Address Proof</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
-                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">View Details</span>
-                        <span className="sm:hidden">View</span>
-                      </Button>
-                    </div>
+                {/* Search and Filter */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Search by name, mobile, or ID..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-9 sm:h-10"
+                    />
                   </div>
-
-                  {/* Another Application Item */}
-                  <div className="border border-destructive/20 rounded-lg p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-background to-destructive/5">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-base sm:text-lg">Sneha Gupta</h3>
-                        <p className="text-sm text-muted-foreground break-all">VOT-2024-001250 • sneha.gupta@gmail.com</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Contacted: March 11, 2024</p>
-                      </div>
-                      <Badge variant="destructive" className="w-fit">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        <span className="text-xs sm:text-sm">Follow-up Required</span>
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                      <div className="space-y-1 sm:space-y-2">
-                        <h4 className="font-medium text-xs sm:text-sm">Personal Information</h4>
-                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>DOB: July 22, 1990</p>
-                          <p>Phone: +91 98765 43211</p>
-                          <p>Age: 34 years</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1 sm:space-y-2">
-                        <h4 className="font-medium text-xs sm:text-sm">Constituency Details</h4>
-                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>Location: Mumbai North</p>
-                          <p>Ward: 12</p>
-                          <p>Emergency Contact: Ravi Gupta</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1">
-                        <h4 className="font-medium text-xs sm:text-sm">Documents</h4>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Voter ID</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <AlertCircle className="w-3 h-3 text-destructive flex-shrink-0" />
-                            <span>Aadhaar Card (Missing)</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs sm:text-sm">
-                            <CheckCircle className="w-3 h-3 text-chart-1 flex-shrink-0" />
-                            <span>Proof of Address</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                      <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
-                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">View Details</span>
-                        <span className="sm:hidden">View</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Bulk Operations Tab */}
-          <TabsContent value="bulk" className="space-y-6">
-            <Card className="hover:border-primary/20 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-primary" />
-                  Bulk Voter Management
-                </CardTitle>
-                <CardDescription>Import, export, and manage multiple voter registrations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Bulk Import */}
-                  <div className="border border-chart-1/20 rounded-lg p-6 bg-gradient-to-br from-background to-chart-1/5">
-                    <h3 className="font-semibold mb-3">Bulk Import Voters</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Upload a CSV file to register multiple voters at once
-                    </p>
-                    <div className="space-y-3">
-                      <Button variant="outline" className="w-full bg-transparent">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Choose CSV File
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button variant="outline" className="w-full bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Template
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Bulk Export */}
-                  <div className="border border-chart-2/20 rounded-lg p-6 bg-gradient-to-br from-background to-chart-2/5">
-                    <h3 className="font-semibold mb-3">Export Voter Data</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Export voter registration data for reporting</p>
-                    <div className="space-y-3">
-                      <Button variant="outline" className="w-full bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Export All Voters
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button variant="outline" className="w-full bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Export Pending Only
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                    </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px] h-9 sm:h-10">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending Verification</SelectItem>
+                      <SelectItem value="approved">Verified</SelectItem>
+                      <SelectItem value="rejected">Follow-up Required</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" onClick={fetchSubmissions}>
+                    <Filter className="w-4 h-4 mr-2" />
+                    Refresh Data
+                  </Button>
+                  <div className="text-xs text-muted-foreground bg-yellow-50 px-2 py-1 rounded">
+                    🧪 Testing Mode: Showing all submissions
                   </div>
                 </div>
 
-                {/* Bulk Actions */}
-                <div className="border border-border rounded-lg p-6 bg-gradient-to-br from-background to-muted/30">
-                  <h3 className="font-semibold mb-3">Bulk Actions</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Perform actions on multiple selected voters</p>
-                  <div className="flex flex-wrap gap-3">
-                    <Button 
-                      variant="outline"
-                      onClick={handleDownloadAllStudentsPDF}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download All Students PDF
-                    </Button>
-                    <Button variant="outline">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Send Notifications
-                    </Button>
+                {/* Submissions Table */}
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Loading submissions...</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
-            <Card className="hover:border-primary/20 transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="w-5 h-5 text-primary" />
-                  Reports & Analytics
-                </CardTitle>
-                <CardDescription>Generate reports and view voter outreach analytics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                ) : filteredSubmissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No submissions found</h3>
+                    <p className="text-muted-foreground">No voter registrations match your current filters.</p>
+                  </div>
+                ) : (
                   <div className="space-y-4">
-                    <h3 className="font-semibold">Voter Outreach Reports</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Daily Outreach Summary
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Weekly Progress Report
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Monthly Analytics
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
+                    {/* Desktop Table */}
+                    <div className="hidden lg:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead>Student</TableHead>
+                            <TableHead>Registration ID</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Form Source</TableHead>
+                            <TableHead>Filled By</TableHead>
+                            <TableHead>Submitted</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredSubmissions.map((submission) => (
+                            <TableRow key={submission.id} className="hover:bg-muted/50">
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {submission.firstName} {submission.surname}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {submission.mobileNumber}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <code className="text-xs bg-muted px-2 py-1 rounded">
+                                  {submission.id}
+                                </code>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={
+                                    submission.status === 'approved' ? 'default' : 
+                                    submission.status === 'rejected' ? 'destructive' : 
+                                    'secondary'
+                                  }
+                                  className={
+                                    submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                                    submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                                    'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                  }
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {submission.status === 'approved' ? (
+                                      <>
+                                        <CheckCircle className="w-3 h-3" />
+                                        <span>Approved</span>
+                                      </>
+                                    ) : submission.status === 'rejected' ? (
+                                      <>
+                                        <X className="w-3 h-3" />
+                                        <span>Rejected</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="w-3 h-3" />
+                                        <span>Pending</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={submission.formSource === 'team' ? 'default' : 'secondary'}>
+                                  {submission.formSource === 'team' ? 'Team' : 'Public'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {submission.filledByName ? (
+                                    <div>
+                                      <div className="font-medium">{submission.filledByName}</div>
+                                      {submission.filledByPhone && (
+                                        <div className="text-muted-foreground text-xs">{submission.filledByPhone}</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">Self-registered</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {formatDate(submission.submittedAt)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedSubmission(submission)}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDownloadStudentPDF(submission)}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </Button>
+                                  {/* Status Update Buttons */}
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700"
+                                      onClick={() => handleStatusUpdate(submission.id, 'approved')}
+                                    >
+                                      <CheckCircle className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-600 hover:text-red-700"
+                                      onClick={() => handleStatusUpdate(submission.id, 'rejected')}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Status Reports</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Pending Verifications
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Follow-up Required
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Download className="w-4 h-4 mr-2" />
-                        Verification Statistics
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
+                    {/* Mobile Cards */}
+                    <div className="lg:hidden space-y-4">
+                      {filteredSubmissions.map((submission) => (
+                        <Card key={submission.id} className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-semibold">
+                                  {submission.firstName} {submission.surname}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {submission.mobileNumber}
+                                </p>
+                                <code className="text-xs bg-muted px-2 py-1 rounded mt-1 inline-block">
+                                  {submission.id}
+                                </code>
+                              </div>
+                              <Badge 
+                                variant={
+                                  submission.status === 'approved' ? 'default' : 
+                                  submission.status === 'rejected' ? 'destructive' : 
+                                  'secondary'
+                                }
+                                className={
+                                  submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                                  submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                                  'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                }
+                              >
+                                <div className="flex items-center gap-1">
+                                  {submission.status === 'approved' ? (
+                                    <>
+                                      <CheckCircle className="w-3 h-3" />
+                                      <span>Approved</span>
+                                    </>
+                                  ) : submission.status === 'rejected' ? (
+                                    <>
+                                      <X className="w-3 h-3" />
+                                      <span>Rejected</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="w-3 h-3" />
+                                      <span>Pending</span>
+                                    </>
+                                  )}
+                                </div>
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-sm">
+                              <Badge variant={submission.formSource === 'team' ? 'default' : 'secondary'}>
+                                {submission.formSource === 'team' ? 'Team' : 'Public'}
+                              </Badge>
+                              {submission.filledByName && (
+                                <span className="text-muted-foreground">
+                                  by {submission.filledByName}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="text-sm text-muted-foreground">
+                              {formatDate(submission.submittedAt)}
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedSubmission(submission)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDownloadStudentPDF(submission)}
+                              >
+                                <Download className="w-4 h-4 mr-1" />
+                                PDF
+                              </Button>
+                              {/* Status Update Buttons */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-green-600 hover:text-green-700"
+                                onClick={() => handleStatusUpdate(submission.id, 'approved')}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleStatusUpdate(submission.id, 'rejected')}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
+
         </Tabs>
       </div>
 
@@ -1292,6 +1439,144 @@ export default function TeamDashboard() {
                     <span className="font-medium text-muted-foreground min-w-[120px]">Declaration Date:</span>
                     <span>{selectedSubmission.declarationDate}</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Form Source and Filled By Information */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Form Submission Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Form Source:</span>
+                      <Badge variant={selectedSubmission.formSource === 'team' ? 'default' : 'secondary'}>
+                        {selectedSubmission.formSource === 'team' ? 'Team Member' : 'Public Registration'}
+                      </Badge>
+                    </div>
+                    {selectedSubmission.filledByName && (
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="font-medium text-muted-foreground min-w-[120px]">Filled By:</span>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span>{selectedSubmission.filledByName}</span>
+                          {selectedSubmission.filledByPhone && (
+                            <span className="text-muted-foreground">({selectedSubmission.filledByPhone})</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Status:</span>
+                      <Badge 
+                        variant={
+                          selectedSubmission.status === 'approved' ? 'default' : 
+                          selectedSubmission.status === 'rejected' ? 'destructive' : 
+                          'secondary'
+                        }
+                        className={
+                          selectedSubmission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                          selectedSubmission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                          'bg-yellow-100 text-yellow-800 border-yellow-200'
+                        }
+                      >
+                        <div className="flex items-center gap-1">
+                          {selectedSubmission.status === 'approved' ? (
+                            <>
+                              <CheckCircle className="w-3 h-3" />
+                              <span>Approved</span>
+                            </>
+                          ) : selectedSubmission.status === 'rejected' ? (
+                            <>
+                              <X className="w-3 h-3" />
+                              <span>Rejected</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3" />
+                              <span>Pending</span>
+                            </>
+                          )}
+                        </div>
+                      </Badge>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span className="font-medium text-muted-foreground min-w-[120px]">Submitted:</span>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span>{formatDate(selectedSubmission.submittedAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Related Files */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Related Files
+                  </h4>
+                  {selectedSubmission.files && Object.keys(selectedSubmission.files).length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Object.entries(selectedSubmission.files).map(([fieldName, fileData]) => (
+                        <div key={fieldName} className="border rounded-lg p-3 bg-muted/30">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0">
+                              {fieldName.includes('photo') || fieldName.includes('signature') || fieldName.includes('image') ? (
+                                <FileImage className="w-5 h-5 text-blue-600" />
+                              ) : (
+                                <File className="w-5 h-5 text-gray-600" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h5 className="font-medium text-sm capitalize">
+                                  {fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                                </h5>
+                                <Badge variant="outline" className="text-xs">
+                                  {fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1 truncate">
+                                {fileData.originalName || fileData.filename || 'Unknown file'}
+                              </p>
+                              {fileData.uploadedAt && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Uploaded: {new Date(fileData.uploadedAt).toLocaleDateString()}
+                                </p>
+                              )}
+                              <div className="mt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs"
+                                  onClick={() => {
+                                    // Create a download link for the file
+                                    const link = document.createElement('a')
+                                    link.href = `/api/files/${fileData.filename || fileData.originalName}`
+                                    link.download = fileData.originalName || fileData.filename
+                                    link.click()
+                                  }}
+                                >
+                                  <Download className="w-3 h-3 mr-1" />
+                                  Download
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No files uploaded with this submission</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
