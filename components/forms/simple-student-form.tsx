@@ -69,7 +69,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     aadhaarCard: null as File | null,
     residentialProof: null as File | null,
     marriageCertificate: null as File | null,
-    signaturePhoto: null as File | null
+    idPhoto: null as File | null
   })
 
   // Calculate age from date of birth
@@ -156,7 +156,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     
     const optionalFields = ['qualification', 'occupation', 'nameOfDiploma']
     
-    const requiredFiles = ['degreeCertificate', 'aadhaarCard', 'residentialProof', 'signaturePhoto']
+    const requiredFiles = ['degreeCertificate', 'aadhaarCard', 'residentialProof', 'idPhoto']
     const conditionalFiles = formData.haveChangedName === 'Yes' ? ['marriageCertificate'] : []
     
     const totalRequired = requiredFields.length + requiredFiles.length + conditionalFiles.length
@@ -348,7 +348,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
       aadhaarCard: null,
       residentialProof: null,
       marriageCertificate: null,
-      signaturePhoto: null
+      idPhoto: null
     })
     setValidationErrors({})
     setTouchedFields(new Set())
@@ -801,14 +801,15 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signaturePhoto" className="text-sm font-semibold text-gray-700">4. Signature Photo *</Label>
+                    <Label htmlFor="idPhoto" className="text-sm font-semibold text-gray-700">4. ID Photo (Passport Size) *</Label>
                     <Input
-                      id="signaturePhoto"
+                      id="idPhoto"
                       type="file"
                       accept=".jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange("signaturePhoto", e.target.files?.[0] || null)}
+                      onChange={(e) => handleFileChange("idPhoto", e.target.files?.[0] || null)}
                       className="mt-1 border-2 border-gray-300 focus:border-gray-500 rounded-lg"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Upload a recent passport size photo (4.6 cm) with white background</p>
                   </div>
                 </div>
                 {formData.haveChangedName === 'Yes' && (

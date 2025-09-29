@@ -1,71 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { withAuth } from '@/lib/auth-middleware'
 
-export const GET = withAuth(async (request: AuthenticatedRequest, context: { params: { filename: string } }) => {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { filename: string } }
+) {
   try {
-    const { filename } = context.params
+    const filename = params.filename
     
-    if (!filename) {
-      return NextResponse.json({ error: 'Filename is required' }, { status: 400 })
+    // Security check - only allow specific file types
+    const allowedExtensions = ['.pdf', '.html']
+    const hasValidExtension = allowedExtensions.some(ext => filename.toLowerCase().endsWith(ext))
+    
+    if (!hasValidExtension) {
+      return NextResponse.json({ error: 'File type not allowed' }, { status: 400 })
     }
-
-    // Security: Only allow alphanumeric characters, dots, and hyphens in filename
-    if (!/^[a-zA-Z0-9.-]+$/.test(filename)) {
+    
+    // Security check - prevent directory traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
       return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
     }
-
-    // Construct the file path
-    const uploadsDir = join(process.cwd(), 'data', 'uploads')
-    const filePath = join(uploadsDir, filename)
-
+    
+    // Construct file path
+    const filePath = join(process.cwd(), 'data', 'pdfs', filename)
+    
     try {
-      // Read the file
+      // Read file
       const fileBuffer = await readFile(filePath)
       
-      // Determine content type based on file extension
-      const extension = filename.split('.').pop()?.toLowerCase()
+      // Determine content type
       let contentType = 'application/octet-stream'
-      
-      switch (extension) {
-        case 'jpg':
-        case 'jpeg':
-          contentType = 'image/jpeg'
-          break
-        case 'png':
-          contentType = 'image/png'
-          break
-        case 'pdf':
-          contentType = 'application/pdf'
-          break
-        case 'gif':
-          contentType = 'image/gif'
-          break
-        default:
-          contentType = 'application/octet-stream'
+      if (filename.toLowerCase().endsWith('.pdf')) {
+        contentType = 'application/pdf'
+      } else if (filename.toLowerCase().endsWith('.html')) {
+        contentType = 'text/html'
       }
-
-      // Return the file with appropriate headers
+      
+      // Return file with appropriate headers
       return new NextResponse(fileBuffer, {
         status: 200,
         headers: {
           'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Disposition': `inline; filename="${filename}"`,
           'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       })
-
+      
     } catch (fileError) {
-      console.error('File not found:', fileError)
+      console.error('❌ File not found:', filePath)
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
-
+    
   } catch (error) {
     console.error('❌ Error serving file:', error)
-    return NextResponse.json({ 
-      error: 'Failed to serve file',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}, 'volunteer') // Only authenticated volunteers and above can download files
+}

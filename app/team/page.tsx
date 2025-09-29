@@ -1361,25 +1361,49 @@ export default function TeamDashboard() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Uploaded Documents</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {Object.entries(selectedSubmission.files).map(([key, file]) => {
+                    {Object.entries(selectedSubmission.files).map(([key, fileData]) => {
                       // Skip if file is null, undefined, or empty object
-                      if (!file || typeof file !== 'object' || !file.fileName) {
+                      if (!fileData || typeof fileData !== 'object' || !fileData.filename) {
                         return null
                       }
                       
                       return (
                         <div key={key} className="p-3 border rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
                           <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-medium truncate">{file.fileName}</div>
+                            <div className="text-sm font-medium truncate">{fileData.originalName || fileData.filename}</div>
                             <div className="text-xs text-muted-foreground">
-                              {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                              {fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size'}
                             </div>
                           </div>
                           <div className="flex gap-2">
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => window.open(`/api/files/${file.savedAs}`, '_blank')}
+                              onClick={async () => {
+                                try {
+                                  // Check if it's an image file for viewing
+                                  const isImage = fileData.filename && /\.(jpg|jpeg|png|gif|webp)$/i.test(fileData.filename)
+                                  const viewUrl = isImage ? `/api/files/${fileData.filename}/view` : `/api/files/${fileData.filename}`
+                                  
+                                  // Try authenticated route first, fallback to public route
+                                  const response = await fetch(viewUrl, {
+                                    headers: {
+                                      'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                    }
+                                  })
+                                  
+                                  if (!response.ok) {
+                                    // Fallback to public route
+                                    window.open(`/uploads/${fileData.filename}`, '_blank')
+                                  } else {
+                                    window.open(viewUrl, '_blank')
+                                  }
+                                } catch (error) {
+                                  console.error('Error viewing file:', error)
+                                  // Fallback to public route
+                                  window.open(`/uploads/${fileData.filename}`, '_blank')
+                                }
+                              }}
                               className="text-xs h-8"
                             >
                               <Eye className="w-3 h-3 mr-1" />
@@ -1388,11 +1412,34 @@ export default function TeamDashboard() {
                             <Button 
                               size="sm" 
                               variant="outline"
-                              onClick={() => {
-                                const link = document.createElement('a')
-                                link.href = `/api/files/${file.savedAs}`
-                                link.download = file.fileName
-                                link.click()
+                              onClick={async () => {
+                                try {
+                                  const link = document.createElement('a')
+                                  
+                                  // Try authenticated route first
+                                  const response = await fetch(`/api/files/${fileData.filename}`, {
+                                    headers: {
+                                      'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                    }
+                                  })
+                                  
+                                  if (response.ok) {
+                                    link.href = `/api/files/${fileData.filename}`
+                                  } else {
+                                    // Fallback to public route
+                                    link.href = `/uploads/${fileData.filename}`
+                                  }
+                                  
+                                  link.download = fileData.originalName || fileData.filename
+                                  link.click()
+                                } catch (error) {
+                                  console.error('Error downloading file:', error)
+                                  // Fallback to public route
+                                  const link = document.createElement('a')
+                                  link.href = `/uploads/${fileData.filename}`
+                                  link.download = fileData.originalName || fileData.filename
+                                  link.click()
+                                }
                               }}
                               className="text-xs h-8"
                             >
@@ -1549,17 +1596,72 @@ export default function TeamDashboard() {
                                   Uploaded: {new Date(fileData.uploadedAt).toLocaleDateString()}
                                 </p>
                               )}
-                              <div className="mt-2">
+                              <div className="mt-2 flex gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   className="h-7 text-xs"
-                                  onClick={() => {
-                                    // Create a download link for the file
-                                    const link = document.createElement('a')
-                                    link.href = `/api/files/${fileData.filename || fileData.originalName}`
-                                    link.download = fileData.originalName || fileData.filename
-                                    link.click()
+                                  onClick={async () => {
+                                    try {
+                                      // Check if it's an image file for viewing
+                                      const isImage = fileData.filename && /\.(jpg|jpeg|png|gif|webp)$/i.test(fileData.filename)
+                                      const viewUrl = isImage ? `/api/files/${fileData.filename}/view` : `/api/files/${fileData.filename}`
+                                      
+                                      // Try authenticated route first, fallback to public route
+                                      const response = await fetch(viewUrl, {
+                                        headers: {
+                                          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                        }
+                                      })
+                                      
+                                      if (!response.ok) {
+                                        // Fallback to public route
+                                        window.open(`/uploads/${fileData.filename}`, '_blank')
+                                      } else {
+                                        window.open(viewUrl, '_blank')
+                                      }
+                                    } catch (error) {
+                                      console.error('Error viewing file:', error)
+                                      // Fallback to public route
+                                      window.open(`/uploads/${fileData.filename}`, '_blank')
+                                    }
+                                  }}
+                                >
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs"
+                                  onClick={async () => {
+                                    try {
+                                      const link = document.createElement('a')
+                                      
+                                      // Try authenticated route first
+                                      const response = await fetch(`/api/files/${fileData.filename}`, {
+                                        headers: {
+                                          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                        }
+                                      })
+                                      
+                                      if (response.ok) {
+                                        link.href = `/api/files/${fileData.filename}`
+                                      } else {
+                                        // Fallback to public route
+                                        link.href = `/uploads/${fileData.filename}`
+                                      }
+                                      
+                                      link.download = fileData.originalName || fileData.filename
+                                      link.click()
+                                    } catch (error) {
+                                      console.error('Error downloading file:', error)
+                                      // Fallback to public route
+                                      const link = document.createElement('a')
+                                      link.href = `/uploads/${fileData.filename}`
+                                      link.download = fileData.originalName || fileData.filename
+                                      link.click()
+                                    }
                                   }}
                                 >
                                   <Download className="w-3 h-3 mr-1" />

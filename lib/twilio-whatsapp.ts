@@ -180,6 +180,243 @@ Thank you for registering with BJP!`;
       };
     }
   }
+
+  async sendPDFFile(phoneNumber: string, pdfUrl: string, caption?: string) {
+    try {
+      console.log('📱 Starting WhatsApp PDF file send for:', phoneNumber);
+      console.log('📱 PDF URL:', pdfUrl);
+      
+      // Validate mobile number
+      if (!phoneNumber || phoneNumber.trim() === '') {
+        console.log('⚠️ No mobile number provided, skipping WhatsApp PDF');
+        return { success: false, message: 'No mobile number provided' };
+      }
+
+      // Reinitialize Twilio to ensure environment variables are loaded
+      if (!this.isReady()) {
+        console.log('🔄 Reinitializing Twilio service...');
+        this.initialize();
+      }
+
+      // Check if service is ready
+      if (!this.isReady()) {
+        console.log('⚠️ Twilio not configured - using mock mode');
+        console.log('📱 MOCK WhatsApp PDF would be sent to:', phoneNumber);
+        console.log('📱 PDF URL:', pdfUrl);
+        return { 
+          success: true, 
+          message: 'PDF ready! (WhatsApp not configured - check console for details)' 
+        };
+      }
+
+      // Format phone number for WhatsApp
+      let formattedNumber = phoneNumber.replace(/\D/g, ''); // Remove non-digits
+      if (formattedNumber.startsWith('0')) {
+        formattedNumber = '91' + formattedNumber; // Add India country code if starts with 0
+      } else if (!formattedNumber.startsWith('91')) {
+        formattedNumber = '91' + formattedNumber; // Add India country code
+      }
+      formattedNumber = `whatsapp:+${formattedNumber}`;
+
+      // Create message with PDF attachment
+      const message = caption || `📄 Your ECI Form PDF is ready!
+
+Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Generated on: ${new Date().toLocaleString('en-GB')}
+
+This is your official ECI Form-18 for voter registration. 
+Please keep this document safe.
+
+Thank you for your registration!`;
+
+      // Ensure client is initialized
+      if (!client) {
+        console.log('⚠️ Twilio client not initialized, reinitializing...');
+        initializeTwilio();
+        if (!client) {
+          throw new Error('Failed to initialize Twilio client');
+        }
+      }
+
+      // Check if it's a localhost URL (Twilio can't access these)
+      if (pdfUrl.includes('localhost') || pdfUrl.includes('127.0.0.1')) {
+        console.log('📱 Localhost URL detected - sending download instructions instead of attachment...');
+        const downloadMessage = `📄 Your ECI Form PDF has been generated!
+
+Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Generated on: ${new Date().toLocaleString('en-GB')}
+
+⚠️ Note: Due to server configuration, the PDF cannot be sent as an attachment.
+Please contact us to receive your PDF form.
+
+Thank you for your registration!`;
+
+        const result = await client.messages.create({
+          body: downloadMessage,
+          from: whatsappNumber,
+          to: formattedNumber
+        });
+
+        console.log('📱 WhatsApp localhost message sent:', result.sid);
+        return {
+          success: true,
+          messageId: result.sid,
+          message: 'Registration confirmation sent (PDF not accessible from localhost)'
+        };
+      }
+
+      // Check if it's an HTML file (fallback case)
+      if (pdfUrl.endsWith('.html')) {
+        console.log('📱 Sending HTML file as download link...');
+        const downloadMessage = `📄 Your ECI Form PDF has been generated!
+
+Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Generated on: ${new Date().toLocaleString('en-GB')}
+
+🔗 Download your PDF:
+${pdfUrl}
+
+✅ Click the link above to download your PDF form directly.
+
+Thank you for your registration!`;
+
+        const result = await client.messages.create({
+          body: downloadMessage,
+          from: whatsappNumber,
+          to: formattedNumber
+        });
+
+        console.log('📱 WhatsApp download link sent:', result.sid);
+        return {
+          success: true,
+          messageId: result.sid,
+          message: 'Download link sent successfully!'
+        };
+      }
+
+      // Validate PDF URL accessibility and content type before sending
+      console.log('🔍 Validating PDF URL accessibility and content type...');
+      try {
+        const urlResponse = await fetch(pdfUrl, { method: 'HEAD', timeout: 10000 });
+        if (!urlResponse.ok) {
+          console.log('⚠️ PDF URL not accessible, sending as download link instead');
+          const downloadMessage = `📄 Your ECI Form PDF has been generated!
+
+Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Generated on: ${new Date().toLocaleString('en-GB')}
+
+🔗 Download your PDF:
+${pdfUrl}
+
+✅ Click the link above to download your PDF form directly.
+
+Thank you for your registration!`;
+
+          const result = await client.messages.create({
+            body: downloadMessage,
+            from: whatsappNumber,
+            to: formattedNumber
+          });
+
+          console.log('📱 WhatsApp download link sent:', result.sid);
+          return {
+            success: true,
+            messageId: result.sid,
+            message: 'Download link sent successfully!'
+          };
+        }
+        
+        // Check content type
+        const contentType = urlResponse.headers.get('content-type');
+        console.log('📄 PDF URL content type:', contentType);
+        
+        if (!contentType || !contentType.includes('application/pdf')) {
+          console.log('⚠️ PDF URL does not serve PDF content, sending as download link instead');
+          const downloadMessage = `📄 Your ECI Form PDF has been generated!
+
+Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Generated on: ${new Date().toLocaleString('en-GB')}
+
+🔗 Download your PDF:
+${pdfUrl}
+
+✅ Click the link above to download your PDF form directly.
+
+Thank you for your registration!`;
+
+          const result = await client.messages.create({
+            body: downloadMessage,
+            from: whatsappNumber,
+            to: formattedNumber
+          });
+
+          console.log('📱 WhatsApp download link sent:', result.sid);
+          return {
+            success: true,
+            messageId: result.sid,
+            message: 'Download link sent successfully!'
+          };
+        }
+        
+        console.log('✅ PDF URL is accessible and serves PDF content, proceeding with attachment');
+      } catch (urlError) {
+        console.log('⚠️ PDF URL validation failed, sending as download link instead');
+        const downloadMessage = `📄 Your ECI Form PDF has been generated!
+
+Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Generated on: ${new Date().toLocaleString('en-GB')}
+
+🔗 Download your PDF:
+${pdfUrl}
+
+✅ Click the link above to download your PDF form directly.
+
+Thank you for your registration!`;
+
+        const result = await client.messages.create({
+          body: downloadMessage,
+          from: whatsappNumber,
+          to: formattedNumber
+        });
+
+        console.log('📱 WhatsApp download link sent:', result.sid);
+        return {
+          success: true,
+          messageId: result.sid,
+          message: 'Download link sent successfully!'
+        };
+      }
+
+      // Send PDF as media attachment
+      console.log('📱 Sending REAL WhatsApp PDF file via Twilio...');
+      console.log('📱 From:', whatsappNumber);
+      console.log('📱 To:', formattedNumber);
+      console.log('📱 PDF URL:', pdfUrl);
+      
+      const result = await client.messages.create({
+        body: message,
+        from: whatsappNumber,
+        to: formattedNumber,
+        mediaUrl: [pdfUrl] // Send PDF as attachment
+      });
+
+      console.log('📱 Twilio WhatsApp PDF file sent:', result.sid);
+      
+      return {
+        success: true,
+        messageId: result.sid,
+        message: 'PDF file sent successfully!'
+      };
+
+    } catch (error) {
+      console.error('❌ Twilio WhatsApp PDF file send failed:', error);
+      return {
+        success: false,
+        message: 'PDF file send failed, but registration was successful',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 }
 
 // Export singleton instance
