@@ -131,7 +131,7 @@ export default function LoginPage() {
         <div className="text-center mb-6 sm:mb-8">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg border-2 border-orange-200">
             <img 
-              src="https://upload.wikimedia.org/wikipedia/hi/thumb/e/ec/Bharatiya_Janata_Party_logo.svg.png/960px-Bharatiya_Janata_Party_logo.svg.png?20190905081052" 
+              src="/logo.png" 
               alt="BJP Logo" 
               className="w-12 h-12 sm:w-14 sm:h-14 object-contain"
             />

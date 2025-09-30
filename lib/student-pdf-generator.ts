@@ -49,10 +49,20 @@ export async function generateStudentFormPDF(submission: StudentSubmissionData):
         const fs = require('fs')
         const imageBuffer = fs.readFileSync(submission.files.idPhoto.path)
         submission.files.idPhoto.base64 = imageBuffer.toString('base64')
-        console.log('✅ ID photo processed for PDF')
+        console.log('✅ ID photo processed for PDF with base64 conversion')
       } catch (error) {
         console.log('⚠️ Could not process ID photo:', error)
+        // Try to get base64 from existing data if available
+        if (submission.files.idPhoto.base64) {
+          console.log('✅ Using existing base64 data for ID photo')
+        } else {
+          console.log('❌ No ID photo data available')
+        }
       }
+    } else if (submission.files.idPhoto && submission.files.idPhoto.base64) {
+      console.log('✅ ID photo base64 data already available')
+    } else {
+      console.log('⚠️ No ID photo provided')
     }
     
     // Generate HTML content with form data
@@ -161,6 +171,20 @@ export async function generateStudentFormPDF(submission: StudentSubmissionData):
   }
 }
 
+function getECILogoBase64(): string {
+  try {
+    const fs = require('fs')
+    const path = require('path')
+    const logoPath = path.join(process.cwd(), 'ECI.png')
+    const logoBuffer = fs.readFileSync(logoPath)
+    return logoBuffer.toString('base64')
+  } catch (error) {
+    console.log('⚠️ Could not load ECI logo, using placeholder')
+    // Return a simple placeholder base64 image
+    return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+  }
+}
+
 function generateStudentFormHTML(submission: StudentSubmissionData): string {
   // Get current date for office use if not provided
   const currentDate = new Date().toLocaleDateString('en-GB')
@@ -173,75 +197,64 @@ function generateStudentFormHTML(submission: StudentSubmissionData): string {
   <style>
     body {
       font-family: "Times New Roman", serif;
-      margin: 20px;
+      margin: 0;
+      padding: 20px;
       background: #fff;
+      font-size: 12px;
+      line-height: 1.4;
     }
     .form-container {
-      border: 2px solid #000;
-      padding: 25px 35px;
-      max-width: 850px;
-      margin: auto;
-      line-height: 1.8;
+      max-width: 800px;
+      margin: 0 auto;
       background: #fff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border: 2px solid #000;
+      padding: 20px;
     }
     .header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-bottom: 3px solid #000;
-      padding-bottom: 15px;
+      text-align: center;
       margin-bottom: 20px;
       position: relative;
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      padding: 20px;
-      border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid #000;
+      padding-bottom: 15px;
     }
-    .header img {
+    .header-logo {
       position: absolute;
-      left: 20px;
-      top: 50%;
-      transform: translateY(-50%);
+      left: 0;
+      top: 0;
       width: 80px;
       height: 80px;
-      border: 2px solid #000;
-      border-radius: 8px;
-      background: #fff;
-      padding: 5px;
+      border: 1px solid #000;
     }
-    .header-text {
-      text-align: center;
-      width: 100%;
-    }
-    .header-text h2 {
+    .header h1 {
       margin: 5px 0;
-      color: #000;
-      font-size: 24px;
+      font-size: 16px;
       font-weight: bold;
     }
-    .header-text h3 {
+    .header h2 {
       margin: 5px 0;
-      color: #333;
-      font-size: 18px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .header h3 {
+      margin: 5px 0;
+      font-size: 12px;
       font-weight: normal;
     }
-    .photo-box {
-      width: 140px;
-      height: 170px;
-      border: 1px solid #000;
-      text-align: center;
-      font-size: 12px;
-      padding: 5px;
+    .photo-section {
       float: right;
-      margin: 15px 0 20px 20px;
-      position: relative;
-      background: #f8f9fa;
+      width: 120px;
+      height: 150px;
+      border: 1px solid #000;
+      margin: 10px 0 20px 20px;
+      text-align: center;
+      font-size: 10px;
+      padding: 5px;
+      background: #fff;
     }
-    .photo-box img {
+    .photo-section img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 2px;
     }
     .photo-placeholder {
       display: flex;
@@ -249,83 +262,79 @@ function generateStudentFormHTML(submission: StudentSubmissionData): string {
       justify-content: center;
       height: 100%;
       color: #666;
-      font-size: 10px;
-      line-height: 1.3;
+      font-size: 9px;
+      line-height: 1.2;
     }
-    .section {
-      margin-top: 20px;
+    .form-content {
       clear: both;
     }
+    .section {
+      margin: 15px 0;
+    }
     .section p {
-      margin: 12px 0;
+      margin: 8px 0;
     }
-    .checkboxes {
-      margin-left: 20px;
-    }
-    .declaration, .office-use {
-      border: 1px solid #000;
-      padding: 15px;
-      margin-top: 30px;
-    }
-    .signature {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 25px;
-    }
-    .note {
-      font-size: 12px;
-      margin-top: 15px;
-      border-top: 1px dashed #000;
-      padding-top: 10px;
-    }
-    hr {
-      border: none;
-      border-top: 1px dashed #000;
-      margin: 10px 0;
-    }
-    .var-field {
+    .field-line {
+      border-bottom: 1px solid #000;
       display: inline-block;
-      min-width: 250px;
-      border-bottom: 2px solid #000;
-      padding-bottom: 3px;
-      font-weight: bold;
-      color: #000;
-      background: #f8f9fa;
-      padding: 2px 5px;
-      border-radius: 3px;
+      min-width: 200px;
+      margin: 0 5px;
+      padding-bottom: 2px;
+    }
+    .field-line-long {
+      border-bottom: 1px solid #000;
+      display: inline-block;
+      min-width: 300px;
+      margin: 0 5px;
+      padding-bottom: 2px;
     }
     .checkbox {
-      font-size: 16px;
+      font-size: 14px;
+      margin-right: 5px;
     }
-    .student-info {
-      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-      padding: 20px;
-      border: 2px solid #1976d2;
+    .checkbox-section {
+      margin-left: 20px;
+    }
+    .declaration {
+      border: 2px solid #000;
+      padding: 15px;
       margin: 20px 0;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: #f9f9f9;
     }
-    .student-info h4 {
-      margin: 0 0 10px 0;
-      color: #495057;
+    .office-use {
+      border: 2px solid #000;
+      padding: 15px;
+      margin: 20px 0;
+      background: #f0f0f0;
     }
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .section {
+      margin: 15px 0;
+      padding: 15px;
+      border: 1px solid #000;
+      background: #fff;
     }
-    .info-item {
+    .main-section {
+      border: 2px solid #000;
+      padding: 20px;
+      margin: 20px 0;
+      background: #fafafa;
+    }
+    .signature-line {
       display: flex;
-      margin-bottom: 8px;
+      justify-content: space-between;
+      margin: 15px 0;
     }
-    .info-label {
-      font-weight: bold;
-      min-width: 120px;
-      color: #495057;
+    .perforation {
+      border-top: 2px dashed #000;
+      margin: 20px 0;
+      padding-top: 10px;
     }
-    .info-value {
-      flex: 1;
-      color: #212529;
+    .note {
+      font-size: 10px;
+      margin-top: 10px;
+    }
+    .clear {
+      clear: both;
     }
   </style>
 </head>
@@ -333,144 +342,126 @@ function generateStudentFormHTML(submission: StudentSubmissionData): string {
   <div class="form-container">
     <!-- HEADER -->
     <div class="header">
-      <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA5MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRkZGRkZGIi8+Cjx0ZXh0IHg9IjQ1IiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5FQ0kgTG9nbzwvdGV4dD4KPC9zdmc+" alt="ECI Logo">
-      <div class="header-text">
-        <h2>Form-18 (See Rule 31)</h2>
-        <h2>ELECTION COMMISSION OF INDIA</h2>
-        <h3>Claim for inclusion of name in the electoral roll<br>for a Graduates' Constituency</h3>
-      </div>
+      <img src="data:image/png;base64,${getECILogoBase64()}" alt="ECI Logo" class="header-logo" />
+      <h1>Form-18</h1>
+      <h1>(See Rule 31)</h1>
+      <h2>ELECTION COMMISSION OF INDIA</h2>
+      <h3>Claim for inclusion of name in the electoral roll for a Graduates' Constituency</h3>
     </div>
 
-    <!-- PHOTO BOX BELOW HEADER -->
-    <div class="photo-box">
-      ${submission.files.idPhoto ? 
-        `<img src="data:image/jpeg;base64,${submission.files.idPhoto.base64 || 'placeholder'}" alt="ID Photo" />` :
+    <!-- PHOTO SECTION -->
+    <div class="photo-section">
+      ${submission.files.idPhoto && submission.files.idPhoto.base64 ? 
+        `<img src="data:image/jpeg;base64,${submission.files.idPhoto.base64}" alt="ID Photo" />` :
         `<div class="photo-placeholder">
           Space for pasting<br>one recent<br>passport size<br>colour photo (4.6 cm)<br>full face with<br>white background
         </div>`
       }
     </div>
 
-    <!-- STUDENT INFORMATION SUMMARY -->
-    <div class="student-info">
-      <h4>📋 Registration Summary</h4>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">Registration ID:</span>
-          <span class="info-value">${submission.id}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Submitted On:</span>
-          <span class="info-value">${new Date(submission.submittedAt).toLocaleDateString('en-GB')}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Full Name:</span>
-          <span class="info-value">${submission.firstName} ${submission.surname}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Mobile:</span>
-          <span class="info-value">${submission.mobileNumber}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Email:</span>
-          <span class="info-value">${submission.email || 'Not provided'}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">District:</span>
-          <span class="info-value">${submission.district}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- FORM BODY -->
-    <div class="section">
-      <p><strong>To,</strong><br>
-      The Electoral Registration Officer,<br>
-      (Graduates) Constituency.</p>
-    </div>
-
-    <div class="section">
-      <p>I request that my name be registered in the Electoral Roll for the Graduates' Constituency.  
-      The particulars are:—</p>
-
-      <p>Full Name: <span class="var-field">${submission.firstName} ${submission.surname}</span></p>
-      <p>Father's/Mother's/Husband's Name (in full): <span class="var-field">${submission.fathersHusbandName}</span></p>
-      <p>Qualification: <span class="var-field">${submission.qualification || 'Not specified'}</span></p>
-      <p>Occupation: <span class="var-field">${submission.occupation || 'Not specified'}</span></p>
-      <p>House Address (place of ordinary residence): <span class="var-field">${submission.villageName}, ${submission.taluka}, ${submission.district}</span></p>
-      <p>House/Building/Apartment No.: <span class="var-field">${submission.houseNo}</span>  
-         Town/Village: <span class="var-field">${submission.villageName}</span></p>
-      <p>Police Station/Tehsil/Taluka/Mouza: <span class="var-field">${submission.taluka}</span></p>
-      <p>Street/Mohalla: <span class="var-field">${submission.street}</span></p>
-      <p>Date of Birth (DD/MM/YYYY): <span class="var-field">${new Date(submission.dateOfBirth).toLocaleDateString('en-GB')}</span></p>
-
-      <p><strong>Disability (if any):</strong> (Tick appropriate box)</p>
-      <div class="checkboxes">
-        <span class="checkbox">☐</span> Speech & hearing disability<br>
-        <span class="checkbox">☐</span> Locomotor disability<br>
-        <span class="checkbox">☐</span> Other
+    <!-- FORM CONTENT -->
+    <div class="form-content">
+      <div class="main-section">
+        <p><strong>To,</strong></p>
+        <p>The Electoral Registration Officer,</p>
+        <p>(Graduates) Constituency.</p>
+        <p><strong>Sir,</strong></p>
+        <p>I request that my name be registered in the electoral roll for the <span class="field-line">${submission.district}</span> (Graduates') Constituency.</p>
       </div>
 
-      <p><strong>Whether registered as an Elector for any Assembly Constituency:</strong><br>
-        (a) Number and Name of the Assembly Constituency <span class="var-field">_________________</span><br>
-        (b) Part/Polling Station No. (if known) <span class="var-field">_________________</span><br>
-        (c) Date of Birth <span class="var-field">_________________</span><br>
-        (d) EPIC Number (if any) <span class="var-field">_________________</span>
-      </p>
-
-      <p><strong>Aadhaar Details:</strong><br>
-        Aadhaar Number: <span class="var-field">${submission.aadhaarNumber}</span><br>
-        <span class="checkbox">☐</span> I am not able to furnish my Aadhaar Number because I don't have Aadhaar Number.
-      </p>
-
-      <p>Mobile No. (optional): <span class="var-field">${submission.mobileNumber}</span>  
-         Landline: <span class="var-field">_________________</span></p>
-      <p>Email ID (if any): <span class="var-field">${submission.email || 'Not provided'}</span></p>
-
-      <p>"I am a graduate of the year <span class="var-field">${submission.yearOfPassing}</span> from <span class="var-field">${submission.nameOfUniversity}</span> University, having passed the degree/diploma examination in <span class="var-field">${submission.degreeDiploma}</span>"</p>
-
-      <p>"OR I am in possession of a diploma/certificate <span class="var-field">${submission.nameOfDiploma || 'Not applicable'}</span> which is a qualification equivalent to that of a graduate in India, having passed in the year <span class="var-field">_________________</span>"</p>
-
-      <p>3. In support of my claim as being a graduate in possession of the above diploma/certificate, I submit herewith <span class="var-field">Degree/Diploma Certificate, Aadhaar Card, Residential Proof, Signature Photo</span></p>
-
-      <p>4. <span class="checkbox">${submission.haveChangedName === 'No' ? '☑' : '☐'}</span> My name has not been included in the electoral roll for this or any other graduates' constituency.<br>
-      OR<br>
-      <span class="checkbox">${submission.haveChangedName === 'Yes' ? '☑' : '☐'}</span> My name has been included in the electoral roll for the address given below and I request that it be deleted from that roll.</p>
-
-      <p>Graduates' constituency under the <span class="var-field">${submission.district} District</span></p>
-    </div>
-
-    <!-- DECLARATION -->
-    <div class="declaration">
-      <p>5. I declare that I am a citizen of India and that all the particulars given above are true to the best of my knowledge and belief.</p>
-      <div class="signature">
-        <div>Place: <span class="var-field">${submission.place}</span></div>
-        <div>Date: <span class="var-field">${new Date(submission.declarationDate).toLocaleDateString('en-GB')}</span></div>
-        <div>Signature of Claimant: __________________</div>
+      <div class="main-section">
+        <p><strong>1. The particulars are:-</strong></p>
+        <p>Full Name <span class="field-line-long">${submission.firstName} ${submission.surname}</span></p>
+        <p>Father's/Mother's/Husband's Name (in full) <span class="field-line-long">${submission.fathersHusbandName}</span></p>
+        
+        <p>Sex <span class="field-line">${submission.sex}</span> Qualification <span class="field-line">${submission.qualification || ''}</span> Occupation <span class="field-line">${submission.occupation || ''}</span></p>
+        
+        <p>House Address (Place of ordinary residence)</p>
+        <p>House/Building/Apartment No. <span class="field-line">${submission.houseNo}</span> Street/ Mohalla <span class="field-line">${submission.street}</span></p>
+        <p>Town/Village <span class="field-line">${submission.villageName}</span> Post Office <span class="field-line"></span></p>
+        <p>Police Station/Tehsil/Taluka/Mouza <span class="field-line">${submission.taluka}</span></p>
+        <p>District <span class="field-line">${submission.district}</span> State <span class="field-line"></span></p>
+        
+        <p>Age <span class="field-line">${submission.ageYears}</span> Years <span class="field-line">${submission.ageMonths}</span> Months</p>
+        
+        <p>Disability (if any):- (Tick appropriate box) (optional Field)</p>
+        <div class="checkbox-section">
+          <p><span class="checkbox">☐</span> Visual impairment <span class="checkbox">☐</span> Speech & hearing disability <span class="checkbox">☐</span> Locomotor disability <span class="checkbox">☐</span> Other</p>
+        </div>
+        
+        <p>Whether registered as an elector for any assembly constituency <span class="checkbox">☐</span> If yes, then mention the following---</p>
+        <p>(a) Number and Name of the Assembly constituency <span class="field-line-long"></span></p>
+        <p>(b) Part/Polling Station No.(if known) <span class="field-line-long"></span></p>
+        <p>(c) Date of Birth <span class="field-line">${new Date(submission.dateOfBirth).toLocaleDateString('en-GB')}</span></p>
+        <p>(d) EPIC Number (if any) <span class="field-line-long"></span></p>
+        
+        <p><strong>Aadhaar Details:- (Please tick the appropriate box)</strong></p>
+        <p>(a) Aadhaar Number <span class="field-line-long">${submission.aadhaarNumber}</span> or</p>
+        <p>(b) <span class="checkbox">☐</span> I am not able to furnish my Aadhaar Number because I don't have Aadhaar Number</p>
+        
+        <p><strong>Contact Number :-</strong></p>
+        <p>Mobile No. (optional) <span class="field-line">${submission.mobileNumber}</span> Landline <span class="field-line"></span></p>
+        <p>Email Id (if any) <span class="field-line-long">${submission.email || ''}</span></p>
       </div>
-      <div class="note">
-        NOTE: Any person who makes a false statement is punishable under section 31 of the Representation of the People Act, 1950.<br>
-        * Strike off the paragraph not applicable.<br>
-        * Strike off the inappropriate alternative.
+
+      <div class="main-section">
+        <p><strong>2. *I am a graduate of the <span class="field-line">${submission.nameOfUniversity}</span> University having passed the degree/diploma examination in the year <span class="field-line">${submission.yearOfPassing}</span></span></p>
+        
+        <p><strong>OR</strong></p>
+        
+        <p><strong>*I am in possession of a diploma/certificate in <span class="field-line">${submission.nameOfDiploma || ''}</span> which is a qualification equivalent to that of a graduate University in India having passed the examination for the diploma/certificate in the year <span class="field-line"></span></strong></p>
       </div>
-    </div>
 
-    <!-- OFFICE USE -->
-    <div class="office-use">
-      <h4>(For Office Use Only)</h4>
-      <p>The application in Form 18 of Shri/Smt/Kumari <span class="var-field">${submission.firstName} ${submission.surname}</span> (address) has been:</p>
-      <p><span class="checkbox">☐</span> accepted and the name of Shri/Smt/Kumari included in Part No. <span class="var-field">_________________</span><br>
-      <span class="checkbox">☐</span> rejected for the reason <span class="var-field">_________________</span></p>
-      <p>Date: <span class="var-field">${currentDate}</span></p>
+      <div class="main-section">
+        <p><strong>3. In support of my claim as being a graduate/in possession of the above diploma/certificate. I submit herewith <span class="field-line-long">Degree/Diploma Certificate, Aadhaar Card, Residential Proof, Signature Photo</span></strong></p>
+      </div>
 
-      <hr>
+      <div class="main-section">
+        <p><strong>4. *My name has not been included in the electoral roll for this or any other graduates' constituency.</strong></p>
+        <p><strong>OR</strong></p>
+        <p><strong>**My name has been included in the electoral roll for the <span class="field-line">${submission.district}</span> graduates' constituency under the address given below and I request that it be deleted from that roll</strong></p>
+        <p><span class="field-line-long"></span></p>
+        <p><span class="field-line-long"></span></p>
+      </div>
 
-      <p>(Perforation) Receipt of application</p>
-      <p>Received the application in Form 18 from Shri/Smt/Kumari <span class="var-field">${submission.firstName} ${submission.surname}</span> (address)</p>
-      <p>Date: <span class="var-field">${currentDate}</span></p>
-      <p>* To be filled in by the applicant</p>
-      <p>Has been registered at Serial No. <span class="var-field">${submission.id}</span></p>
-      <p>Electoral Registration Officer (Address) <span class="var-field">_________________</span></p>
+      <div class="declaration">
+        <p><strong>5. I declare that I am a citizen of India and that all the particulars given above are true to the best of my knowledge and belief.</strong></p>
+        <div class="signature-line">
+          <p>Place <span class="field-line">${submission.place}</span></p>
+          <p>Date <span class="field-line">${new Date(submission.declarationDate).toLocaleDateString('en-GB')}</span></p>
+          <p>Signature of claimant <span class="field-line-long"></span></p>
+        </div>
+        <div class="note">
+          <p><strong>NOTE :</strong> Any person who makes a statement or declaration which is false and which he either knows or believes to be false or does not believe to be true is punishable under section 31 of the Representation of the People Act, 1950.</p>
+          <p>*Strike off the paragraph not applicable.</p>
+          <p>**Strike off the inappropriate alternative.</p>
+        </div>
+      </div>
+
+      <div class="perforation"></div>
+
+      <div class="office-use">
+        <p><strong>Intimation of action taken</strong></p>
+        <p>The application in Form 18 of Shri/Smt./Kumari <span class="field-line-long">${submission.firstName} ${submission.surname}</span> address <span class="field-line-long"></span> has been—</p>
+        <p>(a) accepted and the name of Shri/Smt./Kumari <span class="field-line-long"></span> has been registered at Serial No. <span class="field-line">${submission.id}</span> in Part No. <span class="field-line"></span></p>
+        <p>(b) rejected for the reason <span class="field-line-long"></span></p>
+        <p><span class="field-line-long"></span></p>
+        <p>Date <span class="field-line">${currentDate}</span></p>
+        <p>Electoral Registration Officer, (Address) <span class="field-line-long"></span></p>
+      </div>
+
+      <div class="perforation"></div>
+
+      <div class="office-use">
+        <p><strong>Receipt of application</strong></p>
+        <p>Received the application in Form 18 from Shri/ Smt./Kumari* <span class="field-line-long">${submission.firstName} ${submission.surname}</span> address* <span class="field-line-long"></span></p>
+        <p><span class="field-line-long"></span></p>
+        <p>Date <span class="field-line">${currentDate}</span></p>
+        <p><span class="field-line-long"></span></p>
+        <p><span class="field-line-long"></span></p>
+        <p>*To be filled in by the applicant</p>
+        <p>Electoral Registration Officer, (Address) <span class="field-line-long"></span></p>
+      </div>
     </div>
   </div>
 </body>

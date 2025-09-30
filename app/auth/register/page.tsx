@@ -139,7 +139,7 @@ export default function RegisterPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-primary via-primary/90 to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <UserPlus className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Join ElectionEnroll</h1>
+          <h1 className="text-2xl font-bold text-foreground">Join Election Management</h1>
           <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
 
@@ -432,7 +432,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-muted-foreground">
-          &copy; 2024 ElectionEnroll. All rights reserved.
+          &copy; 2024  KarykartaManagement. All rights reserved.
         </div>
       </div>
     </div>

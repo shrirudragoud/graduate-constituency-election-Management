@@ -1,5 +1,101 @@
 # Ubuntu VPS Deployment Guide - High Concurrency Setup
+tep 1: Point your domain to VPS
 
+Log into your registrar (where padvidhar.com is registered).
+
+Go to DNS settings.
+
+Add 2 records:
+
+A record → Host: @, Value: your VPS public IP.
+
+A record → Host: www, Value: your VPS public IP.
+
+👉 Wait a few minutes for DNS to propagate (you can check with: dig padvidhar.com +short or nslookup padvidhar.com).
+
+🔹 Step 2: Install NGINX
+
+On your VPS (Ubuntu/Debian):
+
+sudo apt update
+sudo apt install nginx -y
+
+
+Verify NGINX is running:
+
+systemctl status nginx
+
+
+You should see “active (running)”.
+
+🔹 Step 3: Configure Reverse Proxy
+
+Create a new NGINX config file for your domain:
+
+sudo nano /etc/nginx/sites-available/padvidhar.com
+
+
+Paste this config (adjust if needed):
+
+server {
+    listen 80;
+    server_name padvidhar.com www.padvidhar.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+
+Save + exit (CTRL+O, ENTER, CTRL+X).
+
+Enable the site and reload NGINX:
+
+sudo ln -s /etc/nginx/sites-available/padvidhar.com /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+
+At this point, http://padvidhar.com should already work 🎉 (no SSL yet).
+
+🔹 Step 4: Add Free SSL (Let’s Encrypt)
+
+Install Certbot:
+
+sudo apt install certbot python3-certbot-nginx -y
+
+
+Request certificate:
+
+sudo certbot --nginx -d padvidhar.com -d www.padvidhar.com
+
+
+Enter email, agree to terms, choose “Redirect HTTP → HTTPS”.
+
+Certbot will fetch a certificate and auto-configure NGINX.
+
+Check renewal (runs automatically, but good to confirm):
+
+sudo certbot renew --dry-run
+
+🔹 Step 5: Test
+
+Open https://padvidhar.com in browser → should load your app (port 3000 behind the scenes).
+
+SSL padlock should be green/valid.
+
+✅ That’s it! You now have:
+
+Stable domain (padvidhar.com)
+
+Free HTTPS via Let’s Encrypt
+
+Reverse proxy hiding port 3000
 ## 🚀 Quick Setup (Terminal Only)
 
 ### 1. Connect to your Ubuntu VPS

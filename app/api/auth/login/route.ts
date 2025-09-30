@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       if (result.user && phone) {
         try {
           const { twilioWhatsAppService } = await import('@/lib/twilio-whatsapp')
-          const welcomeMessage = `🎉 Welcome to BJP Election Management System!
+          const welcomeMessage = `🎉 Welcome to Election Management System!
 
 Dear ${firstName || 'Team Member'},
 

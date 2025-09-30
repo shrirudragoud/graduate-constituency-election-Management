@@ -36,7 +36,7 @@ export class WhatsAppDebugger {
     const whatsappNumber = `whatsapp:+${formattedNumber}`
     console.log('📱 Final WhatsApp number:', whatsappNumber)
     
-    const message = testMessage || `🧪 Test Message from BJP Voter Registration System
+    const message = testMessage || `🧪 Test Message from  Management System
 
 Hello! This is a test message to verify WhatsApp integration.
 
@@ -88,7 +88,7 @@ Thank you for testing! 🎉`
     console.log('📄 PDF URL:', pdfUrl)
     
     try {
-      const result = await twilioWhatsAppService.sendPDFFile(phoneNumber, pdfUrl, '🧪 Test PDF from BJP Voter Registration System')
+      const result = await twilioWhatsAppService.sendPDFFile(phoneNumber, pdfUrl, '')
       
       console.log('📱 PDF test result:', result)
       

@@ -62,6 +62,7 @@ const navigation = [
 export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [navigationOpen, setNavigationOpen] = useState(false)
   
   // Auto-detect role based on current URL if not provided
   const getRoleFromPath = (path: string): "volunteer" | "manager" | "admin" => {
@@ -100,7 +101,7 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
                     <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-base sm:text-lg font-bold text-sidebar-foreground tracking-tight">ElectionEnroll</span>
+                    <span className="text-base sm:text-lg font-bold text-sidebar-foreground tracking-tight"></span>
                     <span className="text-[10px] sm:text-xs text-sidebar-foreground/60 font-medium">Platform</span>
                   </div>
                 </div>
@@ -114,10 +115,24 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
                 </Button>
               </div>
 
-              {/* Navigation */}
-              <ScrollArea className="flex-1 px-3 sm:px-4 py-4 sm:py-6">
-                <nav className="space-y-2">
-                  {filteredNavigation.map((item) => {
+              {/* Navigation Toggle Button */}
+              <div className="px-3 sm:px-4 py-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/15"
+                  onClick={() => setNavigationOpen(!navigationOpen)}
+                >
+                  <Menu className="w-4 h-4 mr-2" />
+                  {navigationOpen ? 'Hide Menu' : 'Show Menu'}
+                </Button>
+              </div>
+
+              {/* Navigation - Hidden by default */}
+              {navigationOpen && (
+                <ScrollArea className="flex-1 px-3 sm:px-4 py-4 sm:py-6">
+                  <nav className="space-y-2">
+                    {filteredNavigation.map((item) => {
                     const isActive = pathname === item.href
                     return (
                       <Link
@@ -155,9 +170,10 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
                         )}
                       </Link>
                     )
-                  })}
-                </nav>
-              </ScrollArea>
+                    })}
+                  </nav>
+                </ScrollArea>
+              )}
 
               {/* User section */}
               <div className="border-t border-sidebar-border/60 p-4 sm:p-5 bg-sidebar/30">
@@ -197,7 +213,7 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
 
           <div className="flex-1 lg:ml-0 ml-3 sm:ml-4">
             <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate tracking-tight">
-              Enrollment Platform
+              Padhvidhar Portal
             </h1>
           </div>
 

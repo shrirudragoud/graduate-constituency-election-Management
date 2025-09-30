@@ -26,7 +26,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "ElectionEnroll - Student Registration Platform",
+  title: " - Voter Registration System",
   description:
     "Modern election enrollment platform for student ID registration with team management and admin analytics",
   generator: "v0.app",

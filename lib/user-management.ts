@@ -301,7 +301,7 @@ class UserManagementService {
   private async sendWelcomeMessage(user: User): Promise<void> {
     if (!user.phone) return
 
-    const message = `🎉 Welcome to BJP Election Management System!
+    const message = `🎉 Welcome to Karykarta Portal!
 
 Dear ${user.firstName || 'Team Member'},
 

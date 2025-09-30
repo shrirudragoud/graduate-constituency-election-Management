@@ -13,7 +13,10 @@
     "db:test": "node scripts/test-database.js",
     "db:add-team-tracking": "node scripts/add-team-tracking-columns.js",
     "setup:ubuntu": "chmod +x scripts/ubuntu-setup.sh && ./scripts/ubuntu-setup.sh",
-    "deploy:production": "chmod +x scripts/deploy-production.sh && ./scripts/deploy-production.sh"
+    "deploy:production": "chmod +x scripts/deploy-production.sh && ./scripts/deploy-production.sh",
+    "setup": "node scripts/simple-setup.js",
+    "import": "node scripts/import-data.js",
+    "quick-start": "npm run setup && npm run import && npm run dev"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

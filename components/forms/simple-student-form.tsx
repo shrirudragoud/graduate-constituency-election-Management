@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { AlertCircle, CheckCircle, X } from "lucide-react"
+import { AlertCircle, CheckCircle, X, ArrowRight } from "lucide-react"
 import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
 
 interface SimpleStudentFormProps {
@@ -368,9 +368,9 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     if (!isTouched || !error || error.isValid) return null
     
     return (
-      <div className="flex items-center gap-1 mt-1 text-red-600 text-xs">
-        <AlertCircle className="w-3 h-3 flex-shrink-0" />
-        <span>{error.error}</span>
+      <div className="flex items-center gap-1 mt-1 text-red-600 text-xs animate-fade-in">
+        <AlertCircle className="w-3 h-3 flex-shrink-0 animate-pulse" />
+        <span className="font-medium">{error.error}</span>
       </div>
     )
   }
@@ -383,9 +383,9 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     if (!isTouched || !error || !error.isValid) return null
     
     return (
-      <div className="flex items-center gap-1 mt-1 text-green-600 text-xs">
-        <CheckCircle className="w-3 h-3 flex-shrink-0" />
-        <span>Valid</span>
+      <div className="flex items-center gap-1 mt-1 text-green-600 text-xs animate-fade-in">
+        <CheckCircle className="w-3 h-3 flex-shrink-0 animate-bounce" />
+        <span className="font-medium">Valid</span>
       </div>
     )
   }
@@ -395,17 +395,17 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     const error = validationErrors[field]
     const isTouched = touchedFields.has(field)
     
-    if (!isTouched) return baseClassName
+    if (!isTouched) return `${baseClassName} transition-all duration-200 focus:ring-2 focus:ring-blue-500/20`
     
     if (error && !error.isValid) {
-      return `${baseClassName} border-red-500 focus:border-red-500 focus:ring-red-500`
+      return `${baseClassName} border-red-500 focus:border-red-500 focus:ring-red-500/20 transition-all duration-200 animate-pulse`
     }
     
     if (error && error.isValid) {
-      return `${baseClassName} border-green-500 focus:border-green-500 focus:ring-green-500`
+      return `${baseClassName} border-green-500 focus:border-green-500 focus:ring-green-500/20 transition-all duration-200`
     }
     
-    return baseClassName
+    return `${baseClassName} transition-all duration-200 focus:ring-2 focus:ring-blue-500/20`
   }
 
   return (
@@ -426,12 +426,21 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
 
         <div className="space-y-8">
           {/* Progress Bar */}
-          <div className="space-y-3">
+          <div className="space-y-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
             <div className="flex justify-between text-sm font-medium">
-              <span className="text-gray-700">Form Completion</span>
-              <span className="text-blue-600">{formCompletion}%</span>
+              <span className="text-gray-700 flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                Form Completion
+              </span>
+              <span className="text-blue-600 font-bold text-lg">{formCompletion}%</span>
             </div>
-            <Progress value={formCompletion} className="h-3 bg-gray-200" />
+            <Progress value={formCompletion} className="h-4 bg-gray-200 shadow-inner" />
+            <div className="text-xs text-gray-600 text-center">
+              {formCompletion === 100 ? "🎉 Form is complete and ready to submit!" : 
+               formCompletion >= 75 ? "Almost there! Just a few more fields to go." :
+               formCompletion >= 50 ? "Good progress! Keep filling out the form." :
+               "Let's get started! Fill in your information below."}
+            </div>
           </div>
 
           {/* Form Fields - Single Column Layout */}
@@ -833,25 +842,26 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className={`px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold w-full sm:w-auto min-w-[200px] ${
+              className={`px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg font-semibold w-full sm:w-auto min-w-[250px] transition-all duration-300 ${
                 isFormValidState 
-                  ? "bg-green-600 hover:bg-green-700 text-white" 
-                  : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"
+                  ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-xl hover:shadow-2xl hover:scale-105" 
+                  : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed shadow-lg"
               }`}
             >
               {isSubmitting ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>Submitting...</span>
                 </div>
               ) : isFormValidState ? (
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4" />
+                <div className="flex items-center space-x-3 group">
+                  <CheckCircle className="w-5 h-5 group-hover:animate-bounce" />
                   <span>{isTeamForm ? 'Add Voter Registration' : 'Submit Registration'}</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <X className="w-4 h-4" />
+                <div className="flex items-center space-x-3">
+                  <X className="w-5 h-5 animate-pulse" />
                   <span>Fix Errors to Submit</span>
                 </div>
               )}

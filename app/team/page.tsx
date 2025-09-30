@@ -358,9 +358,10 @@ export default function TeamDashboard() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+        <div className="text-center animate-fade-in-up">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Loading Dashboard</h3>
+          <p className="text-gray-600">Please wait while we verify your access...</p>
         </div>
       </div>
     )
@@ -371,7 +372,7 @@ export default function TeamDashboard() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Volunteer Portal</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Karykarta Portal</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               Welcome back, {user?.firstName}! Reach out to voters, collect voter information, and coordinate constituency outreach efforts.
             </p>
@@ -396,34 +397,34 @@ export default function TeamDashboard() {
         </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-medium bg-gradient-to-br from-card via-card to-chart-1/5 border-chart-1/20">
+              <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-card via-card to-chart-1/5 border-chart-1/20 hover:scale-105 animate-fade-in-up">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Students Registered</p>
-                      <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight">{totalSubmissions}</p>
+                      <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight group-hover:scale-110 transition-transform duration-300">{totalSubmissions}</p>
                     </div>
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-300 group-hover:scale-105">
-                      <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-chart-1" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+                      <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-chart-1 group-hover:animate-bounce" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 p-2 bg-chart-1/10 rounded-lg">
-                    <TrendingUp className="w-3 h-3 text-chart-1 flex-shrink-0" />
+                  <div className="flex items-center gap-1.5 p-2 bg-chart-1/10 rounded-lg group-hover:bg-chart-1/20 transition-colors duration-300">
+                    <TrendingUp className="w-3 h-3 text-chart-1 flex-shrink-0 group-hover:animate-pulse" />
                     <span className="text-[10px] sm:text-xs text-chart-1 font-medium">+12%</span>
                     <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline font-medium">from last week</span>
                   </div>
                 </CardContent>
               </Card>
 
-          <Card className="border-chart-2/20 bg-gradient-to-br from-background to-chart-2/5">
+          <Card className="group hover:border-chart-2/30 transition-all duration-300 hover:shadow-xl border-chart-2/20 bg-gradient-to-br from-background to-chart-2/5 hover:scale-105 animate-fade-in-up delay-100">
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Pending Verification</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2">{pendingSubmissions}</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2 group-hover:scale-110 transition-transform duration-300">{pendingSubmissions}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-2" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-2 group-hover:animate-pulse" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
@@ -432,15 +433,15 @@ export default function TeamDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5">
+          <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-xl border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5 hover:scale-105 animate-fade-in-up delay-200">
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Verified Students</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">{verifiedSubmissions}</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1 group-hover:scale-110 transition-transform duration-300">{verifiedSubmissions}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1 group-hover:animate-bounce" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
@@ -450,15 +451,15 @@ export default function TeamDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-destructive/20 bg-gradient-to-br from-background to-destructive/5">
+          <Card className="group hover:border-destructive/30 transition-all duration-300 hover:shadow-xl border-destructive/20 bg-gradient-to-br from-background to-destructive/5 hover:scale-105 animate-fade-in-up delay-300">
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Follow-up Required</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive">{followUpRequired}</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive group-hover:scale-110 transition-transform duration-300">{followUpRequired}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-destructive/20 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-destructive" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-destructive/20 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-destructive group-hover:animate-pulse" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
@@ -619,8 +620,14 @@ export default function TeamDashboard() {
                     <TableBody>
                         {loading ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8">
-                              Loading submissions...
+                            <TableCell colSpan={7} className="text-center py-12">
+                              <div className="flex flex-col items-center gap-4">
+                                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                <div className="text-center">
+                                  <h3 className="font-semibold text-gray-800 mb-1">Loading Submissions</h3>
+                                  <p className="text-sm text-gray-600">Please wait while we fetch the data...</p>
+                                </div>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ) : filteredSubmissions.length === 0 ? (
@@ -724,8 +731,14 @@ export default function TeamDashboard() {
                   {/* Mobile Cards */}
                   <div className="sm:hidden">
                     {loading ? (
-                      <div className="text-center py-8">
-                        Loading submissions...
+                      <div className="text-center py-12">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          <div className="text-center">
+                            <h3 className="font-semibold text-gray-800 mb-1">Loading Submissions</h3>
+                            <p className="text-sm text-gray-600">Please wait while we fetch the data...</p>
+                          </div>
+                        </div>
                       </div>
                     ) : filteredSubmissions.length === 0 ? (
                       <div className="text-center py-8">

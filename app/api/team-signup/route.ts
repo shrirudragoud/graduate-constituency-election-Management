@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { UserManagement } from '@/lib/user-management'
 import { testConnection } from '@/lib/database'
 import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
+import { generateThankYouPDF, ThankYouPDFData } from '@/lib/thank-you-pdf-generator'
+import { fileUploadService } from '@/lib/file-upload-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,9 +79,58 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Team member created successfully:', result.user?.phone)
 
-    // Send Marathi WhatsApp message
+    // Generate Thank You PDF
+    let pdfPath: string | null = null
+    let pdfUrl: string | null = null
+    
     try {
-      const marathiMessage = `प्रिय श्री ${name}
+      console.log('📄 Generating Thank You PDF for team member:', name)
+      
+      const thankYouData: ThankYouPDFData = {
+        name: name,
+        phone: phone,
+        address: address,
+        district: district,
+        padvidhar: padvidhar,
+        pin: pin,
+        signupDate: new Date().toISOString()
+      }
+
+      pdfPath = await generateThankYouPDF(thankYouData)
+      console.log('✅ Thank You PDF generated successfully:', pdfPath)
+
+      // Get public URL for the PDF
+      const uploadResult = await fileUploadService.getBestPublicUrl(pdfPath)
+      if (uploadResult.success && uploadResult.url) {
+        pdfUrl = uploadResult.url
+        console.log('✅ Thank You PDF uploaded successfully:', pdfUrl)
+      } else {
+        console.error('❌ Failed to upload Thank You PDF:', uploadResult.error)
+      }
+    } catch (pdfError) {
+      console.error('❌ Thank You PDF generation failed:', pdfError)
+      // Continue with regular notification without PDF
+    }
+
+    // Send WhatsApp message with or without PDF
+    try {
+      if (pdfUrl) {
+        // Send with PDF attachment
+        const caption = `प्रिय श्री ${name}
+
+आपण भारतीय जनता पार्टीच्या संघटन पर्वात सहभागी झाल्याबद्दल आपले हार्दिक अभिनंदन!
+
+आपल्या योगदानाबद्दल आपले पुन्हा एकदा सहर्ष अभिनंदन!
+
+आपलाच,
+रविंद्र चव्हाण
+भाजपा महाराष्ट्र प्रदेश कार्यकरी अध्यक्ष`
+
+        await twilioWhatsAppService.sendPDFFile(phone, pdfUrl, caption)
+        console.log('📱 Thank You PDF sent via WhatsApp to:', phone)
+      } else {
+        // Send regular Marathi WhatsApp message
+        const marathiMessage = `प्रिय श्री ${name}
 पत्ता: ${address}
 जिल्हा: ${district}
 
@@ -92,8 +143,9 @@ export async function POST(request: NextRequest) {
 रवींद्र चव्हाण
 प्रदेशाध्यक्ष, भारतीय जनता पार्टी.`
 
-      await twilioWhatsAppService.sendMessage(phone, marathiMessage)
-      console.log('📱 Marathi WhatsApp message sent to:', phone)
+        await twilioWhatsAppService.sendMessage(phone, marathiMessage)
+        console.log('📱 Marathi WhatsApp message sent to:', phone)
+      }
     } catch (whatsappError) {
       console.error('❌ Failed to send WhatsApp message:', whatsappError)
       // Don't fail the signup if WhatsApp fails
@@ -107,7 +159,9 @@ export async function POST(request: NextRequest) {
       success: true,
       user: result.user,
       token,
-      message: 'Account created successfully! Welcome message sent to your phone.'
+      message: pdfUrl ? 'Account created successfully! Thank you PDF sent to your phone.' : 'Account created successfully! Welcome message sent to your phone.',
+      pdfGenerated: !!pdfPath,
+      pdfSent: !!pdfUrl
     })
 
   } catch (error) {
