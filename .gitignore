@@ -134,3 +134,6 @@ test-twilio.js
 
 # Setup guides with sensitive information
 YOUR_TWILIO_SETUP.mdtest-*.js
+test-*.js
+*.env
+.env.local
