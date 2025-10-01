@@ -3,7 +3,7 @@ import { UserManagement } from '@/lib/user-management'
 import { testConnection } from '@/lib/database'
 import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
 import { generateThankYouPDF, ThankYouPDFData } from '@/lib/thank-you-pdf-generator'
-import { fileUploadService } from '@/lib/file-upload-service'
+import { fileUploadService } from '@/lib/simple-file-upload-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ Thank You PDF generated successfully:', pdfPath)
 
       // Get public URL for the PDF
-      const uploadResult = await fileUploadService.getBestPublicUrl(pdfPath)
+      const uploadResult = await fileUploadService.getBestPublicUrl(pdfPath, request)
       if (uploadResult.success && uploadResult.url) {
         pdfUrl = uploadResult.url
         console.log('✅ Thank You PDF uploaded successfully:', pdfUrl)

@@ -1,6 +1,5 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { domainDetector } from './domain-detector'
 
 export interface FileUploadResult {
   success: boolean
@@ -10,64 +9,32 @@ export interface FileUploadResult {
 }
 
 export class FileUploadService {
-  private domainInfo: any = null
+  private baseUrl: string
 
   constructor() {
-    this.initializeDomain()
-  }
-
-  private async initializeDomain() {
-    this.domainInfo = await domainDetector.detectBestDomain()
+    // Use URL from environment variable
+    this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    console.log('🌐 Using base URL from .env:', this.baseUrl)
   }
 
   /**
    * Get the best available public URL for a file
-   * Tries multiple strategies in order of preference
+   * Simple approach: use URL from .env
    */
-  public async getBestPublicUrl(filePath: string): Promise<FileUploadResult> {
+  public async getBestPublicUrl(filePath: string, request?: any): Promise<FileUploadResult> {
     console.log('📤 Getting public URL for file:', filePath)
-    
-    // Ensure domain is initialized
-    if (!this.domainInfo) {
-      await this.initializeDomain()
-    }
     
     // Extract filename from path
     const fileName = filePath.split('/').pop() || filePath
     
-    // Strategy 1: Try local file serving first (if not localhost)
-    if (!this.domainInfo.isLocalhost) {
-      const localResult = await this.tryLocalFileServing(fileName)
-      if (localResult.success) {
-        console.log('✅ Using local file serving:', localResult.url)
-        return localResult
-      }
-    }
+    // Use the base URL from environment
+    const publicUrl = `${this.baseUrl}/api/files/${fileName}`
     
-    // Strategy 2: Try external upload services (simplified - only reliable ones)
-    try {
-      const externalResult = await this.tryExternalUploadServices(filePath)
-      if (externalResult.success) {
-        console.log('✅ Using external upload service:', externalResult.service)
-        return externalResult
-      }
-    } catch (error) {
-      console.log('⚠️ External upload services failed, falling back to local')
-    }
-    
-    // Strategy 3: Fallback to local file serving (even if localhost)
-    const fallbackResult = await this.tryLocalFileServing(fileName)
-    if (fallbackResult.success) {
-      console.log('⚠️ Using fallback local file serving:', fallbackResult.url)
-      return fallbackResult
-    }
-    
-    // Strategy 4: Simple file path fallback
-    console.log('⚠️ All methods failed, using direct file path')
+    console.log('✅ Using URL from .env:', publicUrl)
     return {
       success: true,
-      url: `/api/files/${fileName}`,
-      service: 'fallback'
+      url: publicUrl,
+      service: 'env_url'
     }
   }
 
@@ -76,7 +43,16 @@ export class FileUploadService {
    */
   private async tryLocalFileServing(fileName: string): Promise<FileUploadResult> {
     try {
-      const publicUrl = `${this.domainInfo.baseUrl}/api/files/${fileName}`
+      // Check for Lightning Cloud domain first
+      const lightningHost = process.env.LIGHTNING_CLOUDSPACE_HOST
+      let baseUrl = this.domainInfo.baseUrl
+      
+      if (lightningHost && !lightningHost.includes('localhost')) {
+        baseUrl = `https://${lightningHost}`
+        console.log('🌩️ Using Lightning Cloud domain:', baseUrl)
+      }
+      
+      const publicUrl = `${baseUrl}/api/files/${fileName}`
       
       // Verify file is accessible
       const response = await fetch(publicUrl, { method: 'HEAD' })

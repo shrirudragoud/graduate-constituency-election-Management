@@ -44,6 +44,20 @@ export class DomainDetector {
       return this.domainInfo
     }
 
+    // Strategy 1.5: Check for Lightning Cloud environment
+    const lightningHost = process.env.LIGHTNING_CLOUDSPACE_HOST
+    if (lightningHost && !lightningHost.includes('localhost')) {
+      const lightningUrl = `https://${lightningHost}`
+      console.log('✅ Using Lightning Cloud URL:', lightningUrl)
+      this.domainInfo = {
+        baseUrl: lightningUrl,
+        isProduction: true,
+        isLocalhost: false,
+        detectedDomain: lightningHost
+      }
+      return this.domainInfo
+    }
+
     // Strategy 2: Check for ngrok tunnel
     const ngrokUrl = await this.detectNgrokTunnel()
     if (ngrokUrl) {
