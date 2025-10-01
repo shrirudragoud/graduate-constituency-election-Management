@@ -236,7 +236,7 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
     }
 
     // Validate required fields
-    const requiredFields = ['surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka']
+    const requiredFields = ['surname', 'firstName', 'mobileNumber', 'district', 'taluka']
     const missingFields = requiredFields.filter(field => !submission[field as keyof typeof submission])
     
     if (missingFields.length > 0) {
