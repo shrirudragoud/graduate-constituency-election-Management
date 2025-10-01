@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Team member created successfully:', result.user?.phone)
 
-    // Generate Thank You PDF
+    // Generate Thank You PDF with fallback
     let pdfPath: string | null = null
     let pdfUrl: string | null = null
     
@@ -96,8 +96,16 @@ export async function POST(request: NextRequest) {
         signupDate: new Date().toISOString()
       }
 
-      pdfPath = await generateThankYouPDF(thankYouData)
-      console.log('✅ Thank You PDF generated successfully:', pdfPath)
+      // Try Puppeteer first, fallback to simple generator
+      try {
+        pdfPath = await generateThankYouPDF(thankYouData)
+        console.log('✅ Thank You PDF generated with Puppeteer:', pdfPath)
+      } catch (puppeteerError) {
+        console.log('⚠️ Puppeteer failed, trying simple PDF generator...')
+        const { generateSimplePDF } = await import('@/lib/simple-pdf-generator')
+        pdfPath = await generateSimplePDF(thankYouData)
+        console.log('✅ Thank You PDF generated with Simple generator:', pdfPath)
+      }
 
       // Get public URL for the PDF
       const uploadResult = await fileUploadService.getBestPublicUrl(pdfPath)

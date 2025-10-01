@@ -1,63 +1,9 @@
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-
-export interface SimplePDFData {
-  name: string
-  phone: string
-  address: string
-  district: string
-  padvidhar: string
-  pin: string
-  signupDate: string
-}
-
-/**
- * Simple PDF generator that creates HTML files that can be opened as PDFs
- * This is a fallback when Puppeteer/Chrome is not available
- */
-export async function generateSimplePDF(data: SimplePDFData): Promise<string> {
-  try {
-    console.log('🔄 Generating Simple PDF for team member:', data.name)
-    
-    // Ensure output directory exists
-    const outputDir = join(process.cwd(), 'data', 'pdfs')
-    await mkdir(outputDir, { recursive: true })
-    
-    // Generate HTML content with print-friendly CSS
-    const htmlContent = generatePrintFriendlyHTML(data)
-    
-    // Save as HTML file (can be opened as PDF in browser)
-    const htmlPath = join(outputDir, `thank-you-${data.phone}-${Date.now()}.html`)
-    await writeFile(htmlPath, htmlContent)
-    
-    console.log('✅ Simple PDF (HTML) generated successfully:', htmlPath)
-    return htmlPath
-    
-  } catch (error) {
-    console.error('❌ Error generating Simple PDF:', error)
-    throw new Error('Failed to generate Simple PDF: ' + (error as Error).message)
-  }
-}
-
-function generatePrintFriendlyHTML(data: SimplePDFData): string {
-  const currentDate = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-  
-  return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="mr">
 <head>
   <meta charset="UTF-8">
-  <title>Thank You - ${data.name}</title>
+  <title>Thank You - shridhar</title>
   <style>
-    @media print {
-      body { margin: 0; }
-      .no-print { display: none; }
-      .page-break { page-break-before: always; }
-    }
-    
     body {
       font-family: "Times New Roman", serif;
       margin: 0;
@@ -65,9 +11,7 @@ function generatePrintFriendlyHTML(data: SimplePDFData): string {
       background: #fff;
       font-size: 14px;
       line-height: 1.6;
-      color: #000;
     }
-    
     .document-container {
       max-width: 800px;
       margin: 0 auto;
@@ -75,7 +19,6 @@ function generatePrintFriendlyHTML(data: SimplePDFData): string {
       border: 2px solid #000;
       padding: 30px;
     }
-    
     .header {
       text-align: center;
       margin-bottom: 30px;
@@ -83,7 +26,6 @@ function generatePrintFriendlyHTML(data: SimplePDFData): string {
       padding-bottom: 20px;
       position: relative;
     }
-    
     .header-logo {
       position: absolute;
       left: 0;
@@ -91,104 +33,70 @@ function generatePrintFriendlyHTML(data: SimplePDFData): string {
       width: 100px;
       height: 100px;
       border: 2px solid #000;
-      background: #f0f0f0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      text-align: center;
     }
-    
     .header-text {
       text-align: center;
       width: 100%;
     }
-    
     .header-text h1 {
       margin: 5px 0;
       color: #000;
       font-size: 20px;
       font-weight: bold;
     }
-    
     .header-text h2 {
       margin: 5px 0;
       color: #333;
       font-size: 16px;
       font-weight: bold;
     }
-    
     .header-text h3 {
       margin: 5px 0;
       color: #666;
       font-size: 14px;
       font-weight: normal;
     }
-    
     .content {
       margin: 20px 0;
       text-align: justify;
     }
-    
     .content p {
       margin: 15px 0;
       text-indent: 0;
     }
-    
     .signature-section {
       margin-top: 40px;
       text-align: right;
     }
-    
     .signature-line {
       border-bottom: 1px solid #000;
       width: 200px;
       margin: 20px 0 5px auto;
       height: 30px;
     }
-    
     .signature-text {
       text-align: right;
       font-weight: bold;
     }
-    
     .date-section {
       margin-top: 20px;
       text-align: left;
     }
-    
     .highlight {
       font-weight: bold;
       color: #000;
     }
-    
     .marathi-text {
       font-family: "Times New Roman", serif;
       direction: ltr;
     }
-    
-    .print-instructions {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin: 20px 0;
-      font-size: 12px;
-      color: #666;
-    }
   </style>
 </head>
 <body>
-  <div class="print-instructions no-print">
-    <strong>Print Instructions:</strong> Press Ctrl+P (or Cmd+P on Mac) to print this document as PDF. 
-    Make sure to select "Save as PDF" in the print dialog.
-  </div>
-
   <div class="document-container">
     <!-- HEADER -->
     <div class="header">
-      <div class="header-logo">
-        BJP<br>Logo
-      </div>
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAACQBAMAAAAVTaiiAAAAMFBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABaPxwLAAAAD3RSTlMA3yCAQMAQ759gUDBwkK/koHcMAAABqElEQVR42u3YvUozURAG4Dcnuvoln3w/hSAWuxaCnQFFywRsBYM34IIXoChY2ETtBMGAjY2od2DuwMLCW/AqdP3HwvFEg6ybbUSYAX0fmOY0Oww77J4XREREREREREREREREXxOcX8Sw1BIZhiHXEHmIYKdfvDrs9Im3DDt/xLvCJ3y3CQyItwE7LhRJIhgaEZmHqZkzGCo14fWcwErhMQLcwiCsVKUCFOUGRgJJ4IUJrIw9wZsz3IMavDJ+qmIFHYunsDCeHOFVOVyBhV3pNNAjdzDgwkd0XCYxDBTfBz8yBRMxLAXWzfRvIWW0Dm2H0sS7UuMW2sL0hcQ11Pcg2L1BSvU5grJSHSm9NfwwLkZGEEFTYQgZx4PQVJUjfPBL98/QSZK3loqmn5AxtwpNromM3xH0zE4ix8wklIyK/EeXVvtUhQvbyVReXqXzQegkU7mnFWgoiLeWGxf9hYK3R11jbyJK17heXtUn3j0WpJauJb0JDIhXzzbQq5dXtd93qWHz34cqi15e1RJZR5djxdz6YCdGF7e/HYOIiIiIiIiIiIiIiOjzXgA1X7Msl1OuJQAAAABJRU5ErkJggg==" alt="BJP Logo" class="header-logo" />
       <div class="header-text">
         <h1>भारतीय जनता पार्टी</h1>
         <h2>Bharatiya Janata Party</h2>
@@ -199,14 +107,14 @@ function generatePrintFriendlyHTML(data: SimplePDFData): string {
     <!-- CONTENT -->
     <div class="content marathi-text">
       <div class="date-section">
-        <p><strong>दिनांक : ${currentDate}</strong></p>
+        <p><strong>दिनांक : 1 October 2025</strong></p>
       </div>
 
-      <p><strong>श्री. ${data.name}</strong><br>
-      <strong>पत्ता:</strong> ${data.address}<br>
-      <strong>जिल्हा:</strong> ${data.district}<br>
-      <strong>पिन कोड:</strong> ${data.pin}<br>
-      <strong>मोबाइल:</strong> ${data.phone}</p>
+      <p><strong>श्री. shridhar</strong><br>
+      <strong>पत्ता:</strong> wec<br>
+      <strong>जिल्हा:</strong> Nagpur<br>
+      <strong>पिन कोड:</strong> 123456<br>
+      <strong>मोबाइल:</strong> 8700546080</p>
 
       <p><strong>सप्रेम नमस्कार</strong></p>
 
@@ -231,5 +139,4 @@ function generatePrintFriendlyHTML(data: SimplePDFData): string {
     </div>
   </div>
 </body>
-</html>`
-}
+</html>

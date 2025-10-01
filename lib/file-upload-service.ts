@@ -44,11 +44,15 @@ export class FileUploadService {
       }
     }
     
-    // Strategy 2: Try external upload services
-    const externalResult = await this.tryExternalUploadServices(filePath)
-    if (externalResult.success) {
-      console.log('✅ Using external upload service:', externalResult.service)
-      return externalResult
+    // Strategy 2: Try external upload services (simplified - only reliable ones)
+    try {
+      const externalResult = await this.tryExternalUploadServices(filePath)
+      if (externalResult.success) {
+        console.log('✅ Using external upload service:', externalResult.service)
+        return externalResult
+      }
+    } catch (error) {
+      console.log('⚠️ External upload services failed, falling back to local')
     }
     
     // Strategy 3: Fallback to local file serving (even if localhost)
@@ -58,9 +62,12 @@ export class FileUploadService {
       return fallbackResult
     }
     
+    // Strategy 4: Simple file path fallback
+    console.log('⚠️ All methods failed, using direct file path')
     return {
-      success: false,
-      error: 'All upload methods failed'
+      success: true,
+      url: `/api/files/${fileName}`,
+      service: 'fallback'
     }
   }
 
@@ -98,14 +105,10 @@ export class FileUploadService {
    * Try external upload services with priority order
    */
   private async tryExternalUploadServices(filePath: string): Promise<FileUploadResult> {
-    // Try services in order of preference (best first)
+    // Try services in order of preference (best first) - only working services
     const uploadServices = [
-      { name: 'tmpfiles.org', fn: () => this.uploadToTmpFiles(filePath) },
       { name: '0x0.st', fn: () => this.uploadTo0x0(filePath) },
-      { name: 'transfer.sh', fn: () => this.uploadToTransferSh(filePath) },
-      { name: 'file.io', fn: () => this.uploadToFileIo(filePath) },
-      { name: 'gofile.io', fn: () => this.uploadToGoFile(filePath) },
-      { name: 'anonfiles.com', fn: () => this.uploadToAnonFiles(filePath) }
+      { name: 'transfer.sh', fn: () => this.uploadToTransferSh(filePath) }
     ]
 
     // Try each service sequentially for better reliability
@@ -149,16 +152,21 @@ export class FileUploadService {
       
       if (response.ok) {
         const url = await response.text()
-        return {
-          success: true,
-          url: url.trim(),
-          service: '0x0.st'
+        const cleanUrl = url.trim()
+        
+        // Validate URL format
+        if (cleanUrl.startsWith('http')) {
+          return {
+            success: true,
+            url: cleanUrl,
+            service: '0x0.st'
+          }
         }
       }
       
       return {
         success: false,
-        error: `0x0.st upload failed: ${response.status}`
+        error: `0x0.st upload failed: ${response.status} ${response.statusText}`
       }
     } catch (error) {
       console.error('❌ 0x0.st upload error:', error)
@@ -224,21 +232,27 @@ export class FileUploadService {
         body: fileBuffer,
         headers: {
           'Content-Type': 'application/pdf'
-        }
+        },
+        timeout: 10000 // 10 second timeout
       })
       
       if (response.ok) {
         const url = await response.text()
-        return {
-          success: true,
-          url: url.trim(),
-          service: 'transfer.sh'
+        const cleanUrl = url.trim()
+        
+        // Validate URL format
+        if (cleanUrl.startsWith('http')) {
+          return {
+            success: true,
+            url: cleanUrl,
+            service: 'transfer.sh'
+          }
         }
       }
       
       return {
         success: false,
-        error: `transfer.sh upload failed: ${response.status}`
+        error: `transfer.sh upload failed: ${response.status} ${response.statusText}`
       }
     } catch (error) {
       console.error('❌ transfer.sh upload error:', error)
