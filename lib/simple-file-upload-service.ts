@@ -40,3 +40,4 @@ export class SimpleFileUploadService {
 
 // Export singleton instance
 export const fileUploadService = new SimpleFileUploadService()
+

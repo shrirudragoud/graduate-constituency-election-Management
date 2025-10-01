@@ -103,8 +103,8 @@ export default function TeamSignupPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <UserPlus className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Join BJP Team</h1>
-          <p className="text-gray-600 text-sm">Become part of our election management team</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Become Karykarta </h1>
+          <p className="text-gray-600 text-sm">Become part of our  management team</p>
         </div>
 
         <Card className="shadow-xl">

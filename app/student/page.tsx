@@ -26,7 +26,19 @@ export default function StudentOnboardingPage() {
               </span>
             </h1>
           </div>
+          
+          {/* Karykarta Portal Button below BJP logo */}
+          <div className="mt-4">
+            <Link href="/karykarta-portal">
+              <Button className="bg-gradient-to-r from-blue-500/90 to-purple-600/90 backdrop-blur-sm rounded-2xl px-4 sm:px-6 py-2 sm:py-3 border border-white/30 shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105">
+                <span className="text-xs sm:text-sm font-bold text-white drop-shadow-lg">
+                  Karykarta Portal
+                </span>
+              </Button>
+            </Link>
+          </div>
         </div>
+
 
         {/* Main content positioned at bottom */}
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-8 sm:pb-12 lg:pb-16">
@@ -52,7 +64,7 @@ export default function StudentOnboardingPage() {
               {/* Main heading */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-900 leading-tight mb-6 sm:mb-8 text-center">
                 <span className="block bg-gradient-to-r from-orange-500 via-green-600 to-gray-800 bg-clip-text text-transparent">
-                Voter ID Register
+                पदवीधर मतदार नोंदणी
                 </span>
               </h1>
               
