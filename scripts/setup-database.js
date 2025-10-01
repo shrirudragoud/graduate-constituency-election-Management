@@ -97,9 +97,9 @@ async function setupDatabase() {
         pin_code VARCHAR(10) NOT NULL CHECK (pin_code ~ '^[0-9]{6}$'),
         
         -- Contact Details
-        mobile_number VARCHAR(20) NOT NULL UNIQUE CHECK (mobile_number ~ '^[0-9]{10}$'),
+        mobile_number VARCHAR(20) NOT NULL,
         email VARCHAR(255),
-        aadhaar_number VARCHAR(255) NOT NULL UNIQUE CHECK (aadhaar_number ~ '^[0-9]{12}$'),
+        aadhaar_number VARCHAR(255) NOT NULL,
         
         -- Education Details
         year_of_passing VARCHAR(4),
