@@ -2,10 +2,10 @@
 const https = require('https');
 
 // Your Twilio credentials
-const accountSid = 'AC6425d40fad5531921a08f161fe7e87c3';
+const accountSid = 'accountsid_here';
 const authToken = process.env.TWILIO_AUTH_TOKEN; // Get from environment
-const fromNumber = 'whatsapp:+14155238886';
-const toNumber = 'whatsapp:+918700546080';
+const fromNumber = 'whatsapp:+FNumber';
+const toNumber = 'whatsapp:+91Number';
 
 if (!authToken) {
   console.error('❌ TWILIO_AUTH_TOKEN not found in environment variables');
