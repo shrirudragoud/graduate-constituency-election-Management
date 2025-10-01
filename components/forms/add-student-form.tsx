@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useMemo, useEffect } from "react"
 import { SimpleStudentForm } from "./simple-student-form"
 import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
+import { PhoneVerificationButton } from "@/components/ui/phone-verification-button"
 import { AlertCircle, CheckCircle, X } from "lucide-react"
 
 interface AddStudentFormProps {
@@ -651,15 +652,18 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                             <Label htmlFor="mobileNumber" className="text-xs sm:text-sm font-medium">
                               Mobile Number <span className="text-destructive">*</span>
                             </Label>
-                            <Input
-                              id="mobileNumber"
-                              type="tel"
-                              value={formData.mobileNumber}
-                              onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
-                              placeholder="Enter mobile number"
-                              className="h-11 sm:h-10 text-sm sm:text-base"
-                              required
-                            />
+                            <div className="flex gap-2">
+                              <Input
+                                id="mobileNumber"
+                                type="tel"
+                                value={formData.mobileNumber}
+                                onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
+                                placeholder="Enter mobile number"
+                                className="flex-1 h-11 sm:h-10 text-sm sm:text-base"
+                                required
+                              />
+                              <PhoneVerificationButton phoneNumber={formData.mobileNumber} />
+                            </div>
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">
                             <Label htmlFor="email" className="text-xs sm:text-sm font-medium">

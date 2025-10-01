@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { UserManagement } from '@/lib/user-management'
 import { testConnection } from '@/lib/database'
 import { twilioWhatsAppService } from '@/lib/twilio-whatsapp'
-import { generateThankYouPDF, ThankYouPDFData } from '@/lib/thank-you-pdf-generator'
+import { generateTeamSignupPDF, TeamSignupPDFData } from '@/lib/team-signup-pdf-generator'
 import { fileUploadService } from '@/lib/simple-file-upload-service'
 
 export async function POST(request: NextRequest) {
@@ -79,25 +79,25 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Team member created successfully:', result.user?.phone)
 
-    // Generate Thank You PDF
+    // Generate Team Signup Thank You PDF
     let pdfPath: string | null = null
     let pdfUrl: string | null = null
     
     try {
-      console.log('📄 Generating Thank You PDF for team member:', name)
+      console.log('📄 Generating Team Signup Thank You PDF for team member:', name)
       
-      const thankYouData: ThankYouPDFData = {
+      const teamSignupData: TeamSignupPDFData = {
         name: name,
         phone: phone,
         address: address,
         district: district,
         padvidhar: padvidhar,
         pin: pin,
-        signupDate: new Date().toISOString()
+        submittedAt: new Date()
       }
 
-      pdfPath = await generateThankYouPDF(thankYouData)
-      console.log('✅ Thank You PDF generated successfully:', pdfPath)
+      pdfPath = await generateTeamSignupPDF(teamSignupData)
+      console.log('✅ Team Signup Thank You PDF generated successfully:', pdfPath)
 
       // Get public URL for the PDF
       const uploadResult = await fileUploadService.getBestPublicUrl(pdfPath, request)
@@ -130,11 +130,7 @@ export async function POST(request: NextRequest) {
         console.log('📱 Thank You PDF sent via WhatsApp to:', phone)
       } else {
         // Send regular Marathi WhatsApp message
-        const marathiMessage = `प्रिय श्री ${name}
-पत्ता: ${address}
-जिल्हा: ${district}
-
-नमस्कार 
+        const marathiMessage = `नमस्कार 
 आपण मराठवाडा पदवीधर निवडणुकीमध्ये कार्यकर्ता म्हणून नोंद केल्याबद्दल आपले हार्दिक अभिनंदन.
 ही पदवीधर निवडणूक ही युवकांचे भवितव्य घडवणारी निवडणूक असणार आहे. युवकाच्या पदवीस सन्मान मिळवून देण्यासाठी ही निवडणूक महत्वपूर्ण ठरणार आहे. पदवीधरांच्या प्रश्नांची जाणीव असणारा योग्य उमेदवार निवडून देणे ही काळाची गरज आहे. या निवडणुकीमध्ये आपण सर्व शक्तीनिशी पदवीधरांची नोंदणी करण्यासाठी मी मनःपूर्वक शुभेच्छा व्यक्त करतो.
 

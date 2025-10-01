@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CheckCircle, UserPlus, Phone, MapPin, Lock, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { PhoneVerificationButton } from "@/components/ui/phone-verification-button"
 
 export default function TeamSignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -134,14 +135,17 @@ export default function TeamSignupPage() {
                 <Phone className="w-4 h-4" />
                 Phone Number *
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className={errors.phone ? "border-red-500" : ""}
-                placeholder="9876543210"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className={`flex-1 ${errors.phone ? "border-red-500" : ""}`}
+                  placeholder="9876543210"
+                />
+                <PhoneVerificationButton phoneNumber={formData.phone} />
+              </div>
               {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
 

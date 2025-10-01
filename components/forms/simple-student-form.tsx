@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { AlertCircle, CheckCircle, X, ArrowRight } from "lucide-react"
 import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
+import { PhoneVerificationButton } from "@/components/ui/phone-verification-button"
 
 interface SimpleStudentFormProps {
   open: boolean
@@ -639,13 +640,16 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <Label htmlFor="mobileNumber" className="text-sm font-semibold text-gray-700">Mobile Number *</Label>
-                  <Input
-                    id="mobileNumber"
-                    value={formData.mobileNumber}
-                    onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
-                    placeholder="Enter mobile number"
-                    className={getInputClassName("mobileNumber", "mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg")}
-                  />
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="mobileNumber"
+                      value={formData.mobileNumber}
+                      onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
+                      placeholder="Enter mobile number"
+                      className={`flex-1 ${getInputClassName("mobileNumber", "border-2 border-gray-300 focus:border-purple-500 rounded-lg")}`}
+                    />
+                    <PhoneVerificationButton phoneNumber={formData.mobileNumber} />
+                  </div>
                   <ValidationError field="mobileNumber" />
                   <ValidationSuccess field="mobileNumber" />
                 </div>
