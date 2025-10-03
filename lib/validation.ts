@@ -186,6 +186,36 @@ export const validatePinCode = (pinCode: string): ValidationResult => {
   return { isValid: true }
 }
 
+// District validation for dropdown
+export const validateDistrict = (district: string): ValidationResult => {
+  if (!district) {
+    return { isValid: false, error: "District is required" }
+  }
+  
+  const trimmedDistrict = district.trim()
+  
+  if (trimmedDistrict.length < 2) {
+    return { isValid: false, error: "Please select a valid district" }
+  }
+  
+  return { isValid: true }
+}
+
+// Taluka validation for dropdown
+export const validateTaluka = (taluka: string): ValidationResult => {
+  if (!taluka) {
+    return { isValid: false, error: "Taluka is required" }
+  }
+  
+  const trimmedTaluka = taluka.trim()
+  
+  if (trimmedTaluka.length < 2) {
+    return { isValid: false, error: "Please select a valid taluka" }
+  }
+  
+  return { isValid: true }
+}
+
 // Name validation
 export const validateName = (name: string, fieldName: string = "Name"): ValidationResult => {
   if (!name) {
@@ -288,8 +318,8 @@ export const validateStudentForm = (formData: any, files: any = {}): FieldValida
   errors.ageMonths = validateAge(formData.ageYears, formData.ageMonths)
   
   // Address validation
-  errors.district = validateRequired(formData.district, "District")
-  errors.taluka = validateRequired(formData.taluka, "Taluka")
+  errors.district = validateDistrict(formData.district)
+  errors.taluka = validateTaluka(formData.taluka)
   errors.villageName = validateRequired(formData.villageName, "Village Name")
   errors.houseNo = validateRequired(formData.houseNo, "House Number")
   errors.street = validateRequired(formData.street, "Street")
@@ -362,9 +392,9 @@ export const validateField = (fieldName: string, value: string, formData?: any):
       }
       return { isValid: true }
     case 'district':
-      return validateRequired(value, "District")
+      return validateDistrict(value)
     case 'taluka':
-      return validateRequired(value, "Taluka")
+      return validateTaluka(value)
     case 'villageName':
       return validateRequired(value, "Village Name")
     case 'houseNo':

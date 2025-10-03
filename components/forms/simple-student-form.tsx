@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { AlertCircle, CheckCircle, X, ArrowRight } from "lucide-react"
 import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
 import { PhoneVerificationButton } from "@/components/ui/phone-verification-button"
+import DistrictTalukaService, { DistrictOption, TalukaOption } from "@/lib/district-taluka-service"
 
 interface SimpleStudentFormProps {
   open: boolean
@@ -28,6 +29,12 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<FieldValidation>({})
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
+  
+  // District and Taluka dropdown states
+  const [districts, setDistricts] = useState<DistrictOption[]>([])
+  const [talukas, setTalukas] = useState<TalukaOption[]>([])
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState(false)
+  const [isLoadingTalukas, setIsLoadingTalukas] = useState(false)
   const [formData, setFormData] = useState({
     // Personal Details
     surname: "",
@@ -73,6 +80,48 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     idPhoto: null as File | null
   })
 
+  // Load districts on component mount
+  useEffect(() => {
+    const loadDistricts = async () => {
+      setIsLoadingDistricts(true)
+      try {
+        const districtOptions = await DistrictTalukaService.getDistricts()
+        setDistricts(districtOptions)
+      } catch (error) {
+        console.error('Error loading districts:', error)
+      } finally {
+        setIsLoadingDistricts(false)
+      }
+    }
+
+    if (open) {
+      loadDistricts()
+    }
+  }, [open])
+
+  // Load talukas when district changes
+  useEffect(() => {
+    const loadTalukas = async () => {
+      if (!formData.district) {
+        setTalukas([])
+        return
+      }
+
+      setIsLoadingTalukas(true)
+      try {
+        const talukaOptions = await DistrictTalukaService.getTalukasByDistrict(formData.district)
+        setTalukas(talukaOptions)
+      } catch (error) {
+        console.error('Error loading talukas:', error)
+        setTalukas([])
+      } finally {
+        setIsLoadingTalukas(false)
+      }
+    }
+
+    loadTalukas()
+  }, [formData.district])
+
   // Calculate age from date of birth
   const calculateAge = (dateOfBirth: string) => {
     if (!dateOfBirth) return { years: 0, months: 0 }
@@ -105,6 +154,11 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
       }))
     }
     
+    // Reset taluka when district changes
+    if (field === "district") {
+      setFormData(prev => ({ ...prev, district: value, taluka: "" }))
+    }
+    
     // Mark field as touched
     setTouchedFields(prev => new Set(prev).add(field))
     
@@ -113,6 +167,9 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     if (field === "dateOfBirth") {
       newFormData.ageYears = calculateAge(value).years.toString()
       newFormData.ageMonths = calculateAge(value).months.toString()
+    }
+    if (field === "district") {
+      newFormData.taluka = ""
     }
     
     const fieldError = validateField(field, value, newFormData)
@@ -354,6 +411,8 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     })
     setValidationErrors({})
     setTouchedFields(new Set())
+    // Reset dropdown states
+    setTalukas([])
   }
 
   const handleClose = () => {
@@ -555,6 +614,19 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     />
                   </div>
                 </div>
+                
+                {/* ID Photo Upload in Personal Information */}
+                <div className="mt-4">
+                  <Label htmlFor="idPhoto" className="text-sm font-semibold text-gray-700">ID Photo (Passport Size) *</Label>
+                  <Input
+                    id="idPhoto"
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange("idPhoto", e.target.files?.[0] || null)}
+                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Upload a recent passport size photo (4.6 cm) with white background</p>
+                </div>
               </div>
             </div>
 
@@ -564,23 +636,48 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <Label htmlFor="district" className="text-sm font-semibold text-gray-700">District *</Label>
-                  <Input
-                    id="district"
+                  <Select
                     value={formData.district}
-                    onChange={(e) => handleInputChange("district", e.target.value)}
-                    placeholder="Enter district"
-                    className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
-                  />
+                    onValueChange={(value) => handleInputChange("district", value)}
+                  >
+                    <SelectTrigger className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg">
+                      <SelectValue placeholder={isLoadingDistricts ? "Loading districts..." : "Select District"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {districts.map((district) => (
+                        <SelectItem key={district.value} value={district.value}>
+                          {district.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <ValidationError field="district" />
                 </div>
                 <div>
                   <Label htmlFor="taluka" className="text-sm font-semibold text-gray-700">Taluka *</Label>
-                  <Input
-                    id="taluka"
+                  <Select
                     value={formData.taluka}
-                    onChange={(e) => handleInputChange("taluka", e.target.value)}
-                    placeholder="Enter taluka"
-                    className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
-                  />
+                    onValueChange={(value) => handleInputChange("taluka", value)}
+                    disabled={!formData.district || isLoadingTalukas}
+                  >
+                    <SelectTrigger className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg">
+                      <SelectValue placeholder={
+                        !formData.district 
+                          ? "Select District first" 
+                          : isLoadingTalukas 
+                            ? "Loading talukas..." 
+                            : "Select Taluka"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {talukas.map((taluka) => (
+                        <SelectItem key={taluka.value} value={taluka.value}>
+                          {taluka.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <ValidationError field="taluka" />
                 </div>
                 <div>
                   <Label htmlFor="villageName" className="text-sm font-semibold text-gray-700">Village Name</Label>
@@ -619,6 +716,30 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     value={formData.pinCode}
                     onChange={(e) => handleInputChange("pinCode", e.target.value)}
                     placeholder="Enter pin code"
+                    className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
+                  />
+                </div>
+              </div>
+              
+              {/* Address-related documents */}
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div>
+                  <Label htmlFor="aadhaarCard" className="text-sm font-semibold text-gray-700">Aadhaar Card *</Label>
+                  <Input
+                    id="aadhaarCard"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange("aadhaarCard", e.target.files?.[0] || null)}
+                    className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="residentialProof" className="text-sm font-semibold text-gray-700">Residential Proof *</Label>
+                  <Input
+                    id="residentialProof"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange("residentialProof", e.target.files?.[0] || null)}
                     className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
                   />
                 </div>
@@ -713,6 +834,20 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
               </div>
+              
+              {/* Education-related documents */}
+              <div className="mt-6">
+                <div>
+                  <Label htmlFor="degreeCertificate" className="text-sm font-semibold text-gray-700">Degree/Diploma Certificate/Mark Memo *</Label>
+                  <Input
+                    id="degreeCertificate"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange("degreeCertificate", e.target.files?.[0] || null)}
+                    className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Additional Information Section */}
@@ -760,72 +895,23 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* File Uploads Section */}
-            <div className="bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-200 rounded-xl p-4 sm:p-6">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6 border-b-2 border-gray-300 pb-2">Required Documents</h3>
-              <div className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <Label htmlFor="degreeCertificate" className="text-sm font-semibold text-gray-700">1. Degree/Diploma Certificate/Mark Memo *</Label>
-                    <Input
-                      id="degreeCertificate"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange("degreeCertificate", e.target.files?.[0] || null)}
-                      className="mt-1 border-2 border-gray-300 focus:border-gray-500 rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="aadhaarCard" className="text-sm font-semibold text-gray-700">2. Aadhaar Card *</Label>
-                    <Input
-                      id="aadhaarCard"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange("aadhaarCard", e.target.files?.[0] || null)}
-                      className="mt-1 border-2 border-gray-300 focus:border-gray-500 rounded-lg"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <Label htmlFor="residentialProof" className="text-sm font-semibold text-gray-700">3. Residential Proof *</Label>
-                    <Input
-                      id="residentialProof"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange("residentialProof", e.target.files?.[0] || null)}
-                      className="mt-1 border-2 border-gray-300 focus:border-gray-500 rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="idPhoto" className="text-sm font-semibold text-gray-700">4. ID Photo (Passport Size) *</Label>
-                    <Input
-                      id="idPhoto"
-                      type="file"
-                      accept=".jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange("idPhoto", e.target.files?.[0] || null)}
-                      className="mt-1 border-2 border-gray-300 focus:border-gray-500 rounded-lg"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Upload a recent passport size photo (4.6 cm) with white background</p>
-                  </div>
-                </div>
+                
+                {/* Marriage Certificate for name change */}
                 {formData.haveChangedName === 'Yes' && (
-                  <div>
-                    <Label htmlFor="marriageCertificate" className="text-sm font-semibold text-gray-700">5. Marriage Certificate/Gazette Notification/PAN Card *</Label>
+                  <div className="mt-6">
+                    <Label htmlFor="marriageCertificate" className="text-sm font-semibold text-gray-700">Marriage Certificate/Gazette Notification/PAN Card *</Label>
                     <Input
                       id="marriageCertificate"
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => handleFileChange("marriageCertificate", e.target.files?.[0] || null)}
-                      className="mt-1 border-2 border-gray-300 focus:border-gray-500 rounded-lg"
+                      className="mt-1 border-2 border-gray-300 focus:border-yellow-500 rounded-lg"
                     />
                   </div>
                 )}
               </div>
             </div>
+
           </div>
 
           {/* Submit Button */}
