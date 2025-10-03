@@ -19,6 +19,7 @@
     "prod:restart": "npm run build && pm2 restart voter-app",
     "db:setup": "node scripts/setup-database.js",
     "db:migrate": "node scripts/migrate-json-to-postgres.js",
+    "db:migrate-schema": "node scripts/migrate-to-new-schema.js",
     "db:reset": "node scripts/reset-database.js",
     "db:test": "node scripts/test-database.js",
     "db:add-team-tracking": "node scripts/add-team-tracking-columns.js",

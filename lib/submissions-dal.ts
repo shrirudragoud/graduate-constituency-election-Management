@@ -88,7 +88,7 @@ export interface Submission {
   educationType?: string
   documentType?: string
   
-  // Additional Information (Required)
+  // Additional Information
   haveChangedName?: 'Yes' | 'No'
   previousName?: string
   nameChangeDocumentType?: string
@@ -250,21 +250,23 @@ class SubmissionsDataAccessLayer {
           district, taluka, village_name, house_no, street, pin_code,
           mobile_number, email, aadhaar_number,
           year_of_passing, degree_diploma, name_of_university, name_of_diploma,
-          have_changed_name, place, declaration_date, status, submitted_at, updated_at, files,
+          education_type, document_type, have_changed_name, previous_name, name_change_document_type,
+          place, declaration_date, status, submitted_at, updated_at, files,
           ip_address, user_agent, source, filled_by_user_id, filled_by_name, filled_by_phone, form_source, filled_for_self
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44)
         RETURNING *`,
         [
           newSubmission.id, newSubmission.userId, newSubmission.surname, newSubmission.firstName, 
-          newSubmission.fathersHusbandName, newSubmission.fathersHusbandFullName,
-          newSubmission.sex, newSubmission.qualification, newSubmission.occupation, 
-          newSubmission.dateOfBirth, newSubmission.ageYears, newSubmission.ageMonths,
-          newSubmission.district, newSubmission.taluka, newSubmission.villageName, 
-          newSubmission.houseNo, newSubmission.street, newSubmission.pinCode,
-          newSubmission.mobileNumber, newSubmission.email, newSubmission.aadhaarNumber,
-          newSubmission.yearOfPassing, newSubmission.degreeDiploma, newSubmission.nameOfUniversity, 
-          newSubmission.nameOfDiploma, newSubmission.haveChangedName, newSubmission.place, 
-          newSubmission.declarationDate, newSubmission.status, newSubmission.submittedAt, 
+          newSubmission.fathersHusbandName || null, newSubmission.fathersHusbandFullName || null,
+          newSubmission.sex || null, newSubmission.qualification || null, newSubmission.occupation || null, 
+          newSubmission.dateOfBirth || null, newSubmission.ageYears || null, newSubmission.ageMonths || null,
+          newSubmission.district, newSubmission.taluka, newSubmission.villageName || null, 
+          newSubmission.houseNo || null, newSubmission.street || null, newSubmission.pinCode,
+          newSubmission.mobileNumber, newSubmission.email || null, newSubmission.aadhaarNumber,
+          newSubmission.yearOfPassing || null, newSubmission.degreeDiploma || null, newSubmission.nameOfUniversity || null, 
+          newSubmission.nameOfDiploma || null, newSubmission.educationType || null, newSubmission.documentType || null,
+          newSubmission.haveChangedName, newSubmission.previousName || null, newSubmission.nameChangeDocumentType || null,
+          newSubmission.place || null, newSubmission.declarationDate || null, newSubmission.status, newSubmission.submittedAt, 
           newSubmission.updatedAt, newSubmission.files,
           newSubmission.ipAddress, newSubmission.userAgent, newSubmission.source,
           newSubmission.filledByUserId, newSubmission.filledByName, newSubmission.filledByPhone, 

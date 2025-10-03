@@ -79,21 +79,21 @@ async function setupDatabase() {
         -- Personal Details
         surname VARCHAR(255) NOT NULL,
         first_name VARCHAR(255) NOT NULL,
-        fathers_husband_name VARCHAR(255) NOT NULL,
+        fathers_husband_name VARCHAR(255),
         fathers_husband_full_name VARCHAR(255),
-        sex VARCHAR(10) NOT NULL CHECK (sex IN ('M', 'F')),
+        sex VARCHAR(10) CHECK (sex IN ('M', 'F')),
         qualification VARCHAR(255),
         occupation VARCHAR(255),
-        date_of_birth DATE NOT NULL,
-        age_years INTEGER NOT NULL CHECK (age_years >= 0 AND age_years <= 150),
-        age_months INTEGER NOT NULL CHECK (age_months >= 0 AND age_months <= 11),
+        date_of_birth DATE,
+        age_years INTEGER CHECK (age_years >= 0 AND age_years <= 150),
+        age_months INTEGER CHECK (age_months >= 0 AND age_months <= 11),
         
         -- Address Details
         district VARCHAR(255) NOT NULL,
         taluka VARCHAR(255) NOT NULL,
-        village_name VARCHAR(255) NOT NULL,
-        house_no VARCHAR(255) NOT NULL,
-        street VARCHAR(255) NOT NULL,
+        village_name VARCHAR(255),
+        house_no VARCHAR(255),
+        street VARCHAR(255),
         pin_code VARCHAR(10) NOT NULL CHECK (pin_code ~ '^[0-9]{6}$'),
         
         -- Contact Details
@@ -106,11 +106,15 @@ async function setupDatabase() {
         degree_diploma VARCHAR(255),
         name_of_university VARCHAR(255),
         name_of_diploma VARCHAR(255),
+        education_type VARCHAR(50),
+        document_type VARCHAR(50),
         
         -- Additional Information
         have_changed_name VARCHAR(5) CHECK (have_changed_name IN ('Yes', 'No')),
-        place VARCHAR(255) NOT NULL,
-        declaration_date DATE NOT NULL,
+        previous_name VARCHAR(255),
+        name_change_document_type VARCHAR(50),
+        place VARCHAR(255),
+        declaration_date DATE,
         
         -- Status and Metadata
         status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'deleted')),

@@ -158,6 +158,10 @@ EOF
 echo "🗄️ Setting up database tables..."
 npm run db:setup || true
 
+# Migrate schema to new version (if needed)
+echo "🔄 Migrating database schema..."
+npm run db:migrate-schema || true
+
 # Migrate existing JSON data (if any)
 echo "🔄 Migrating existing data..."
 npm run db:migrate || true
