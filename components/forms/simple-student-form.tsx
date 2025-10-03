@@ -65,11 +65,13 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     degreeDiploma: "",
     nameOfUniversity: "",
     nameOfDiploma: "",
+    educationType: "", // New field: "degree" or "diploma"
+    documentType: "", // New field: "certificate" or "markmemo"
 
     // Additional Information
     haveChangedName: "",
-    place: "",
-    declarationDate: ""
+    previousName: "", // New field for previous name
+    nameChangeDocumentType: "" // New field for document type
   })
 
   const [files, setFiles] = useState({
@@ -212,7 +214,8 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     const optionalFields = [
       'fathersHusbandName', 'sex', 'qualification', 'occupation', 'dateOfBirth', 'ageYears', 'ageMonths',
       'villageName', 'houseNo', 'street', 'email', 'yearOfPassing', 'degreeDiploma', 
-      'nameOfUniversity', 'nameOfDiploma', 'haveChangedName', 'place', 'declarationDate'
+      'nameOfUniversity', 'nameOfDiploma', 'haveChangedName', 'educationType', 'documentType',
+      'previousName', 'nameChangeDocumentType'
     ]
     
     const requiredFiles = ['degreeCertificate', 'aadhaarCard', 'residentialProof', 'idPhoto']
@@ -398,9 +401,11 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
       degreeDiploma: "",
       nameOfUniversity: "",
       nameOfDiploma: "",
+      educationType: "",
+      documentType: "",
       haveChangedName: "",
-      place: "",
-      declarationDate: ""
+      previousName: "",
+      nameChangeDocumentType: ""
     })
     setFiles({
       degreeCertificate: null,
@@ -792,62 +797,122 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
             {/* Education Information Section */}
             <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-4 sm:p-6">
               <h3 className="text-lg sm:text-xl font-bold text-orange-800 mb-4 sm:mb-6 border-b-2 border-orange-300 pb-2">Education Information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <Label htmlFor="yearOfPassing" className="text-sm font-semibold text-gray-700">Year of Passing</Label>
-                  <Input
-                    id="yearOfPassing"
-                    value={formData.yearOfPassing}
-                    onChange={(e) => handleInputChange("yearOfPassing", e.target.value)}
-                    placeholder="Enter year"
-                    className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="degreeDiploma" className="text-sm font-semibold text-gray-700">Degree/Diploma</Label>
-                  <Input
-                    id="degreeDiploma"
-                    value={formData.degreeDiploma}
-                    onChange={(e) => handleInputChange("degreeDiploma", e.target.value)}
-                    placeholder="Enter degree/diploma"
-                    className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nameOfUniversity" className="text-sm font-semibold text-gray-700">Name of University</Label>
-                  <Input
-                    id="nameOfUniversity"
-                    value={formData.nameOfUniversity}
-                    onChange={(e) => handleInputChange("nameOfUniversity", e.target.value)}
-                    placeholder="Enter university name"
-                    className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nameOfDiploma" className="text-sm font-semibold text-gray-700">Name of Diploma</Label>
-                  <Input
-                    id="nameOfDiploma"
-                    value={formData.nameOfDiploma}
-                    onChange={(e) => handleInputChange("nameOfDiploma", e.target.value)}
-                    placeholder="Enter diploma name"
-                    className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
-                  />
-                </div>
-              </div>
               
-              {/* Education-related documents */}
-              <div className="mt-6">
-                <div>
-                  <Label htmlFor="degreeCertificate" className="text-sm font-semibold text-gray-700">Degree/Diploma Certificate/Mark Memo *</Label>
-                  <Input
-                    id="degreeCertificate"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileChange("degreeCertificate", e.target.files?.[0] || null)}
-                    className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
-                  />
-                </div>
+              {/* Education Type Selection */}
+              <div className="mb-6">
+                <Label className="text-sm font-semibold text-gray-700">Education Type *</Label>
+                <RadioGroup
+                  value={formData.educationType}
+                  onValueChange={(value) => {
+                    handleInputChange("educationType", value)
+                    // Reset related fields when education type changes
+                    setFormData(prev => ({
+                      ...prev,
+                      educationType: value,
+                      degreeDiploma: "",
+                      nameOfUniversity: "",
+                      nameOfDiploma: "",
+                      documentType: ""
+                    }))
+                  }}
+                  className="mt-2"
+                >
+                  <div className="flex items-center space-x-6">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="degree" id="educationDegree" className="border-2" />
+                      <Label htmlFor="educationDegree" className="font-medium">Degree</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="diploma" id="educationDiploma" className="border-2" />
+                      <Label htmlFor="educationDiploma" className="font-medium">Diploma</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
               </div>
+
+              {/* Conditional Fields based on Education Type */}
+              {formData.educationType && (
+                <div className="space-y-6 bg-white/50 rounded-lg p-4 border border-orange-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div>
+                      <Label htmlFor="yearOfPassing" className="text-sm font-semibold text-gray-700">Year of Passing</Label>
+                      <Input
+                        id="yearOfPassing"
+                        value={formData.yearOfPassing}
+                        onChange={(e) => handleInputChange("yearOfPassing", e.target.value)}
+                        placeholder="Enter year"
+                        className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="degreeDiploma" className="text-sm font-semibold text-gray-700">
+                        {formData.educationType === 'degree' ? 'Name of Degree' : 'Name of Diploma'}
+                      </Label>
+                      <Input
+                        id="degreeDiploma"
+                        value={formData.degreeDiploma}
+                        onChange={(e) => handleInputChange("degreeDiploma", e.target.value)}
+                        placeholder={formData.educationType === 'degree' ? 'Enter degree name' : 'Enter diploma name'}
+                        className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="nameOfUniversity" className="text-sm font-semibold text-gray-700">
+                      {formData.educationType === 'degree' ? 'Name of University' : 'Name of Institution'}
+                    </Label>
+                    <Input
+                      id="nameOfUniversity"
+                      value={formData.nameOfUniversity}
+                      onChange={(e) => handleInputChange("nameOfUniversity", e.target.value)}
+                      placeholder={formData.educationType === 'degree' ? 'Enter university name' : 'Enter institution name'}
+                      className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
+                    />
+                  </div>
+
+                  {/* Document Type Selection */}
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Document Type *</Label>
+                    <RadioGroup
+                      value={formData.documentType}
+                      onValueChange={(value) => handleInputChange("documentType", value)}
+                      className="mt-2"
+                    >
+                      <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="certificate" id="docCertificate" className="border-2" />
+                          <Label htmlFor="docCertificate" className="font-medium">Certificate</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="markmemo" id="docMarkMemo" className="border-2" />
+                          <Label htmlFor="docMarkMemo" className="font-medium">Mark Memo</Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Document Upload */}
+                  <div>
+                    <Label htmlFor="degreeCertificate" className="text-sm font-semibold text-gray-700">
+                      {formData.educationType === 'degree' 
+                        ? `Degree ${formData.documentType === 'certificate' ? 'Certificate' : 'Mark Memo'} *`
+                        : `Diploma ${formData.documentType === 'certificate' ? 'Certificate' : 'Mark Memo'} *`
+                      }
+                    </Label>
+                    <Input
+                      id="degreeCertificate"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => handleFileChange("degreeCertificate", e.target.files?.[0] || null)}
+                      className="mt-1 border-2 border-gray-300 focus:border-orange-500 rounded-lg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Upload your {formData.educationType} {formData.documentType === 'certificate' ? 'certificate' : 'mark memo'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Additional Information Section */}
@@ -858,7 +923,18 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   <Label className="text-sm font-semibold text-gray-700">Have you changed your name?</Label>
                   <RadioGroup
                     value={formData.haveChangedName}
-                    onValueChange={(value) => handleInputChange("haveChangedName", value)}
+                    onValueChange={(value) => {
+                      handleInputChange("haveChangedName", value)
+                      // Reset related fields when name change selection changes
+                      if (value === "No") {
+                        setFormData(prev => ({
+                          ...prev,
+                          haveChangedName: value,
+                          previousName: "",
+                          nameChangeDocumentType: ""
+                        }))
+                      }
+                    }}
                     className="mt-2"
                   >
                     <div className="flex items-center space-x-4">
@@ -873,40 +949,66 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     </div>
                   </RadioGroup>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <Label htmlFor="place" className="text-sm font-semibold text-gray-700">Place</Label>
-                    <Input
-                      id="place"
-                      value={formData.place}
-                      onChange={(e) => handleInputChange("place", e.target.value)}
-                      placeholder="Enter place"
-                      className="mt-1 border-2 border-gray-300 focus:border-yellow-500 rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="declarationDate" className="text-sm font-semibold text-gray-700">Declaration Date</Label>
-                    <Input
-                      id="declarationDate"
-                      type="date"
-                      value={formData.declarationDate}
-                      onChange={(e) => handleInputChange("declarationDate", e.target.value)}
-                      className="mt-1 border-2 border-gray-300 focus:border-yellow-500 rounded-lg"
-                    />
-                  </div>
-                </div>
                 
-                {/* Marriage Certificate for name change */}
+                {/* Conditional fields for name change */}
                 {formData.haveChangedName === 'Yes' && (
-                  <div className="mt-6">
-                    <Label htmlFor="marriageCertificate" className="text-sm font-semibold text-gray-700">Marriage Certificate/Gazette Notification/PAN Card *</Label>
-                    <Input
-                      id="marriageCertificate"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange("marriageCertificate", e.target.files?.[0] || null)}
-                      className="mt-1 border-2 border-gray-300 focus:border-yellow-500 rounded-lg"
-                    />
+                  <div className="bg-white/50 rounded-lg p-4 border border-yellow-200 space-y-4">
+                    <div>
+                      <Label htmlFor="previousName" className="text-sm font-semibold text-gray-700">Previous Name *</Label>
+                      <Input
+                        id="previousName"
+                        value={formData.previousName}
+                        onChange={(e) => handleInputChange("previousName", e.target.value)}
+                        placeholder="Enter your previous name"
+                        className="mt-1 border-2 border-gray-300 focus:border-yellow-500 rounded-lg"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700">Document Type for Name Change *</Label>
+                      <RadioGroup
+                        value={formData.nameChangeDocumentType}
+                        onValueChange={(value) => handleInputChange("nameChangeDocumentType", value)}
+                        className="mt-2"
+                      >
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="marriage" id="docMarriage" className="border-2" />
+                            <Label htmlFor="docMarriage" className="font-medium">Marriage Certificate</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="gazette" id="docGazette" className="border-2" />
+                            <Label htmlFor="docGazette" className="font-medium">Gazette Notification</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="pan" id="docPan" className="border-2" />
+                            <Label htmlFor="docPan" className="font-medium">PAN Card</Label>
+                          </div>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="marriageCertificate" className="text-sm font-semibold text-gray-700">
+                        {formData.nameChangeDocumentType === 'marriage' ? 'Marriage Certificate *' :
+                         formData.nameChangeDocumentType === 'gazette' ? 'Gazette Notification *' :
+                         formData.nameChangeDocumentType === 'pan' ? 'PAN Card *' :
+                         'Name Change Document *'}
+                      </Label>
+                      <Input
+                        id="marriageCertificate"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleFileChange("marriageCertificate", e.target.files?.[0] || null)}
+                        className="mt-1 border-2 border-gray-300 focus:border-yellow-500 rounded-lg"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Upload your {formData.nameChangeDocumentType === 'marriage' ? 'marriage certificate' :
+                                   formData.nameChangeDocumentType === 'gazette' ? 'gazette notification' :
+                                   formData.nameChangeDocumentType === 'pan' ? 'PAN card' :
+                                   'name change document'}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

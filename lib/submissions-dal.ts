@@ -85,11 +85,15 @@ export interface Submission {
   degreeDiploma?: string
   nameOfUniversity?: string
   nameOfDiploma?: string
+  educationType?: string
+  documentType?: string
   
   // Additional Information (Required)
   haveChangedName?: 'Yes' | 'No'
-  place: string
-  declarationDate: string
+  previousName?: string
+  nameChangeDocumentType?: string
+  place?: string
+  declarationDate?: string
   
   // Status and Metadata
   status: 'pending' | 'approved' | 'rejected' | 'deleted'
@@ -156,22 +160,15 @@ class SubmissionsDataAccessLayer {
     // Required personal details
     if (!submission.surname?.trim()) errors.push('Surname is required')
     if (!submission.firstName?.trim()) errors.push('First name is required')
-    if (!submission.fathersHusbandName?.trim()) errors.push('Father/Husband name is required')
-    if (!submission.sex || !['M', 'F'].includes(submission.sex)) errors.push('Valid sex selection is required')
-    if (!submission.dateOfBirth) errors.push('Date of birth is required')
-    if (submission.ageYears === undefined || submission.ageYears < 0 || submission.ageYears > 150) {
-      errors.push('Valid age in years is required')
-    }
-    if (submission.ageMonths === undefined || submission.ageMonths < 0 || submission.ageMonths > 11) {
-      errors.push('Valid age in months is required')
-    }
+    // FathersHusbandName is optional now
+    // Sex is optional now
+    // DateOfBirth is optional now
+    // Age fields are optional now
     
     // Required address details
     if (!submission.district?.trim()) errors.push('District is required')
     if (!submission.taluka?.trim()) errors.push('Taluka is required')
-    if (!submission.villageName?.trim()) errors.push('Village name is required')
-    if (!submission.houseNo?.trim()) errors.push('House number is required')
-    if (!submission.street?.trim()) errors.push('Street is required')
+    // VillageName, HouseNo, Street are optional now
     if (!submission.pinCode?.trim() || !/^[0-9]{6}$/.test(submission.pinCode)) {
       errors.push('Valid 6-digit PIN code is required')
     }
@@ -184,14 +181,21 @@ class SubmissionsDataAccessLayer {
       errors.push('Valid 12-digit Aadhaar number is required')
     }
     
-    // Required education details
-    if (!submission.yearOfPassing?.trim()) errors.push('Year of passing is required')
-    if (!submission.degreeDiploma?.trim()) errors.push('Degree/Diploma is required')
-    if (!submission.nameOfUniversity?.trim()) errors.push('University name is required')
+    // Education details are optional now
+    // Only validate if education type is selected
+    if (submission.educationType) {
+      if (!submission.degreeDiploma?.trim()) errors.push('Degree/Diploma name is required when education type is selected')
+      if (!submission.nameOfUniversity?.trim()) errors.push('University/Institution name is required when education type is selected')
+      if (!submission.documentType?.trim()) errors.push('Document type is required when education type is selected')
+    }
     
-    // Required additional information
-    if (!submission.place?.trim()) errors.push('Place is required')
-    if (!submission.declarationDate) errors.push('Declaration0 date is required')
+    // Additional information validation
+    // Place and declarationDate are optional now
+    // Only validate name change fields if name was changed
+    if (submission.haveChangedName === 'Yes') {
+      if (!submission.previousName?.trim()) errors.push('Previous name is required when name was changed')
+      if (!submission.nameChangeDocumentType?.trim()) errors.push('Document type for name change is required when name was changed')
+    }
     
     // Email validation if provided
     if (submission.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submission.email)) {
@@ -621,7 +625,11 @@ class SubmissionsDataAccessLayer {
       degreeDiploma: row.degree_diploma,
       nameOfUniversity: row.name_of_university,
       nameOfDiploma: row.name_of_diploma,
+      educationType: row.education_type,
+      documentType: row.document_type,
       haveChangedName: row.have_changed_name,
+      previousName: row.previous_name,
+      nameChangeDocumentType: row.name_change_document_type,
       place: row.place,
       declarationDate: row.declaration_date,
       status: row.status,

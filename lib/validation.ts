@@ -311,18 +311,12 @@ export const validateStudentForm = (formData: any, files: any = {}): FieldValida
   // Personal information validation
   errors.surname = validateName(formData.surname, "Surname")
   errors.firstName = validateName(formData.firstName, "First Name")
-  errors.fathersHusbandName = validateName(formData.fathersHusbandName, "Father's/Husband Name")
-  errors.sex = validateRequired(formData.sex, "Sex")
-  errors.dateOfBirth = validateDateOfBirth(formData.dateOfBirth)
-  errors.ageYears = validateAge(formData.ageYears, formData.ageMonths)
-  errors.ageMonths = validateAge(formData.ageYears, formData.ageMonths)
+  // FathersHusbandName, sex, dateOfBirth, age are optional now
   
   // Address validation
   errors.district = validateDistrict(formData.district)
   errors.taluka = validateTaluka(formData.taluka)
-  errors.villageName = validateRequired(formData.villageName, "Village Name")
-  errors.houseNo = validateRequired(formData.houseNo, "House Number")
-  errors.street = validateRequired(formData.street, "Street")
+  // VillageName, houseNo, street are optional now
   errors.pinCode = validatePinCode(formData.pinCode)
   
   // Contact validation
@@ -330,14 +324,19 @@ export const validateStudentForm = (formData: any, files: any = {}): FieldValida
   errors.aadhaarNumber = validateAadhaarNumber(formData.aadhaarNumber)
   errors.email = validateEmail(formData.email)
   
-  // Education validation
-  errors.yearOfPassing = validateYear(formData.yearOfPassing, "Year of Passing")
-  errors.degreeDiploma = validateRequired(formData.degreeDiploma, "Degree/Diploma")
-  errors.nameOfUniversity = validateRequired(formData.nameOfUniversity, "Name of University")
+  // Education validation - only validate if education type is selected
+  if (formData.educationType) {
+    errors.educationType = validateRequired(formData.educationType, "Education Type")
+    errors.degreeDiploma = validateRequired(formData.degreeDiploma, formData.educationType === 'degree' ? "Name of Degree" : "Name of Diploma")
+    errors.nameOfUniversity = validateRequired(formData.nameOfUniversity, formData.educationType === 'degree' ? "Name of University" : "Name of Institution")
+    errors.documentType = validateRequired(formData.documentType, "Document Type")
+  }
   
-  // Additional validation
-  errors.place = validateRequired(formData.place, "Place")
-  errors.declarationDate = validateRequired(formData.declarationDate, "Declaration Date")
+  // Name change validation (only if name changed)
+  if (formData.haveChangedName === 'Yes') {
+    errors.previousName = validateName(formData.previousName, "Previous Name")
+    errors.nameChangeDocumentType = validateRequired(formData.nameChangeDocumentType, "Document Type for Name Change")
+  }
   
   // File validation
   if (files.degreeCertificate) {
@@ -411,14 +410,24 @@ export const validateField = (fieldName: string, value: string, formData?: any):
       return validateEmail(value)
     case 'yearOfPassing':
       return validateYear(value, "Year of Passing")
+    case 'educationType':
+      return validateRequired(value, "Education Type")
     case 'degreeDiploma':
+      if (formData && formData.educationType) {
+        return validateRequired(value, formData.educationType === 'degree' ? "Name of Degree" : "Name of Diploma")
+      }
       return validateRequired(value, "Degree/Diploma")
     case 'nameOfUniversity':
+      if (formData && formData.educationType) {
+        return validateRequired(value, formData.educationType === 'degree' ? "Name of University" : "Name of Institution")
+      }
       return validateRequired(value, "Name of University")
-    case 'place':
-      return validateRequired(value, "Place")
-    case 'declarationDate':
-      return validateRequired(value, "Declaration Date")
+    case 'documentType':
+      return validateRequired(value, "Document Type")
+    case 'previousName':
+      return validateName(value, "Previous Name")
+    case 'nameChangeDocumentType':
+      return validateRequired(value, "Document Type for Name Change")
     default:
       return { isValid: true }
   }
