@@ -149,13 +149,14 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
   // Calculate form completion percentage
   const formCompletion = useMemo(() => {
     const requiredFields = [
-      'surname', 'firstName', 'fathersHusbandName', 
-      'sex', 'dateOfBirth', 'district', 'taluka', 'villageName', 'houseNo', 
-      'street', 'pinCode', 'mobileNumber', 'aadhaarNumber', 'email',
-      'yearOfPassing', 'degreeDiploma', 'nameOfUniversity', 'place', 'declarationDate'
+      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka', 'pinCode'
     ]
     
-    const optionalFields = ['qualification', 'occupation', 'nameOfDiploma']
+    const optionalFields = [
+      'fathersHusbandName', 'sex', 'qualification', 'occupation', 'dateOfBirth', 'ageYears', 'ageMonths',
+      'villageName', 'houseNo', 'street', 'email', 'yearOfPassing', 'degreeDiploma', 
+      'nameOfUniversity', 'nameOfDiploma', 'haveChangedName', 'place', 'declarationDate'
+    ]
     
     const requiredFiles = ['degreeCertificate', 'aadhaarCard', 'residentialProof', 'idPhoto']
     const conditionalFiles = formData.haveChangedName === 'Yes' ? ['marriageCertificate'] : []
@@ -461,7 +462,6 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     className={getInputClassName("surname", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
                   />
                   <ValidationError field="surname" />
-                  <ValidationSuccess field="surname" />
                 </div>
                 <div>
                   <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First Name *</Label>
@@ -473,22 +473,19 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     className={getInputClassName("firstName", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
                   />
                   <ValidationError field="firstName" />
-                  <ValidationSuccess field="firstName" />
                 </div>
                 <div>
-                  <Label htmlFor="fathersHusbandName" className="text-sm font-semibold text-gray-700">Father's/Husband Name *</Label>
+                  <Label htmlFor="fathersHusbandName" className="text-sm font-semibold text-gray-700">Father's/Husband Name</Label>
                   <Input
                     id="fathersHusbandName"
                     value={formData.fathersHusbandName}
                     onChange={(e) => handleInputChange("fathersHusbandName", e.target.value)}
                     placeholder="Enter father's/husband name"
-                    className={getInputClassName("fathersHusbandName", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
+                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
                   />
-                  <ValidationError field="fathersHusbandName" />
-                  <ValidationSuccess field="fathersHusbandName" />
                 </div>
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700">Sex *</Label>
+                  <Label className="text-sm font-semibold text-gray-700">Sex</Label>
                   <RadioGroup
                     value={formData.sex}
                     onValueChange={(value) => handleInputChange("sex", value)}
@@ -505,8 +502,6 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                       </div>
                     </div>
                   </RadioGroup>
-                  <ValidationError field="sex" />
-                  <ValidationSuccess field="sex" />
                 </div>
                 <div>
                   <Label htmlFor="qualification" className="text-sm font-semibold text-gray-700">Qualifications</Label>
@@ -529,39 +524,35 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dateOfBirth" className="text-sm font-semibold text-gray-700">Date of Birth *</Label>
+                  <Label htmlFor="dateOfBirth" className="text-sm font-semibold text-gray-700">Date of Birth</Label>
                   <Input
                     id="dateOfBirth"
                     type="date"
                     value={formData.dateOfBirth}
                     onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className={getInputClassName("dateOfBirth", "mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg")}
+                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
                   />
-                  <ValidationError field="dateOfBirth" />
-                  <ValidationSuccess field="dateOfBirth" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label htmlFor="ageYears" className="text-sm font-semibold text-gray-700">Age (Years) *</Label>
+                    <Label htmlFor="ageYears" className="text-sm font-semibold text-gray-700">Age (Years)</Label>
                     <Input
                       id="ageYears"
                       value={formData.ageYears}
                       placeholder="Years"
                       readOnly
-                      className={getInputClassName("ageYears", "mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg")}
+                      className="mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg"
                     />
-                    <ValidationError field="ageYears" />
                   </div>
                   <div>
-                    <Label htmlFor="ageMonths" className="text-sm font-semibold text-gray-700">Age (Months) *</Label>
+                    <Label htmlFor="ageMonths" className="text-sm font-semibold text-gray-700">Age (Months)</Label>
                     <Input
                       id="ageMonths"
                       value={formData.ageMonths}
                       placeholder="Months"
                       readOnly
-                      className={getInputClassName("ageMonths", "mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg")}
+                      className="mt-1 border-2 border-gray-300 bg-gray-100 rounded-lg"
                     />
-                    <ValidationError field="ageMonths" />
                   </div>
                 </div>
               </div>
@@ -592,7 +583,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="villageName" className="text-sm font-semibold text-gray-700">Village Name *</Label>
+                  <Label htmlFor="villageName" className="text-sm font-semibold text-gray-700">Village Name</Label>
                   <Input
                     id="villageName"
                     value={formData.villageName}
@@ -602,7 +593,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="houseNo" className="text-sm font-semibold text-gray-700">House No. *</Label>
+                  <Label htmlFor="houseNo" className="text-sm font-semibold text-gray-700">House No.</Label>
                   <Input
                     id="houseNo"
                     value={formData.houseNo}
@@ -612,7 +603,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="street" className="text-sm font-semibold text-gray-700">Street *</Label>
+                  <Label htmlFor="street" className="text-sm font-semibold text-gray-700">Street</Label>
                   <Input
                     id="street"
                     value={formData.street}
@@ -651,7 +642,6 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     <PhoneVerificationButton phoneNumber={formData.mobileNumber} />
                   </div>
                   <ValidationError field="mobileNumber" />
-                  <ValidationSuccess field="mobileNumber" />
                 </div>
                 <div>
                   <Label htmlFor="aadhaarNumber" className="text-sm font-semibold text-gray-700">Aadhaar No. *</Label>
@@ -663,20 +653,17 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     className={getInputClassName("aadhaarNumber", "mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg")}
                   />
                   <ValidationError field="aadhaarNumber" />
-                  <ValidationSuccess field="aadhaarNumber" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email Address *</Label>
+                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     placeholder="Enter email address"
-                    className={getInputClassName("email", "mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg")}
+                    className="mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg"
                   />
-                  <ValidationError field="email" />
-                  <ValidationSuccess field="email" />
                 </div>
               </div>
             </div>
@@ -686,7 +673,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
               <h3 className="text-lg sm:text-xl font-bold text-orange-800 mb-4 sm:mb-6 border-b-2 border-orange-300 pb-2">Education Information</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
-                  <Label htmlFor="yearOfPassing" className="text-sm font-semibold text-gray-700">Year of Passing *</Label>
+                  <Label htmlFor="yearOfPassing" className="text-sm font-semibold text-gray-700">Year of Passing</Label>
                   <Input
                     id="yearOfPassing"
                     value={formData.yearOfPassing}
@@ -696,7 +683,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="degreeDiploma" className="text-sm font-semibold text-gray-700">Degree/Diploma *</Label>
+                  <Label htmlFor="degreeDiploma" className="text-sm font-semibold text-gray-700">Degree/Diploma</Label>
                   <Input
                     id="degreeDiploma"
                     value={formData.degreeDiploma}
@@ -706,7 +693,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="nameOfUniversity" className="text-sm font-semibold text-gray-700">Name of University *</Label>
+                  <Label htmlFor="nameOfUniversity" className="text-sm font-semibold text-gray-700">Name of University</Label>
                   <Input
                     id="nameOfUniversity"
                     value={formData.nameOfUniversity}
@@ -733,7 +720,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
               <h3 className="text-lg sm:text-xl font-bold text-yellow-800 mb-4 sm:mb-6 border-b-2 border-yellow-300 pb-2">Additional Information</h3>
               <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700">Have you changed your name? *</Label>
+                  <Label className="text-sm font-semibold text-gray-700">Have you changed your name?</Label>
                   <RadioGroup
                     value={formData.haveChangedName}
                     onValueChange={(value) => handleInputChange("haveChangedName", value)}
@@ -753,7 +740,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <Label htmlFor="place" className="text-sm font-semibold text-gray-700">Place *</Label>
+                    <Label htmlFor="place" className="text-sm font-semibold text-gray-700">Place</Label>
                     <Input
                       id="place"
                       value={formData.place}
@@ -763,7 +750,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     />
                   </div>
                   <div>
-                    <Label htmlFor="declarationDate" className="text-sm font-semibold text-gray-700">Declaration Date *</Label>
+                    <Label htmlFor="declarationDate" className="text-sm font-semibold text-gray-700">Declaration Date</Label>
                     <Input
                       id="declarationDate"
                       type="date"

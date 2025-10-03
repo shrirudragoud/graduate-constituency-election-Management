@@ -283,7 +283,7 @@ async function setupDatabase() {
         ON CONFLICT (email) DO NOTHING
       `, [
         'admin@election.com',
-        '$2b$10$rQZ8K9vL8mN7pQrS5tU6OeX1yA2bC3dE4fG5hI6jK7lM8nO9pQ', // password: admin123
+        'HiveTech@8180', // password: admin123
         'admin',
         'System',
         'Administrator',

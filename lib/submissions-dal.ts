@@ -191,7 +191,7 @@ class SubmissionsDataAccessLayer {
     
     // Required additional information
     if (!submission.place?.trim()) errors.push('Place is required')
-    if (!submission.declarationDate) errors.push('Declaration date is required')
+    if (!submission.declarationDate) errors.push('Declaration0 date is required')
     
     // Email validation if provided
     if (submission.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(submission.email)) {

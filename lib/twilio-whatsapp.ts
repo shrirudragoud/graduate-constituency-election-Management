@@ -241,7 +241,7 @@ Thank you for your registration!`;
       // Check if it's a localhost URL (Twilio can't access these)
       if (pdfUrl.includes('localhost') || pdfUrl.includes('127.0.0.1')) {
         console.log('📱 Localhost URL detected - sending download instructions instead of attachment...');
-        const downloadMessage = `📄 Your Thank You PDF has been generated!
+        const downloadMessage = `✅ Your Thank Your submission  has been received!
 
 Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
 Generated on: ${new Date().toLocaleString('en-GB')}

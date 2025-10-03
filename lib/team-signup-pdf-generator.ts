@@ -41,19 +41,36 @@ export async function generateTeamSignupPDF(data: TeamSignupPDFData): Promise<st
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Team Signup Thank You Letter</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap');
+            
             @page {
                 margin: 0.5in;
                 size: A4;
             }
             
+            * {
+                font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', 'DejaVu Sans', 'Liberation Sans', 'Lohit Devanagari', 'Mangal', Arial, sans-serif !important;
+                font-display: swap;
+                unicode-bidi: normal;
+                direction: ltr;
+            }
+            
             body {
-                font-family: 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif;
+                font-family: 'Noto Sans Devanagari', 'Arial Unicode MS', 'DejaVu Sans', 'Liberation Sans', 'Lohit Devanagari', 'Mangal', Arial, sans-serif !important;
                 line-height: 1.6;
                 color: #000;
                 margin: 0;
                 padding: 0;
                 background: #fff;
+                font-display: swap;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                unicode-bidi: normal;
+                direction: ltr;
             }
             
             .letter-container {
@@ -212,7 +229,7 @@ export async function generateTeamSignupPDF(data: TeamSignupPDFData): Promise<st
                 <div class="closing-text">आपलाच,</div>
                 <div class="signature-section">
                     <div class="signature-name">रविंद्र चव्हाण</div>
-                    <div class="signature-title">भाजपा महाराष्ट्र प्रदेश कार्यकरी अध्यक्ष</div>
+                    <div class="signature-title">भाजपा महाराष्ट्र प्रदेश कार्यकरी अध्यक्ष आमदार, १४३ डोंबिवली विधानसभा</div>
                 </div>
             </div>
             
@@ -231,11 +248,41 @@ export async function generateTeamSignupPDF(data: TeamSignupPDFData): Promise<st
     const puppeteer = await import('puppeteer')
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--font-render-hinting=none',
+        '--disable-font-subpixel-positioning'
+      ]
     })
     
     const page = await browser.newPage()
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
+    
+    // Set viewport and user agent for better font rendering
+    await page.setViewport({ width: 1200, height: 800, deviceScaleFactor: 2 })
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+    
+    // Wait for fonts to load
+    await page.setContent(htmlContent, { 
+      waitUntil: ['networkidle0', 'domcontentloaded'],
+      timeout: 30000
+    })
+    
+    // Wait for fonts to be loaded with timeout
+    try {
+      await Promise.race([
+        page.evaluateHandle('document.fonts.ready'),
+        new Promise(resolve => setTimeout(resolve, 5000)) // 5 second timeout
+      ])
+      console.log('✅ Fonts loaded successfully')
+    } catch (error) {
+      console.log('⚠️ Font loading timeout, proceeding with PDF generation')
+    }
+    
+    // Additional wait to ensure rendering is complete
+    await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Ensure uploads directory exists
     const uploadsDir = join(process.cwd(), 'data', 'pdfs')
@@ -269,5 +316,6 @@ export async function generateTeamSignupPDF(data: TeamSignupPDFData): Promise<st
     throw error
   }
 }
+
 
 
