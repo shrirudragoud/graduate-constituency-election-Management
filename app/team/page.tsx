@@ -66,6 +66,8 @@ interface Submission {
   nameOfUniversity: string
   nameOfDiploma: string
   haveChangedName: string
+  previousName?: string
+  nameChangeDocumentType?: string
   place: string
   declarationDate: string
   files: Record<string, any>
@@ -1417,112 +1419,30 @@ export default function TeamDashboard() {
                 </div>
               </div>
 
-              {/* Files - Mobile Friendly */}
-              {selectedSubmission.files && Object.keys(selectedSubmission.files).length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Uploaded Documents</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {Object.entries(selectedSubmission.files).map(([key, fileData]) => {
-                      // Skip if file is null, undefined, or empty object
-                      if (!fileData || typeof fileData !== 'object' || !fileData.filename) {
-                        return null
-                      }
-                      
-                      return (
-                        <div key={key} className="p-3 border rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-medium truncate">{fileData.originalName || fileData.filename}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size'}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={async () => {
-                                try {
-                                  // Check if it's an image file for viewing
-                                  const isImage = fileData.filename && /\.(jpg|jpeg|png|gif|webp)$/i.test(fileData.filename)
-                                  const viewUrl = isImage ? `/api/files/${fileData.filename}/view` : `/api/files/${fileData.filename}`
-                                  
-                                  // Try authenticated route first, fallback to public route
-                                  const response = await fetch(viewUrl, {
-                                    headers: {
-                                      'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                                    }
-                                  })
-                                  
-                                  if (!response.ok) {
-                                    // Fallback to public route
-                                    window.open(`/uploads/${fileData.filename}`, '_blank')
-                                  } else {
-                                    window.open(viewUrl, '_blank')
-                                  }
-                                } catch (error) {
-                                  console.error('Error viewing file:', error)
-                                  // Fallback to public route
-                                  window.open(`/uploads/${fileData.filename}`, '_blank')
-                                }
-                              }}
-                              className="text-xs h-8"
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              View
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={async () => {
-                                try {
-                                  const link = document.createElement('a')
-                                  
-                                  // Try authenticated route first
-                                  const response = await fetch(`/api/files/${fileData.filename}`, {
-                                    headers: {
-                                      'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                                    }
-                                  })
-                                  
-                                  if (response.ok) {
-                                    link.href = `/api/files/${fileData.filename}`
-                                  } else {
-                                    // Fallback to public route
-                                    link.href = `/uploads/${fileData.filename}`
-                                  }
-                                  
-                                  link.download = fileData.originalName || fileData.filename
-                                  link.click()
-                                } catch (error) {
-                                  console.error('Error downloading file:', error)
-                                  // Fallback to public route
-                                  const link = document.createElement('a')
-                                  link.href = `/uploads/${fileData.filename}`
-                                  link.download = fileData.originalName || fileData.filename
-                                  link.click()
-                                }
-                              }}
-                              className="text-xs h-8"
-                            >
-                              <Download className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Name Change Info */}
-              {selectedSubmission.haveChangedName === 'yes' && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">Name Change Information</h4>
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      This student has indicated they changed their name and provided supporting documents.
-                    </p>
+              {selectedSubmission.haveChangedName === 'Yes' && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-2 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Name Change Information
+                  </h4>
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="font-medium text-yellow-800 min-w-[120px] flex-shrink-0">Previous Name:</span>
+                        <span className="text-yellow-800 font-medium">{selectedSubmission.previousName || 'Not provided'}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="font-medium text-yellow-800 min-w-[120px] flex-shrink-0">Document Type:</span>
+                        <span className="text-yellow-800 capitalize font-medium">
+                          {selectedSubmission.nameChangeDocumentType === 'marriage' ? 'Marriage Certificate' :
+                           selectedSubmission.nameChangeDocumentType === 'gazette' ? 'Gazette Notification' :
+                           selectedSubmission.nameChangeDocumentType === 'pan' ? 'PAN Card' :
+                           selectedSubmission.nameChangeDocumentType || 'Not specified'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1622,18 +1542,18 @@ export default function TeamDashboard() {
               </div>
 
               {/* Related Files */}
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1 flex items-center gap-2">
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-muted-foreground border-b pb-2 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Related Files
                   </h4>
                   {selectedSubmission.files && Object.keys(selectedSubmission.files).length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Object.entries(selectedSubmission.files).map(([fieldName, fileData]) => (
-                        <div key={fieldName} className="border rounded-lg p-3 bg-muted/30">
+                        <div key={fieldName} className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
                           <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 mt-1">
                               {fieldName.includes('photo') || fieldName.includes('signature') || fieldName.includes('image') ? (
                                 <FileImage className="w-5 h-5 text-blue-600" />
                               ) : (
@@ -1641,27 +1561,27 @@ export default function TeamDashboard() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <h5 className="font-medium text-sm capitalize">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-sm capitalize text-foreground">
                                   {fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                                 </h5>
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs px-2 py-1">
                                   {fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size'}
                                 </Badge>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-1 truncate">
+                              <p className="text-xs text-muted-foreground mb-1 truncate">
                                 {fileData.originalName || fileData.filename || 'Unknown file'}
                               </p>
                               {fileData.uploadedAt && (
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-xs text-muted-foreground mb-3">
                                   Uploaded: {new Date(fileData.uploadedAt).toLocaleDateString()}
                                 </p>
                               )}
-                              <div className="mt-2 flex gap-2">
+                              <div className="flex gap-2 flex-wrap">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-7 text-xs"
+                                  className="h-8 text-xs px-3 flex-shrink-0"
                                   onClick={async () => {
                                     try {
                                       // Check if it's an image file for viewing
@@ -1694,7 +1614,7 @@ export default function TeamDashboard() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-7 text-xs"
+                                  className="h-8 text-xs px-3 flex-shrink-0"
                                   onClick={async () => {
                                     try {
                                       const link = document.createElement('a')
@@ -1735,9 +1655,10 @@ export default function TeamDashboard() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No files uploaded with this submission</p>
+                    <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                      <FileText className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm font-medium">No files uploaded with this submission</p>
+                      <p className="text-xs mt-1 opacity-75">Files will appear here once uploaded</p>
                     </div>
                   )}
                 </div>

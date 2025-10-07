@@ -231,9 +231,13 @@ export const POST = withAuth(withRateLimit(RATE_LIMITS.formSubmission, async (re
       degreeDiploma: (formData.get('degreeDiploma') as string) || undefined,
       nameOfUniversity: (formData.get('nameOfUniversity') as string) || undefined,
       nameOfDiploma: (formData.get('nameOfDiploma') as string) || undefined,
+      educationType: (formData.get('educationType') as string)?.trim() || undefined,
+      documentType: (formData.get('documentType') as string)?.trim() || undefined,
       
       // Additional Information
       haveChangedName: (formData.get('haveChangedName') as 'Yes' | 'No') || 'No',
+      previousName: (formData.get('previousName') as string)?.trim() || '',
+      nameChangeDocumentType: (formData.get('nameChangeDocumentType') as string)?.trim() || '',
       place: (formData.get('place') as string) || '',
       declarationDate: (formData.get('declarationDate') as string) || '',
       

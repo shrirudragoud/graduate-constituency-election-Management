@@ -69,7 +69,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     documentType: "", // New field: "certificate" or "markmemo"
 
     // Additional Information
-    haveChangedName: "",
+    haveChangedName: "No",
     previousName: "", // New field for previous name
     nameChangeDocumentType: "" // New field for document type
   })
@@ -471,7 +471,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
       nameOfDiploma: "",
       educationType: "",
       documentType: "",
-      haveChangedName: "",
+      haveChangedName: "No",
       previousName: "",
       nameChangeDocumentType: ""
     })
