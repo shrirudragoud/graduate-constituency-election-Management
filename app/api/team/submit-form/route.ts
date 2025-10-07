@@ -21,7 +21,7 @@ const ALLOWED_FILE_TYPES = [
 ]
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
-const MAX_FILES_PER_SUBMISSION = 3
+const MAX_FILES_PER_SUBMISSION = 6
 
 // File validation function
 function validateFile(file: File): { valid: boolean; error?: string } {
