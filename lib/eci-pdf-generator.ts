@@ -247,7 +247,6 @@ function generateECIFormHTML(submission: ECISubmissionData): string {
 
     <!-- PHOTO BOX BELOW HEADER -->
     <div class="photo-box">
-      Space for pasting<br>one recent<br>passport size<br>colour photo (4.6 cm)<br>full face with<br>white background
     </div>
 
     <!-- FORM BODY -->

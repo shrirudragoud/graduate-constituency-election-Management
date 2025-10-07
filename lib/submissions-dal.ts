@@ -169,8 +169,11 @@ class SubmissionsDataAccessLayer {
     if (!submission.district?.trim()) errors.push('District is required')
     if (!submission.taluka?.trim()) errors.push('Taluka is required')
     // VillageName, HouseNo, Street are optional now
-    if (!submission.pinCode?.trim() || !/^[0-9]{6}$/.test(submission.pinCode)) {
-      errors.push('Valid 6-digit PIN code is required')
+    // PIN code validation - only validate if provided, and must be exactly 6 digits
+    if (submission.pinCode && submission.pinCode.trim()) {
+      if (!/^[0-9]{6}$/.test(submission.pinCode.trim())) {
+        errors.push('PIN code must be exactly 6 digits if provided')
+      }
     }
     
     // Required contact details
@@ -261,7 +264,8 @@ class SubmissionsDataAccessLayer {
           newSubmission.sex || null, newSubmission.qualification || null, newSubmission.occupation || null, 
           newSubmission.dateOfBirth || null, newSubmission.ageYears || null, newSubmission.ageMonths || null,
           newSubmission.district, newSubmission.taluka, newSubmission.villageName || null, 
-          newSubmission.houseNo || null, newSubmission.street || null, newSubmission.pinCode,
+          newSubmission.houseNo || null, newSubmission.street || null, 
+          (newSubmission.pinCode && newSubmission.pinCode.trim() && /^[0-9]{6}$/.test(newSubmission.pinCode.trim())) ? newSubmission.pinCode.trim() : null,
           newSubmission.mobileNumber, newSubmission.email || null, newSubmission.aadhaarNumber,
           newSubmission.yearOfPassing || null, newSubmission.degreeDiploma || null, newSubmission.nameOfUniversity || null, 
           newSubmission.nameOfDiploma || null, newSubmission.educationType || null, newSubmission.documentType || null,

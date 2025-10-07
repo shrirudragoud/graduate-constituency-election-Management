@@ -20,8 +20,8 @@ const ALLOWED_FILE_TYPES = [
   'image/gif'
 ]
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB (reduced for faster uploads)
-const MAX_FILES_PER_SUBMISSION = 3 // Reduced for high concurrency
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB (increased to match client validation)
+const MAX_FILES_PER_SUBMISSION = 6 // Reduced for high concurrency
 
 console.log('📁 Uploads directory:', UPLOADS_DIR)
 
@@ -29,19 +29,21 @@ console.log('📁 Uploads directory:', UPLOADS_DIR)
 function validateFile(file: File): { valid: boolean; error?: string } {
   // Check file size
   if (file.size > MAX_FILE_SIZE) {
-    return { valid: false, error: `File ${file.name} is too large. Maximum size is 5MB.` }
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2)
+    const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)
+    return { valid: false, error: `File "${file.name}" is too large (${sizeMB}MB). Maximum size is ${maxSizeMB}MB.` }
   }
 
   // Check file type
   if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-    return { valid: false, error: `File type ${file.type} is not allowed.` }
+    return { valid: false, error: `File "${file.name}" has invalid type (${file.type}). Allowed types: JPG, PNG, PDF, GIF.` }
   }
 
   // Check file name for security
   const fileName = file.name.toLowerCase()
   const dangerousExtensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com']
   if (dangerousExtensions.some(ext => fileName.endsWith(ext))) {
-    return { valid: false, error: `File ${file.name} has a dangerous extension.` }
+    return { valid: false, error: `File "${file.name}" has a dangerous extension and cannot be uploaded.` }
   }
 
   return { valid: true }
@@ -186,39 +188,43 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
     // Extract form fields with proper validation
     const submission = {
       // Personal Details
-      surname: (formData.get('surname') as string) || '',
-      firstName: (formData.get('firstName') as string) || '',
-      fathersHusbandName: (formData.get('fathersHusbandName') as string) || '',
-      fathersHusbandFullName: (formData.get('fathersHusbandFullName') as string) || undefined,
+      surname: (formData.get('surname') as string)?.trim() || '',
+      firstName: (formData.get('firstName') as string)?.trim() || '',
+      fathersHusbandName: (formData.get('fathersHusbandName') as string)?.trim() || '',
+      fathersHusbandFullName: (formData.get('fathersHusbandFullName') as string)?.trim() || undefined,
       sex: (formData.get('sex') as 'M' | 'F') || 'M',
-      qualification: (formData.get('qualification') as string) || undefined,
-      occupation: (formData.get('occupation') as string) || undefined,
+      qualification: (formData.get('qualification') as string)?.trim() || undefined,
+      occupation: (formData.get('occupation') as string)?.trim() || undefined,
       dateOfBirth: (formData.get('dateOfBirth') as string) || '',
       ageYears: parseInt(formData.get('ageYears') as string) || 0,
       ageMonths: parseInt(formData.get('ageMonths') as string) || 0,
 
       // Address Details
-      district: (formData.get('district') as string) || '',
-      taluka: (formData.get('taluka') as string) || '',
-      villageName: (formData.get('villageName') as string) || '',
-      houseNo: (formData.get('houseNo') as string) || '',
-      street: (formData.get('street') as string) || '',
-      pinCode: (formData.get('pinCode') as string) || '',
+      district: (formData.get('district') as string)?.trim() || '',
+      taluka: (formData.get('taluka') as string)?.trim() || '',
+      villageName: (formData.get('villageName') as string)?.trim() || '',
+      houseNo: (formData.get('houseNo') as string)?.trim() || '',
+      street: (formData.get('street') as string)?.trim() || '',
+      pinCode: (formData.get('pinCode') as string)?.trim() || '',
 
       // Contact and Identification
-      mobileNumber: (formData.get('mobileNumber') as string) || '',
-      email: (formData.get('email') as string) || undefined,
-      aadhaarNumber: (formData.get('aadhaarNumber') as string) || '',
+      mobileNumber: (formData.get('mobileNumber') as string)?.trim() || '',
+      email: (formData.get('email') as string)?.trim() || undefined,
+      aadhaarNumber: (formData.get('aadhaarNumber') as string)?.trim() || '',
       
       // Education Details
-      yearOfPassing: (formData.get('yearOfPassing') as string) || undefined,
-      degreeDiploma: (formData.get('degreeDiploma') as string) || undefined,
-      nameOfUniversity: (formData.get('nameOfUniversity') as string) || undefined,
-      nameOfDiploma: (formData.get('nameOfDiploma') as string) || undefined,
+      yearOfPassing: (formData.get('yearOfPassing') as string)?.trim() || undefined,
+      degreeDiploma: (formData.get('degreeDiploma') as string)?.trim() || undefined,
+      nameOfUniversity: (formData.get('nameOfUniversity') as string)?.trim() || undefined,
+      nameOfDiploma: (formData.get('nameOfDiploma') as string)?.trim() || undefined,
+      educationType: (formData.get('educationType') as string)?.trim() || undefined,
+      documentType: (formData.get('documentType') as string)?.trim() || undefined,
       
       // Additional Information
       haveChangedName: (formData.get('haveChangedName') as 'Yes' | 'No') || 'No',
-      place: (formData.get('place') as string) || '',
+      previousName: (formData.get('previousName') as string)?.trim() || '',
+      nameChangeDocumentType: (formData.get('nameChangeDocumentType') as string)?.trim() || '',
+      place: (formData.get('place') as string)?.trim() || '',
       declarationDate: (formData.get('declarationDate') as string) || '',
       
       // Files will be handled separately
@@ -257,7 +263,8 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       'aadhaarCard', 
       'residentialProof',
       'marriageCertificate',
-      'signaturePhoto'
+      'signaturePhoto',
+      'idPhoto'
     ]
 
     let fileCount = 0
@@ -308,9 +315,11 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
 
     // Return file validation errors if any
     if (fileErrors.length > 0) {
+      console.error('❌ File validation errors:', fileErrors)
       return NextResponse.json({ 
         error: 'File upload validation failed', 
-        fileErrors 
+        fileErrors,
+        details: `Please check the following files: ${fileErrors.join(', ')}`
       }, { status: 400 })
     }
 
@@ -320,6 +329,14 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       mobileNumber: submission.mobileNumber,
       district: submission.district,
       taluka: submission.taluka,
+      pinCode: submission.pinCode,
+      pinCodeLength: submission.pinCode?.length,
+      pinCodeType: typeof submission.pinCode,
+      haveChangedName: submission.haveChangedName,
+      previousName: submission.previousName,
+      nameChangeDocumentType: submission.nameChangeDocumentType,
+      educationType: submission.educationType,
+      documentType: submission.documentType,
       filesCount: Object.keys(submission.files).length
     })
 
@@ -385,11 +402,27 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
           error: 'Invalid data provided. Please check your input.' 
         }, { status: 400 })
       }
+      
+      if (error.message.includes('Validation failed')) {
+        return NextResponse.json({ 
+          error: 'Validation failed',
+          details: error.message.replace('Validation failed: ', ''),
+          validationErrors: error.message.split(': ')[1]?.split(', ') || []
+        }, { status: 400 })
+      }
+      
+      if (error.message.includes('submissions_pin_code_check')) {
+        return NextResponse.json({ 
+          error: 'Invalid PIN code',
+          details: 'PIN code must be exactly 6 digits or left empty',
+          validationErrors: ['PIN code must be exactly 6 digits if provided']
+        }, { status: 400 })
+      }
     }
     
     return NextResponse.json({ 
       error: 'Failed to process submission',
-      details: process.env.NODE_ENV === 'development' ? error : undefined
+      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : 'Internal server error'
     }, { status: 500 })
   }
 })

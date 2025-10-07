@@ -5,7 +5,15 @@ import { useState, useMemo, useEffect } from "react"
 import { SimpleStudentForm } from "./simple-student-form"
 import { validateField, validateStudentForm, isFormValid, getErrorMessages, FieldValidation, validateFile } from "@/lib/validation"
 import { PhoneVerificationButton } from "@/components/ui/phone-verification-button"
-import { AlertCircle, CheckCircle, X } from "lucide-react"
+import { AlertCircle, CheckCircle, X, User, MapPin, GraduationCap, Camera, FileText, Upload, Save, ChevronLeft, ChevronRight } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface AddStudentFormProps {
   open: boolean
@@ -81,16 +89,17 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   const currentTabIndex = tabs.findIndex((tab) => tab.id === activeTab)
 
   const formCompletion = useMemo(() => {
+    // Required fields based on form validation and UI requirements
     const requiredFields = [
       "surname",
-      "firstName",
+      "firstName", 
       "fathersHusbandName",
       "fathersHusbandFullName",
       "sex",
       "dateOfBirth",
       "ageYears",
       "district",
-      "taluka",
+      "taluka", 
       "villageName",
       "houseNo",
       "street",
@@ -104,9 +113,10 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       "declarationDate",
     ]
 
+    // Optional fields that contribute to completion
     const optionalFields = [
       "qualification",
-      "occupation",
+      "occupation", 
       "ageMonths",
       "nameOfDiploma",
       "pinCode",
@@ -127,32 +137,64 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       "panCard"
     ] : []
 
-    const allRequiredFields = [...requiredFields, ...requiredFileFields]
-    const allOptionalFields = [...optionalFields, ...conditionalFileFields]
+    // Calculate totals
+    const totalRequired = requiredFields.length + requiredFileFields.length + conditionalFileFields.length
+    const totalOptional = optionalFields.length
     
-    // Count filled required fields
-    const filledRequiredFields = allRequiredFields.filter((field) => {
-      if (requiredFileFields.includes(field)) {
-        return files[field as keyof typeof files] !== null
-      }
+    let completedRequired = 0
+    let completedOptional = 0
+    
+    // Check required fields
+    requiredFields.forEach(field => {
       const value = formData[field as keyof typeof formData]
-      return value !== "" && value !== false
+      if (value && value.toString().trim() !== '') {
+        completedRequired++
+      }
+    })
+    
+    // Check required files
+    requiredFileFields.forEach(field => {
+      if (files[field as keyof typeof files]) {
+        completedRequired++
+      }
+    })
+    
+    // Check conditional files
+    conditionalFileFields.forEach(field => {
+      if (files[field as keyof typeof files]) {
+        completedRequired++
+      }
+    })
+    
+    // Check optional fields
+    optionalFields.forEach(field => {
+      const value = formData[field as keyof typeof formData]
+      if (value && value.toString().trim() !== '') {
+        completedOptional++
+      }
     })
 
-    // Count filled optional fields
-    const filledOptionalFields = allOptionalFields.filter((field) => {
-      if (conditionalFileFields.includes(field)) {
-        return files[field as keyof typeof files] !== null
-      }
-      const value = formData[field as keyof typeof formData]
-      return value !== "" && value !== false
-    })
-
-    // Calculate completion based on required fields only
-    const requiredCompletion = (filledRequiredFields.length / allRequiredFields.length) * 100
-    const optionalCompletion = filledOptionalFields.length > 0 ? (filledOptionalFields.length / allOptionalFields.length) * 10 : 0
+    // Calculate completion percentage
+    // Required fields count for 85% of completion, optional fields for 15%
+    const requiredCompletion = totalRequired > 0 ? (completedRequired / totalRequired) * 85 : 0
+    const optionalCompletion = totalOptional > 0 ? (completedOptional / totalOptional) * 15 : 0
     
-    return Math.round(Math.min(requiredCompletion + optionalCompletion, 100))
+    const totalCompletion = Math.round(Math.min(requiredCompletion + optionalCompletion, 100))
+    
+    // Debug logging
+    console.log('Add Student Form completion debug:', {
+      completedRequired,
+      totalRequired,
+      completedOptional,
+      totalOptional,
+      requiredCompletion: Math.round(requiredCompletion),
+      optionalCompletion: Math.round(optionalCompletion),
+      totalCompletion,
+      formData: Object.keys(formData).filter(key => formData[key as keyof typeof formData]),
+      files: Object.keys(files).filter(key => files[key as keyof typeof files])
+    })
+    
+    return totalCompletion
   }, [formData, files])
 
   const calculateAge = (dateOfBirth: string) => {
@@ -255,7 +297,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
     
     // Show warning if form is not complete
     if (formCompletion < 100) {
-      const proceed = confirm(`Form is only ${formCompletion}% complete. Some required fields or files may be missing. Do you want to submit anyway?`)
+      const proceed = confirm(`Form is  ${formCompletion}% complete.minimum 70% Required . Do you want to submit ?`)
       if (!proceed) {
         return
       }
@@ -311,7 +353,13 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
         resetForm()
       } else {
         console.error('❌ Form submission failed:', result.error)
-        alert(`Form submission failed: ${result.error || 'Unknown error'}. Please try again.`)
+        if (result.fileErrors) {
+          // File validation errors
+          const fileErrorMessages = result.fileErrors.join('\n• ')
+          alert(`File Upload Error:\n\n• ${fileErrorMessages}\n\nPlease check your files and try again.`)
+        } else {
+          alert(`Form submission failed: ${result.error || 'Unknown error'}\n\nDetails: ${result.details || 'Please try again.'}`)
+        }
       }
     } catch (error) {
       console.error('❌ Error submitting form:', error)
@@ -647,7 +695,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                          <div className="space-y-1.5 sm:space-y-2">
+                          <div className="space-y-1.5 sm:space-y-2 lg:col-span-2">
                             <Label htmlFor="mobileNumber" className="text-xs sm:text-sm font-medium">
                               Mobile Number <span className="text-destructive">*</span>
                             </Label>
@@ -658,10 +706,13 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                                 value={formData.mobileNumber}
                                 onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
                                 placeholder="Enter mobile number"
-                                className="flex-1 h-11 sm:h-10 text-sm sm:text-base"
+                                className="flex-1 min-w-0 h-11 sm:h-10 text-sm sm:text-base"
                                 required
                               />
-                              <PhoneVerificationButton phoneNumber={formData.mobileNumber} />
+                              <PhoneVerificationButton 
+                                phoneNumber={formData.mobileNumber} 
+                                className="flex-shrink-0"
+                              />
                             </div>
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">

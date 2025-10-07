@@ -438,11 +438,11 @@ export default function TeamDashboard() {
         <div className="space-y-3">
           {/* Mobile-first header */}
           <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Karykarta Portal</h1>
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                Welcome back, <span className="font-semibold text-foreground">{user?.firstName}</span>!
-            </p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground truncate"></h1>
+               <p className="text-sm sm:text-base text-muted-foreground mt-1">
+                   Welcome , <span className="font-semibold text-foreground">{user?.firstName}</span>!
+              </p>
           </div>
             <div className="flex items-center gap-1 ml-2">
               <Button onClick={handleLogout} variant="outline" size="sm" className="h-8 w-8 p-0">
@@ -474,7 +474,7 @@ export default function TeamDashboard() {
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground font-medium truncate">Total Voters</p>
+                      <p className="text-xs text-muted-foreground font-medium truncate">My Submissions</p>
                       <p className="text-lg sm:text-xl lg:text-2xl font-bold text-chart-1 tracking-tight">{totalSubmissions}</p>
                 </div>
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-lg flex items-center justify-center">
@@ -483,7 +483,7 @@ export default function TeamDashboard() {
               </div>
                   <div className="flex items-center gap-1 p-1.5 bg-chart-1/10 rounded text-xs">
                     <TrendingUp className="w-3 h-3 text-chart-1" />
-                    <span className="text-chart-1 font-medium">+12%</span>
+                    <span className="text-chart-1 font-medium"></span>
               </div>
             </CardContent>
           </Card>
@@ -514,7 +514,7 @@ export default function TeamDashboard() {
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-chart-1" />
                 </div>
               </div>
-              <div className="text-xs text-chart-1">87.3% verified</div>
+              <div className="text-xs text-chart-1"> </div>
             </CardContent>
           </Card>
 
@@ -592,14 +592,11 @@ export default function TeamDashboard() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-primary" />
-                      Voter Registry
+                      
                     </CardTitle>
-                    <CardDescription>Manage voter information and constituency data</CardDescription>
+                    <CardDescription></CardDescription>
                   </div>
-                  <Button onClick={handleAddVoterClick}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Voter
-                  </Button>
+                
                 </div>
               </CardHeader>
               <CardContent>

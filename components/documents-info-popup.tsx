@@ -31,7 +31,7 @@ export function DocumentsInfoPopup({ open, onOpenChange, onProceed }: DocumentsI
     if (!open) return
 
     setIsAutoProceeding(true)
-    setCountdown(4)
+    setCountdown(9)
 
     const timer = setInterval(() => {
       setCountdown((prev) => {

@@ -207,21 +207,33 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
 
   // Calculate form completion percentage
   const formCompletion = useMemo(() => {
+    // Required fields based on form validation and UI requirements
     const requiredFields = [
-      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka'
+      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka',
+      'sex', 'dateOfBirth', 'ageYears', 'ageMonths', 'educationType', 'documentType'
     ]
     
+    // Optional fields that contribute to completion
     const optionalFields = [
-      'fathersHusbandName', 'sex', 'qualification', 'occupation', 'dateOfBirth', 'ageYears', 'ageMonths',
-      'villageName', 'houseNo', 'street', 'pinCode', 'email', 'yearOfPassing', 'degreeDiploma', 
-      'nameOfUniversity', 'nameOfDiploma', 'haveChangedName', 'educationType', 'documentType',
-      'previousName', 'nameChangeDocumentType'
+      'fathersHusbandName', 'qualification', 'occupation', 'villageName', 'houseNo', 
+      'street', 'pinCode', 'email', 'yearOfPassing', 'degreeDiploma', 'nameOfUniversity', 
+      'nameOfDiploma', 'haveChangedName'
     ]
     
+    // Conditional required fields (only required if certain conditions are met)
+    const conditionalRequiredFields = []
+    if (formData.haveChangedName === 'Yes') {
+      conditionalRequiredFields.push('previousName', 'nameChangeDocumentType')
+    }
+    
+    // Required files
     const requiredFiles = ['degreeCertificate', 'aadhaarCard', 'residentialProof', 'idPhoto']
+    
+    // Conditional required files
     const conditionalFiles = formData.haveChangedName === 'Yes' ? ['marriageCertificate'] : []
     
-    const totalRequired = requiredFields.length + requiredFiles.length + conditionalFiles.length
+    // Calculate totals
+    const totalRequired = requiredFields.length + conditionalRequiredFields.length + requiredFiles.length + conditionalFiles.length
     const totalOptional = optionalFields.length
     
     let completedRequired = 0
@@ -229,36 +241,84 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     
     // Check required fields
     requiredFields.forEach(field => {
-      if (formData[field as keyof typeof formData] && formData[field as keyof typeof formData].toString().trim() !== '') {
+      const value = formData[field as keyof typeof formData]
+      const isValid = value && value.toString().trim() !== ''
+      if (isValid) {
         completedRequired++
       }
+      console.log(`Required field ${field}:`, { value, isValid })
+    })
+    
+    // Check conditional required fields
+    conditionalRequiredFields.forEach(field => {
+      const value = formData[field as keyof typeof formData]
+      const isValid = value && value.toString().trim() !== ''
+      if (isValid) {
+        completedRequired++
+      }
+      console.log(`Conditional required field ${field}:`, { value, isValid })
     })
     
     // Check optional fields
     optionalFields.forEach(field => {
-      if (formData[field as keyof typeof formData] && formData[field as keyof typeof formData].toString().trim() !== '') {
+      const value = formData[field as keyof typeof formData]
+      if (value && value.toString().trim() !== '') {
         completedOptional++
       }
     })
     
     // Check required files
     requiredFiles.forEach(field => {
-      if (files[field as keyof typeof files]) {
+      const file = files[field as keyof typeof files]
+      if (file) {
         completedRequired++
       }
+      console.log(`Required file ${field}:`, { file: file?.name || 'none' })
     })
     
     // Check conditional files
     conditionalFiles.forEach(field => {
-      if (files[field as keyof typeof files]) {
+      const file = files[field as keyof typeof files]
+      if (file) {
         completedRequired++
       }
+      console.log(`Conditional file ${field}:`, { file: file?.name || 'none' })
     })
     
-    const totalPossible = totalRequired + totalOptional
-    const totalCompleted = completedRequired + completedOptional
+    // Calculate completion percentage
+    // Required fields count for 85% of completion, optional fields for 15%
+    const requiredCompletion = totalRequired > 0 ? (completedRequired / totalRequired) * 85 : 0
+    const optionalCompletion = totalOptional > 0 ? (completedOptional / totalOptional) * 15 : 0
     
-    return totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : 0
+    const totalCompletion = Math.round(Math.min(requiredCompletion + optionalCompletion, 100))
+    
+    // Debug logging
+    console.log('Form completion debug:', {
+      completedRequired,
+      totalRequired,
+      completedOptional,
+      totalOptional,
+      requiredCompletion: Math.round(requiredCompletion),
+      optionalCompletion: Math.round(optionalCompletion),
+      totalCompletion,
+      formDataKeys: Object.keys(formData).filter(key => formData[key as keyof typeof formData] && formData[key as keyof typeof formData].toString().trim() !== ''),
+      filesKeys: Object.keys(files).filter(key => files[key as keyof typeof files]),
+      district: formData.district,
+      taluka: formData.taluka,
+      educationType: formData.educationType,
+      documentType: formData.documentType,
+      haveChangedName: formData.haveChangedName,
+      previousName: formData.previousName,
+      nameChangeDocumentType: formData.nameChangeDocumentType,
+      // Show actual values for debugging
+      surname: formData.surname,
+      firstName: formData.firstName,
+      mobileNumber: formData.mobileNumber,
+      aadhaarNumber: formData.aadhaarNumber,
+      pinCode: formData.pinCode
+    })
+    
+    return totalCompletion
   }, [formData, files])
 
   // Check if form is valid
@@ -291,7 +351,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     
     // Show confirmation dialog
     const confirmMessage = formCompletion < 100 
-      ? `Form is only ${formCompletion}% complete. Do you want to submit anyway?`
+      ? `Form is  ${formCompletion}% complete. Do you want to submit ?`
       : 'Are you sure you want to submit this registration?'
     
     const confirmSubmit = confirm(confirmMessage)
@@ -361,11 +421,19 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
           // Validation error
           if (errorData.missingFields) {
             alert(`Please fill in all required fields: ${errorData.missingFields.join(', ')}`)
+          } else if (errorData.fileErrors) {
+            // File validation errors
+            const fileErrorMessages = errorData.fileErrors.join('\n• ')
+            alert(`File Upload Error:\n\n• ${fileErrorMessages}\n\nPlease check your files and try again.`)
+          } else if (errorData.validationErrors) {
+            // Database validation errors
+            const validationMessages = errorData.validationErrors.join('\n• ')
+            alert(`Validation Error:\n\n• ${validationMessages}\n\nPlease check your input and try again.`)
           } else {
-            alert(`Validation Error: ${errorData.error}`)
+            alert(`Validation Error: ${errorData.error}\n\nDetails: ${errorData.details || 'Please check your input and try again.'}`)
           }
         } else {
-          alert(`Submission Error: ${errorData.error || 'Please try again.'}`)
+          alert(`Submission Error: ${errorData.error || 'Please try again.'}\n\nDetails: ${errorData.details || 'Unknown error occurred.'}`)
         }
         throw new Error('Submission failed')
       }
@@ -520,6 +588,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   <Label htmlFor="surname" className="text-sm font-semibold text-gray-700">Surname *</Label>
                   <Input
                     id="surname"
+                    name="surname"
                     value={formData.surname}
                     onChange={(e) => handleInputChange("surname", e.target.value)}
                     placeholder="Enter surname"
@@ -531,6 +600,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   <Label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First Name *</Label>
                   <Input
                     id="firstName"
+                    name="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
                     placeholder="Enter first name"
@@ -632,6 +702,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                 <div>
                   <Label htmlFor="district" className="text-sm font-semibold text-gray-700">District *</Label>
                   <Select
+                    name="district"
                     value={formData.district}
                     onValueChange={(value) => handleInputChange("district", value)}
                   >
@@ -651,6 +722,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                 <div>
                   <Label htmlFor="taluka" className="text-sm font-semibold text-gray-700">Taluka *</Label>
                   <Select
+                    name="taluka"
                     value={formData.taluka}
                     onValueChange={(value) => handleInputChange("taluka", value)}
                     disabled={!formData.district || isLoadingTalukas}
@@ -735,7 +807,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6">
               <h3 className="text-lg sm:text-xl font-bold text-purple-800 mb-4 sm:mb-6 border-b-2 border-purple-300 pb-2">Contact Information</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div>
+                <div className="sm:col-span-2">
                   <Label htmlFor="mobileNumber" className="text-sm font-semibold text-gray-700">Mobile Number *</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
@@ -743,9 +815,12 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                       value={formData.mobileNumber}
                       onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
                       placeholder="Enter mobile number"
-                      className={`flex-1 ${getInputClassName("mobileNumber", "border-2 border-gray-300 focus:border-purple-500 rounded-lg")}`}
+                      className={`flex-1 min-w-0 ${getInputClassName("mobileNumber", "border-2 border-gray-300 focus:border-purple-500 rounded-lg")}`}
                     />
-                    <PhoneVerificationButton phoneNumber={formData.mobileNumber} />
+                    <PhoneVerificationButton 
+                      phoneNumber={formData.mobileNumber} 
+                      className="flex-shrink-0"
+                    />
                   </div>
                   <ValidationError field="mobileNumber" />
                 </div>
@@ -793,22 +868,23 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
               {/* Education Type Selection */}
               <div className="mb-6">
                 <Label className="text-sm font-semibold text-gray-700">Education Type *</Label>
-                <RadioGroup
-                  value={formData.educationType}
-                  onValueChange={(value) => {
-                    handleInputChange("educationType", value)
-                    // Reset related fields when education type changes
-                    setFormData(prev => ({
-                      ...prev,
-                      educationType: value,
-                      degreeDiploma: "",
-                      nameOfUniversity: "",
-                      nameOfDiploma: "",
-                      documentType: ""
-                    }))
-                  }}
-                  className="mt-2"
-                >
+                  <RadioGroup
+                    name="educationType"
+                    value={formData.educationType}
+                    onValueChange={(value) => {
+                      handleInputChange("educationType", value)
+                      // Reset related fields when education type changes
+                      setFormData(prev => ({
+                        ...prev,
+                        educationType: value,
+                        degreeDiploma: "",
+                        nameOfUniversity: "",
+                        nameOfDiploma: "",
+                        documentType: ""
+                      }))
+                    }}
+                    className="mt-2"
+                  >
                   <div className="flex items-center space-x-6">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="degree" id="educationDegree" className="border-2" />
@@ -866,11 +942,12 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   {/* Document Type Selection */}
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Document Type *</Label>
-                    <RadioGroup
-                      value={formData.documentType}
-                      onValueChange={(value) => handleInputChange("documentType", value)}
-                      className="mt-2"
-                    >
+                  <RadioGroup
+                    name="documentType"
+                    value={formData.documentType}
+                    onValueChange={(value) => handleInputChange("documentType", value)}
+                    className="mt-2"
+                  >
                       <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="certificate" id="docCertificate" className="border-2" />
@@ -914,6 +991,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">Have you changed your name?</Label>
                   <RadioGroup
+                    name="haveChangedName"
                     value={formData.haveChangedName}
                     onValueChange={(value) => {
                       handleInputChange("haveChangedName", value)
@@ -949,6 +1027,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                       <Label htmlFor="previousName" className="text-sm font-semibold text-gray-700">Previous Name *</Label>
                       <Input
                         id="previousName"
+                        name="previousName"
                         value={formData.previousName}
                         onChange={(e) => handleInputChange("previousName", e.target.value)}
                         placeholder="Enter your previous name"
@@ -959,6 +1038,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     <div>
                       <Label className="text-sm font-semibold text-gray-700">Document Type for Name Change *</Label>
                       <RadioGroup
+                        name="nameChangeDocumentType"
                         value={formData.nameChangeDocumentType}
                         onValueChange={(value) => handleInputChange("nameChangeDocumentType", value)}
                         className="mt-2"

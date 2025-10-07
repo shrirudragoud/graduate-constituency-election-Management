@@ -493,7 +493,7 @@ function generateImprovedStudentFormHTML(
     </div>
     
     <div class="photo-section">
-      <div style="font-size: 6px; margin-bottom: 2px; line-height: 1.1;">SPACE FOR PASTING<br>ONE RECENT<br>UNSIGNED PASSPORT<br>SIZE COLOUR<br>PHOTOGRAPH (4.5 CM<br>*3.5 CM) SHOWING<br>FRONTAL VIEW OF<br>FULL FACE WITH<br>WHITE BACKGROUND</div>
+      <div style="font-size: 6px; margin-bottom: 2px; line-height: 1.1;"><br><br><br><br><br><br><br></div>
       ${processedPhotos.idPhoto ? 
         `<img src="${processedPhotos.idPhoto}" alt="ID Photo">` : 
         `<div class="photo-placeholder">Photo<br>Not Provided</div>`

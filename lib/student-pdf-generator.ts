@@ -354,7 +354,6 @@ function generateStudentFormHTML(submission: StudentSubmissionData): string {
       ${submission.files.idPhoto && submission.files.idPhoto.base64 ? 
         `<img src="data:image/jpeg;base64,${submission.files.idPhoto.base64}" alt="ID Photo" />` :
         `<div class="photo-placeholder">
-          Space for pasting<br>one recent<br>passport size<br>colour photo (4.6 cm)<br>full face with<br>white background
         </div>`
       }
     </div>

@@ -48,10 +48,15 @@ export function PhoneVerificationButton({ phoneNumber, className = "" }: PhoneVe
       size="sm"
       onClick={handleVerify}
       disabled={isVerifying || !phoneNumber || phoneNumber.length !== 10}
-      className={`flex items-center gap-2 text-xs ${className}`}
+      className={`flex items-center gap-1 text-xs px-2 py-1 h-8 min-w-fit whitespace-nowrap ${className}`}
     >
-      <ExternalLink className="w-3 h-3" />
-      {isVerifying ? "Verifying..." : " Whatsapp Verify"}
+      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+      <span className="hidden sm:inline">
+        {isVerifying ? "Verifying..." : "WhatsApp Verify"}
+      </span>
+      <span className="sm:hidden">
+        {isVerifying ? "..." : "Verify"}
+      </span>
     </Button>
   )
 }

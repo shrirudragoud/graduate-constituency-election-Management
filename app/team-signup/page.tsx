@@ -175,10 +175,13 @@ export default function TeamSignupPage() {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className={`flex-1 ${errors.phone ? "border-red-500" : ""}`}
+                  className={`flex-1 min-w-0 ${errors.phone ? "border-red-500" : ""}`}
                   placeholder="9876543210"
                 />
-                <PhoneVerificationButton phoneNumber={formData.phone} />
+                <PhoneVerificationButton 
+                  phoneNumber={formData.phone} 
+                  className="flex-shrink-0"
+                />
               </div>
               {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
