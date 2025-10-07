@@ -26,8 +26,9 @@ export class SimpleFileUploadService {
     // Extract filename from path
     const fileName = filePath.split('/').pop() || filePath
     
-    // Use the base URL from environment
-    const publicUrl = `${this.baseUrl}/api/files/${fileName}`
+    // Use the base URL from environment and ensure no double slashes
+    const cleanBaseUrl = this.baseUrl.replace(/\/+$/, '') // Remove trailing slashes
+    const publicUrl = `${cleanBaseUrl}/api/files/${fileName}`
     
     console.log('✅ Using URL from .env:', publicUrl)
     return {

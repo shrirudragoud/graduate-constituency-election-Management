@@ -40,6 +40,25 @@ pool.on('remove', (client) => {
   console.log('🔌 Client removed from pool')
 })
 
+// RLS Helper Functions for Row-Level Security
+export async function setUserContext(client: PoolClient, userId: number, role: string, district?: string) {
+  // Use proper SQL escaping to prevent injection
+  const escapedRole = role.replace(/'/g, "''")
+  const escapedDistrict = district ? district.replace(/'/g, "''") : ''
+  
+  await client.query(`SET app.current_user_id = ${userId}`)
+  await client.query(`SET app.current_user_role = '${escapedRole}'`)
+  if (district) {
+    await client.query(`SET app.current_user_district = '${escapedDistrict}'`)
+  }
+}
+
+export async function clearUserContext(client: PoolClient) {
+  await client.query('RESET app.current_user_id')
+  await client.query('RESET app.current_user_role')
+  await client.query('RESET app.current_user_district')
+}
+
 // Test database connection with retry logic
 export async function testConnection(retries = 3): Promise<boolean> {
   for (let i = 0; i < retries; i++) {

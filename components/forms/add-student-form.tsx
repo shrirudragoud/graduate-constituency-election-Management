@@ -94,7 +94,6 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       "villageName",
       "houseNo",
       "street",
-      "pinCode",
       "mobileNumber",
       "email",
       "aadhaarNumber",
@@ -110,6 +109,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       "occupation",
       "ageMonths",
       "nameOfDiploma",
+      "pinCode",
     ]
 
     // Required file fields
@@ -349,7 +349,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-primary/20">
               <User className="w-4 h-4 text-primary" />
             </div>
-            <span>Add New Student</span>
+            <span>Add New Voter</span>
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
             Complete the electoral registration form based on Form-18 requirements
@@ -632,17 +632,16 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                           </div>
                           <div className="space-y-1.5 sm:space-y-2">
                             <Label htmlFor="pinCode" className="text-xs sm:text-sm font-medium">
-                              Pin Code <span className="text-destructive">*</span>
+                              Pin Code
                             </Label>
                             <Input
                               id="pinCode"
                               value={formData.pinCode}
                               onChange={(e) => handleInputChange("pinCode", e.target.value)}
-                              placeholder="Enter pin code"
+                              placeholder="Enter pin code (optional)"
                               className="h-11 sm:h-10 text-sm sm:text-base"
                               maxLength={6}
                               pattern="[0-9]{6}"
-                              required
                             />
                           </div>
                         </div>
@@ -1000,7 +999,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
 
                             <div className="space-y-1.5 sm:space-y-2 sm:col-span-2 lg:col-span-1">
                               <Label className="text-xs sm:text-sm font-medium">
-                                3. Residential proof <span className="text-destructive">*</span>
+                                3. Residential proof <span className="text-destructive">optional</span>
                               </Label>
                               <div className="border-2 border-dashed border-accent/20 rounded-lg p-3 sm:p-4 text-center hover:border-accent/40 transition-colors min-h-[100px] sm:min-h-[120px] flex flex-col items-center justify-center">
                                 <FileText className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-muted-foreground mb-1 sm:mb-2" />
@@ -1246,7 +1245,7 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
             Thank You! 🎉
           </DialogTitle>
           <DialogDescription className="text-center text-base">
-            Your student registration form has been successfully submitted.
+            Your Voter registration form has been successfully submitted.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">

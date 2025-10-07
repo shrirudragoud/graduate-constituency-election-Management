@@ -315,9 +315,6 @@ Your account has been successfully created!
 ${user.district ? `• District: ${user.district}` : ''}
 ${user.taluka ? `• Taluka: ${user.taluka}` : ''}
 
-🔐 Login Credentials:
-• Email: ${user.email}
-• Password: [Check your email for password]
 
 ✅ You can now access the system and start managing voter registrations.
 

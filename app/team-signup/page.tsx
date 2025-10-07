@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckCircle, UserPlus, Phone, MapPin, Lock, ArrowRight } from "lucide-react"
+import { CheckCircle, UserPlus, Phone, MapPin, Lock, Mail } from "lucide-react"
 import Link from "next/link"
 import { PhoneVerificationButton } from "@/components/ui/phone-verification-button"
+import DistrictTalukaService, { DistrictOption, TalukaOption } from "@/lib/district-taluka-service"
 
 export default function TeamSignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -16,21 +17,51 @@ export default function TeamSignupPage() {
     name: "",
     phone: "",
     password: "",
-    padvidhar: "",
-    address: "",
+    email: "",
     district: "",
+    taluka: "",
+    address: "",
     pin: ""
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [districts, setDistricts] = useState<DistrictOption[]>([])
+  const [talukas, setTalukas] = useState<TalukaOption[]>([])
+  const [loadingDistricts, setLoadingDistricts] = useState(true)
 
-  const districts = [
-    "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad",
-    "Jaipur", "Surat", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal",
-    "Visakhapatnam", "Pimpri-Chinchwad", "Patna", "Vadodara", "Ghaziabad", "Ludhiana",
-    "Agra", "Nashik", "Faridabad", "Meerut", "Rajkot", "Kalyan-Dombivali", "Vasai-Virar",
-    "Sangli", "Kolhapur", "Satara", "Solapur", "Aurangabad", "Nashik", "Parbhani", "Nanded"
-  ]
+  // Load districts on component mount
+  useEffect(() => {
+    const loadDistricts = async () => {
+      try {
+        const districtData = await DistrictTalukaService.getDistricts()
+        setDistricts(districtData)
+      } catch (error) {
+        console.error('Error loading districts:', error)
+      } finally {
+        setLoadingDistricts(false)
+      }
+    }
+    loadDistricts()
+  }, [])
+
+  // Load talukas when district changes
+  useEffect(() => {
+    const loadTalukas = async () => {
+      if (formData.district) {
+        try {
+          const talukaData = await DistrictTalukaService.getTalukasByDistrict(formData.district)
+          setTalukas(talukaData)
+          // Reset taluka selection when district changes
+          setFormData(prev => ({ ...prev, taluka: "" }))
+        } catch (error) {
+          console.error('Error loading talukas:', error)
+        }
+      } else {
+        setTalukas([])
+      }
+    }
+    loadTalukas()
+  }, [formData.district])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -42,20 +73,23 @@ export default function TeamSignupPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
+    // Required fields only
     if (!formData.name.trim()) newErrors.name = "Name is required"
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required"
     else if (!/^[0-9]{10}$/.test(formData.phone)) {
       newErrors.phone = "Please enter a valid 10-digit phone number"
     }
-    if (!formData.password.trim()) newErrors.password = "Password is required"
-    else if (formData.password.length < 4) {
+    if (!formData.district) newErrors.district = "Please select a district"
+    if (!formData.taluka) newErrors.taluka = "Please select a taluka"
+
+    // Optional fields validation (only if provided)
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+    if (formData.password && formData.password.length < 4) {
       newErrors.password = "Password must be at least 4 characters"
     }
-    if (!formData.padvidhar.trim()) newErrors.padvidhar = "Padvidhar is required"
-    if (!formData.address.trim()) newErrors.address = "Address is required"
-    if (!formData.district) newErrors.district = "Please select a district"
-    if (!formData.pin.trim()) newErrors.pin = "PIN code is required"
-    else if (!/^[0-9]{6}$/.test(formData.pin)) {
+    if (formData.pin && !/^[0-9]{6}$/.test(formData.pin)) {
       newErrors.pin = "Please enter a valid 6-digit PIN code"
     }
 
@@ -103,15 +137,15 @@ export default function TeamSignupPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <UserPlus className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Become Karykarta </h1>
-          <p className="text-gray-600 text-sm">Become part of our  management team</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">कार्यकर्ता नोंदणी </h1>
+          <p className="text-gray-600 text-sm"></p>
         </div>
 
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-4">
             <CardTitle className="flex items-center justify-center gap-2">
               <UserPlus className="w-5 h-5 text-primary" />
-              Team Registration
+              
             </CardTitle>
           </CardHeader>
           
@@ -149,11 +183,28 @@ export default function TeamSignupPage() {
               {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
 
+            {/* Email Field */}
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email (Optional)
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                className={errors.email ? "border-red-500" : ""}
+                placeholder="Enter your email"
+              />
+              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+            </div>
+
             {/* Password Field */}
             <div>
               <Label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Password * (Min 4 chars)
+                Password (Optional - Min 4 chars)
               </Label>
               <Input
                 id="password"
@@ -166,24 +217,61 @@ export default function TeamSignupPage() {
               {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
             </div>
 
-            {/* Padvidhar Field */}
+            {/* District Field */}
             <div>
-              <Label htmlFor="padvidhar" className="text-sm font-medium">Padvidhar *</Label>
-              <Input
-                id="padvidhar"
-                value={formData.padvidhar}
-                onChange={(e) => handleInputChange("padvidhar", e.target.value)}
-                className={errors.padvidhar ? "border-red-500" : ""}
-                placeholder="Enter padvidhar details"
-              />
-              {errors.padvidhar && <p className="text-xs text-red-500 mt-1">{errors.padvidhar}</p>}
+              <Label htmlFor="district" className="text-sm font-medium">District *</Label>
+              <Select 
+                value={formData.district} 
+                onValueChange={(value) => handleInputChange("district", value)}
+                disabled={loadingDistricts}
+              >
+                <SelectTrigger className={errors.district ? "border-red-500" : ""}>
+                  <SelectValue placeholder={loadingDistricts ? "Loading districts..." : "Select district"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {districts.map((district) => (
+                    <SelectItem key={district.value} value={district.value}>
+                      {district.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.district && <p className="text-xs text-red-500 mt-1">{errors.district}</p>}
+            </div>
+
+            {/* Taluka Field */}
+            <div>
+              <Label htmlFor="taluka" className="text-sm font-medium">Taluka *</Label>
+              <Select 
+                value={formData.taluka} 
+                onValueChange={(value) => handleInputChange("taluka", value)}
+                disabled={!formData.district || talukas.length === 0}
+              >
+                <SelectTrigger className={errors.taluka ? "border-red-500" : ""}>
+                  <SelectValue placeholder={
+                    !formData.district 
+                      ? "Select district first" 
+                      : talukas.length === 0 
+                        ? "Loading talukas..." 
+                        : "Select taluka"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {talukas.map((taluka) => (
+                    <SelectItem key={taluka.value} value={taluka.value}>
+                      {taluka.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.taluka && <p className="text-xs text-red-500 mt-1">{errors.taluka}</p>}
             </div>
 
             {/* Address Field */}
             <div>
               <Label htmlFor="address" className="text-sm font-medium flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                Address *
+                Address 
               </Label>
               <Input
                 id="address"
@@ -195,33 +283,15 @@ export default function TeamSignupPage() {
               {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
             </div>
 
-            {/* District Field */}
-            <div>
-              <Label htmlFor="district" className="text-sm font-medium">District *</Label>
-              <Select value={formData.district} onValueChange={(value) => handleInputChange("district", value)}>
-                <SelectTrigger className={errors.district ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select district" />
-                </SelectTrigger>
-                <SelectContent>
-                  {districts.map((district) => (
-                    <SelectItem key={district} value={district}>
-                      {district}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.district && <p className="text-xs text-red-500 mt-1">{errors.district}</p>}
-            </div>
-
             {/* PIN Code Field */}
             <div>
-              <Label htmlFor="pin" className="text-sm font-medium">PIN Code *</Label>
+              <Label htmlFor="pin" className="text-sm font-medium">PIN Code</Label>
               <Input
                 id="pin"
                 value={formData.pin}
                 onChange={(e) => handleInputChange("pin", e.target.value)}
                 className={errors.pin ? "border-red-500" : ""}
-                placeholder="123456"
+                placeholder="Enter 6-digit PIN code (optional)"
               />
               {errors.pin && <p className="text-xs text-red-500 mt-1">{errors.pin}</p>}
             </div>

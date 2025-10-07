@@ -18,16 +18,17 @@ export async function POST(request: NextRequest) {
       name, 
       phone, 
       password, 
-      padvidhar, 
+      email,
       address, 
       district, 
+      taluka,
       pin 
     } = body
 
     // Validate required fields
-    if (!name || !phone || !password || !padvidhar || !address || !district || !pin) {
+    if (!name || !phone || !district || !taluka) {
       return NextResponse.json({ 
-        error: 'All fields are required' 
+        error: 'Name, phone, district, and taluka are required' 
       }, { status: 400 })
     }
 
@@ -38,15 +39,22 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Validate password strength (minimum 4 characters)
-    if (password.length < 4) {
+    // Validate email format if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ 
+        error: 'Please enter a valid email address' 
+      }, { status: 400 })
+    }
+
+    // Validate password strength if provided (minimum 4 characters)
+    if (password && password.length < 4) {
       return NextResponse.json({ 
         error: 'Password must be at least 4 characters long' 
       }, { status: 400 })
     }
 
-    // Validate PIN format
-    if (!/^[0-9]{6}$/.test(pin)) {
+    // Validate PIN format if provided
+    if (pin && !/^[0-9]{6}$/.test(pin)) {
       return NextResponse.json({ 
         error: 'Please enter a valid 6-digit PIN code' 
       }, { status: 400 })
@@ -56,19 +64,20 @@ export async function POST(request: NextRequest) {
       name,
       phone,
       district,
-      pin
+      taluka,
+      email: email || 'Not provided'
     })
 
     // Create user account with default role as volunteer
     const result = await UserManagement.createUser({
-      email: `${phone}@bjp.local`, // Use phone as email for simplicity
-      password,
+      email: email || `${phone}@bjp.local`, // Use provided email or phone as email
+      password: password || 'default123', // Use provided password or default
       role: 'volunteer',
       firstName: name.split(' ')[0] || name,
       lastName: name.split(' ').slice(1).join(' ') || '',
       phone,
       district,
-      taluka: padvidhar // Using padvidhar as taluka for now
+      taluka: taluka
     })
 
     if (!result.success) {
@@ -89,10 +98,10 @@ export async function POST(request: NextRequest) {
       const teamSignupData: TeamSignupPDFData = {
         name: name,
         phone: phone,
-        address: address,
+        address: address || 'Not provided',
         district: district,
-        padvidhar: padvidhar,
-        pin: pin,
+        padvidhar: taluka, // Using taluka as padvidhar for PDF
+        pin: pin || 'Not provided',
         submittedAt: new Date()
       }
 

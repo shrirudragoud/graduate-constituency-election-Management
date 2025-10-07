@@ -18,7 +18,7 @@ const reportTypes = [
   {
     id: "registration",
     title: "Registration Reports",
-    description: "Student enrollment and registration statistics",
+    description: "Voter enrollment and registration statistics",
     icon: Users,
     color: "chart-1",
     reports: [

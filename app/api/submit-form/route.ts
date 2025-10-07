@@ -6,6 +6,7 @@ import { SubmissionsDAL } from '@/lib/submissions-dal'
 import { testConnection } from '@/lib/database'
 import { withAuth } from '@/lib/auth-middleware'
 import { withRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { generateStudentFormPDF } from '@/lib/improved-student-pdf-generator'
 
 // Ensure uploads directory exists
 const UPLOADS_DIR = join(process.cwd(), 'data', 'uploads')
@@ -329,15 +330,43 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
     })
     console.log('✅ Public submission saved with ID:', savedSubmission.id)
     
-    // Send WhatsApp notification asynchronously (don't block response)
-    const whatsappPromise = sendWhatsAppNotification(savedSubmission, savedSubmission.id)
+    // Generate PDF asynchronously (don't block response)
+    const pdfPromise = generateStudentFormPDF(savedSubmission)
+      .then(pdfPath => {
+        console.log('✅ Voter form PDF generated:', pdfPath)
+        return pdfPath
+      })
+      .catch(error => {
+        console.error('❌ Error generating PDF:', error)
+        return null
+      })
+    
+    // Send WhatsApp notification with PDF asynchronously (don't block response)
+    const whatsappPromise = pdfPromise.then(pdfPath => {
+      if (pdfPath) {
+        // Convert local file path to accessible URL using public domain
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        // Ensure no double slashes in URL
+        const cleanBaseUrl = baseUrl.replace(/\/+$/, '') // Remove trailing slashes
+        const pdfUrl = `${cleanBaseUrl}/api/files/${pdfPath.split('/').pop()}`
+        console.log('📱 Sending WhatsApp notification with PDF:', pdfUrl)
+        return twilioWhatsAppService.sendPDFFile(savedSubmission.mobileNumber, pdfUrl, `📄 Your ECI Form PDF is ready!\n\nForm ID: ${savedSubmission.id}\nGenerated on: ${new Date().toLocaleString('en-GB')}\n\nThis is your official ECI Form-18 for voter registration.`)
+      } else {
+        console.log('📱 Sending WhatsApp notification without PDF (PDF generation failed)')
+        return sendWhatsAppNotification(savedSubmission, savedSubmission.id)
+      }
+    }).catch(error => {
+      console.error('❌ Error in WhatsApp notification process:', error)
+      return sendWhatsAppNotification(savedSubmission, savedSubmission.id)
+    })
     
     // Return response immediately
     return NextResponse.json({
       success: true,
       submissionId: savedSubmission.id,
       message: 'Registration submitted successfully!',
-      whatsappStatus: 'processing' // WhatsApp is being sent in background
+      whatsappStatus: 'processing', // WhatsApp is being sent in background
+      pdfStatus: 'generating' // PDF is being generated in background
     })
 
   } catch (error) {

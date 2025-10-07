@@ -25,7 +25,7 @@ interface SimpleStudentFormProps {
   isTeamForm?: boolean
 }
 
-export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, apiEndpoint = '/api/public/submit-form', isTeamForm = false }: SimpleStudentFormProps) {
+export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, apiEndpoint = '/api/submit-form', isTeamForm = false }: SimpleStudentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<FieldValidation>({})
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
@@ -208,12 +208,12 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
   // Calculate form completion percentage
   const formCompletion = useMemo(() => {
     const requiredFields = [
-      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka', 'pinCode'
+      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka'
     ]
     
     const optionalFields = [
       'fathersHusbandName', 'sex', 'qualification', 'occupation', 'dateOfBirth', 'ageYears', 'ageMonths',
-      'villageName', 'houseNo', 'street', 'email', 'yearOfPassing', 'degreeDiploma', 
+      'villageName', 'houseNo', 'street', 'pinCode', 'email', 'yearOfPassing', 'degreeDiploma', 
       'nameOfUniversity', 'nameOfDiploma', 'haveChangedName', 'educationType', 'documentType',
       'previousName', 'nameChangeDocumentType'
     ]
@@ -480,7 +480,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
         <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader className="pb-4">
             <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
-              {isTeamForm ? 'Add Voter Registration (Team)' : 'Student Registration Form'}
+              {isTeamForm ? 'मतदार नोंदणी फॉर्म' : ' Registration Form'}
             </DialogTitle>
             <DialogDescription className="text-center text-sm sm:text-base">
               {isTeamForm 
@@ -566,16 +566,6 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                       </div>
                     </div>
                   </RadioGroup>
-                </div>
-                <div>
-                  <Label htmlFor="qualification" className="text-sm font-semibold text-gray-700">Qualifications</Label>
-                  <Input
-                    id="qualification"
-                    value={formData.qualification}
-                    onChange={(e) => handleInputChange("qualification", e.target.value)}
-                    placeholder="Enter qualifications"
-                    className="mt-1 border-2 border-gray-300 focus:border-blue-500 rounded-lg"
-                  />
                 </div>
                 <div>
                   <Label htmlFor="occupation" className="text-sm font-semibold text-gray-700">Occupation</Label>
@@ -715,12 +705,12 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                   />
                 </div>
                 <div>
-                  <Label htmlFor="pinCode" className="text-sm font-semibold text-gray-700">Pin Code *</Label>
+                  <Label htmlFor="pinCode" className="text-sm font-semibold text-gray-700">Pin Code</Label>
                   <Input
                     id="pinCode"
                     value={formData.pinCode}
                     onChange={(e) => handleInputChange("pinCode", e.target.value)}
-                    placeholder="Enter pin code"
+                    placeholder="Enter pin code (optional)"
                     className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
                   />
                 </div>
@@ -729,17 +719,7 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
               {/* Address-related documents */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
-                  <Label htmlFor="aadhaarCard" className="text-sm font-semibold text-gray-700">Aadhaar Card *</Label>
-                  <Input
-                    id="aadhaarCard"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileChange("aadhaarCard", e.target.files?.[0] || null)}
-                    className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="residentialProof" className="text-sm font-semibold text-gray-700">Residential Proof *</Label>
+                  <Label htmlFor="residentialProof" className="text-sm font-semibold text-gray-700">Residential Proof </Label>
                   <Input
                     id="residentialProof"
                     type="file"
@@ -791,6 +771,18 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     className="mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg"
                   />
                 </div>
+              </div>
+              
+              {/* Aadhaar Card Upload */}
+              <div className="mt-6">
+                <Label htmlFor="aadhaarCard" className="text-sm font-semibold text-gray-700">Aadhaar Card *</Label>
+                <Input
+                  id="aadhaarCard"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange("aadhaarCard", e.target.files?.[0] || null)}
+                  className="mt-1 border-2 border-gray-300 focus:border-purple-500 rounded-lg"
+                />
               </div>
             </div>
 

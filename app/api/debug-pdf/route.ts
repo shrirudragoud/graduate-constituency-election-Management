@@ -44,9 +44,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Test file accessibility
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    // Ensure no double slashes in URL
+    const cleanBaseUrl = baseUrl.replace(/\/+$/, '') // Remove trailing slashes
     const testUrls = [
-      `http://localhost:3000/api/files/student-form-${submissionId}.pdf`,
-      `http://localhost:3000/api/files/student-form-${submissionId}.html`
+      `${cleanBaseUrl}/api/files/student-form-${submissionId}.pdf`,
+      `${cleanBaseUrl}/api/files/student-form-${submissionId}.html`
     ]
 
     const urlTests = []

@@ -241,15 +241,20 @@ Thank you for your registration!`;
       // Check if it's a localhost URL (Twilio can't access these)
       if (pdfUrl.includes('localhost') || pdfUrl.includes('127.0.0.1')) {
         console.log('📱 Localhost URL detected - sending download instructions instead of attachment...');
-        const downloadMessage = `✅ Your Thank Your submission  has been received!
+        const formId = pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown';
+        const downloadMessage = `📄 Your ECI Form-18 has been generated!
 
-Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Form ID: ${formId}
 Generated on: ${new Date().toLocaleString('en-GB')}
 
-✅ Your registration is complete and successful!
-📋 Please keep this confirmation for your records.
+🔗 Download your form:
+${pdfUrl}
 
-Thank you for joining our team!`;
+✅ Your voter registration is complete and successful!
+📋 This is your official ECI Form-18 for voter registration.
+📱 Please download and save this form for your records.
+
+Thank you for registering with us!`;
 
         const result = await client.messages.create({
           body: downloadMessage,
@@ -261,24 +266,27 @@ Thank you for joining our team!`;
         return {
           success: true,
           messageId: result.sid,
-          message: 'Registration confirmation sent (PDF not accessible from localhost)'
+          message: 'Registration confirmation sent with download link'
         };
       }
 
       // Check if it's an HTML file (fallback case)
       if (pdfUrl.endsWith('.html')) {
         console.log('📱 Sending HTML file as download link...');
-        const downloadMessage = `📄 Your ECI Form PDF has been generated!
+        const formId = pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown';
+        const downloadMessage = `📄 Your ECI Form-18 has been generated!
 
-Form ID: ${pdfUrl.split('-').pop()?.split('.')[0] || 'Unknown'}
+Form ID: ${formId}
 Generated on: ${new Date().toLocaleString('en-GB')}
 
-🔗 Download your PDF:
+🔗 Download your form:
 ${pdfUrl}
 
-✅ Click the link above to download your PDF form directly.
+✅ Your voter registration is complete and successful!
+📋 This is your official ECI Form-18 for voter registration.
+📱 Please download and save this form for your records.
 
-Thank you for your registration!`;
+Thank you for registering with us!`;
 
         const result = await client.messages.create({
           body: downloadMessage,

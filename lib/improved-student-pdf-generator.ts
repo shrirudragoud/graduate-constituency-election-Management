@@ -37,7 +37,7 @@ export interface StudentSubmissionData {
 export async function generateStudentFormPDF(submission: StudentSubmissionData): Promise<string> {
   let browser;
   try {
-    console.log('🔄 Generating Improved Student Form PDF for submission:', submission.id)
+    console.log('🔄 Generating Improved Voter Form PDF for submission:', submission.id)
     
     // Ensure output directory exists
     const outputDir = join(process.cwd(), 'data', 'pdfs')
@@ -55,6 +55,7 @@ export async function generateStudentFormPDF(submission: StudentSubmissionData):
     // Launch Puppeteer
     const launchOptions: any = {
       headless: 'new',
+      executablePath: '/usr/bin/google-chrome', // Use system Chrome
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -134,7 +135,7 @@ export async function generateStudentFormPDF(submission: StudentSubmissionData):
       timeout: 30000
     })
     
-    console.log('✅ Improved Student Form PDF generated successfully:', pdfPath)
+    console.log('✅ Improved Voter Form PDF generated successfully:', pdfPath)
     return pdfPath
     
   } catch (error) {

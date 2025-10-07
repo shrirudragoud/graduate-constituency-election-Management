@@ -112,7 +112,7 @@ export function generateSimpleStudentPDF(submission: SimpleSubmissionData): void
       <body>
         <div class="header">
           <h1>Bharatiya Janata Party</h1>
-          <h2>Student Registration Form</h2>
+          <h2>Voter Registration Form</h2>
         </div>
 
         <div class="section">
@@ -418,7 +418,7 @@ export function generateSimpleAllStudentsPDF(submissions: SimpleSubmissionData[]
     }, 500)
 
   } catch (error) {
-    console.error('Error generating simple all students PDF:', error)
+    console.error('Error generating simple all Voters PDF:', error)
     throw new Error('Failed to generate PDF: ' + (error as Error).message)
   }
 }

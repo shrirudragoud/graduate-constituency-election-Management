@@ -240,7 +240,7 @@ export default function RegisterPage() {
             {/* Role-specific ID */}
             {selectedRole === "student" ? (
               <div className="space-y-2">
-                <Label htmlFor="studentId" className="text-sm font-medium">Student ID *</Label>
+                <Label htmlFor="studentId" className="text-sm font-medium"> Voter ID *</Label>
                 <Input
                   id="studentId"
                   value={formData.studentId}

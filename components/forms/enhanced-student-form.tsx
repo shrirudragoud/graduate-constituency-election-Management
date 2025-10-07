@@ -138,7 +138,7 @@ export function EnhancedStudentForm() {
     }
     
     if (step === 3) {
-      if (!formData.studentId) newErrors.studentId = "Student ID is required"
+      if (!formData.studentId) newErrors.studentId = "Voter ID is required"
       if (!formData.university) newErrors.university = "University is required"
       if (!formData.course) newErrors.course = "Course is required"
     }
@@ -253,7 +253,7 @@ export function EnhancedStudentForm() {
       <Card className="mb-6">
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
-            <CardTitle className="text-2xl">Student Registration Form</CardTitle>
+            <CardTitle className="text-2xl">Voter Registration Form</CardTitle>
             <Badge variant="outline" className="text-sm">
               Step {currentStep} of {totalSteps}
             </Badge>
@@ -515,7 +515,7 @@ export function EnhancedStudentForm() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="studentId">Student ID *</Label>
+                  <Label htmlFor="studentId">Voter ID *</Label>
                   <Input
                     id="studentId"
                     value={formData.studentId}
@@ -625,7 +625,7 @@ export function EnhancedStudentForm() {
                       <SelectItem value="passport">Passport</SelectItem>
                       <SelectItem value="drivers-license">Driver's License</SelectItem>
                       <SelectItem value="national-id">National ID</SelectItem>
-                      <SelectItem value="student-id">Student ID</SelectItem>
+                      <SelectItem value="student-id">Voter ID</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.idType && (

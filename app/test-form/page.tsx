@@ -61,7 +61,7 @@ export default function TestFormPage() {
 
     setLoading(true)
     try {
-      const response = await fetch('/api/public/submit-form', {
+      const response = await fetch('/api/submit-form', {
         method: 'POST',
         body: formData
       })

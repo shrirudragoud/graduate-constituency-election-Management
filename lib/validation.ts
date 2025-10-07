@@ -164,10 +164,11 @@ const isValidAadhaarChecksum = (aadhaar: string): boolean => {
   return true
 }
 
-// PIN code validation (Indian format)
+// PIN code validation (Indian format) - Optional field
 export const validatePinCode = (pinCode: string): ValidationResult => {
-  if (!pinCode) {
-    return { isValid: false, error: "PIN code is required" }
+  // If PIN code is not provided, it's valid (optional field)
+  if (!pinCode || pinCode.trim() === '') {
+    return { isValid: true }
   }
   
   // Remove any spaces

@@ -6,6 +6,7 @@ import { SubmissionsDAL } from '@/lib/submissions-dal'
 import { testConnection } from '@/lib/database'
 import { withAuth } from '@/lib/auth-middleware'
 import { withRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { generateStudentFormPDF } from '@/lib/improved-student-pdf-generator'
 
 // Ensure uploads directory exists
 const UPLOADS_DIR = join(process.cwd(), 'data', 'uploads')
@@ -126,7 +127,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
 
     const offset = (page - 1) * limit
 
-    // Filter by user permissions
+    // Filter by user permissions - show only forms filled by the logged-in user
     let filters: any = {
       limit,
       offset,
@@ -134,11 +135,10 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       search
     }
 
-    // For testing purposes, show all submissions regardless of role
-    // TODO: Remove this and implement proper role-based filtering
+    // Show only submissions filled by the current user
     if (request.user.role === 'volunteer') {
-      // Volunteers can see all submissions for now (for testing)
-      // filters.filledByUserId = request.user.id
+      // Volunteers can only see submissions they filled
+      filters.filledByUserId = request.user.id
     } else if (request.user.role === 'supervisor') {
       // Supervisors can see submissions in their assigned district/taluka
       filters.district = request.user.district || district
@@ -150,6 +150,9 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     }
 
     console.log('🔍 Applied filters:', filters)
+    
+    // For now, use the original method without RLS context to avoid errors
+    // TODO: Enable RLS context once RLS policies are properly set up
     const result = await SubmissionsDAL.getAll(filters)
 
     // Filter by form source if specified
@@ -344,14 +347,43 @@ export const POST = withAuth(withRateLimit(RATE_LIMITS.formSubmission, async (re
     const savedSubmission = await SubmissionsDAL.create(submission, teamMemberInfo)
     console.log('✅ Team submission saved with ID:', savedSubmission.id)
     
-    // Send WhatsApp notification asynchronously
-    const whatsappPromise = sendWhatsAppNotification(savedSubmission, savedSubmission.id)
+    // Generate PDF asynchronously (don't block response)
+    const pdfPromise = generateStudentFormPDF(savedSubmission)
+      .then(pdfPath => {
+        console.log('✅  form PDF generated:', pdfPath)
+        return pdfPath
+      })
+      .catch(error => {
+        console.error('❌ Error generating PDF:', error)
+        return null
+      })
     
+    // Send WhatsApp notification with PDF asynchronously (don't block response)
+    const whatsappPromise = pdfPromise.then(pdfPath => {
+      if (pdfPath) {
+        // Convert local file path to accessible URL using public domain
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        // Ensure no double slashes in URL
+        const cleanBaseUrl = baseUrl.replace(/\/+$/, '') // Remove trailing slashes
+        const pdfUrl = `${cleanBaseUrl}/api/files/${pdfPath.split('/').pop()}`
+        console.log('📱 Sending WhatsApp notification with PDF:', pdfUrl)
+        return twilioWhatsAppService.sendPDFFile(savedSubmission.mobileNumber, pdfUrl, `📄 Your ECI Form PDF is ready!\n\nForm ID: ${savedSubmission.id}\nGenerated on: ${new Date().toLocaleString('en-GB')}\n\nThis is your official ECI Form-18 for voter registration.`)
+      } else {
+        console.log('📱 Sending WhatsApp notification without PDF (PDF generation failed)')
+        return sendWhatsAppNotification(savedSubmission, savedSubmission.id)
+      }
+    }).catch(error => {
+      console.error('❌ Error in WhatsApp notification process:', error)
+      return sendWhatsAppNotification(savedSubmission, savedSubmission.id)
+    })
+    
+    // Return response immediately
     return NextResponse.json({
       success: true,
       submissionId: savedSubmission.id,
       message: 'Voter registration submitted successfully by team member!',
-      whatsappStatus: 'processing',
+      whatsappStatus: 'processing', // WhatsApp is being sent in background
+      pdfStatus: 'generating', // PDF is being generated in background
       teamMember: {
         name: teamMemberInfo.filledByName,
         email: request.user.email

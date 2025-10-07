@@ -100,15 +100,15 @@ export default function TeamLoginPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Team Login</h1>
-          <p className="text-gray-600 text-sm">Access your BJP team account</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">कार्यकर्ता लॉगिन</h1>
+          <p className="text-gray-600 text-sm"></p>
         </div>
 
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-4">
             <CardTitle className="flex items-center justify-center gap-2">
               <LogIn className="w-5 h-5 text-primary" />
-              Sign In
+        
             </CardTitle>
           </CardHeader>
           

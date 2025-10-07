@@ -6,12 +6,13 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Users, UserCheck, Settings, BarChart3, FileText, Shield, LogOut, Menu, X } from "lucide-react"
+import { Users, UserCheck, Settings, BarChart3, FileText, Shield, Menu, X } from "lucide-react"
 import { useState } from "react"
 
 interface SidebarLayoutProps {
   children: React.ReactNode
   currentRole?: "volunteer" | "manager" | "admin"
+  onNewEnrollmentClick?: () => void
 }
 
 const navigation = [
@@ -59,7 +60,7 @@ const navigation = [
   },
 ]
 
-export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
+export function SidebarLayout({ children, currentRole, onNewEnrollmentClick }: SidebarLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [navigationOpen, setNavigationOpen] = useState(false)
@@ -94,40 +95,6 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
             )}
           >
             <div className="flex h-full flex-col">
-              {/* Logo and close button */}
-              <div className="flex h-14 sm:h-16 items-center justify-between px-4 sm:px-6 border-b border-sidebar-border/60 bg-sidebar/50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary via-primary/90 to-secondary rounded-xl flex items-center justify-center shadow-medium ring-1 ring-primary/20">
-                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-base sm:text-lg font-bold text-sidebar-foreground tracking-tight"></span>
-                    <span className="text-[10px] sm:text-xs text-sidebar-foreground/60 font-medium">Platform</span>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="lg:hidden h-8 w-8 p-0 hover:bg-sidebar-accent/20 focus-ring" 
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* Navigation Toggle Button */}
-              <div className="px-3 sm:px-4 py-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/15"
-                  onClick={() => setNavigationOpen(!navigationOpen)}
-                >
-                  <Menu className="w-4 h-4 mr-2" />
-                  {navigationOpen ? 'Hide Menu' : 'Show Menu'}
-                </Button>
-              </div>
-
               {/* Navigation - Hidden by default */}
               {navigationOpen && (
                 <ScrollArea className="flex-1 px-3 sm:px-4 py-4 sm:py-6">
@@ -175,26 +142,6 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
                 </ScrollArea>
               )}
 
-              {/* User section */}
-              <div className="border-t border-sidebar-border/60 p-4 sm:p-5 bg-sidebar/30">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary via-secondary/90 to-primary rounded-xl flex items-center justify-center shadow-medium ring-1 ring-secondary/20">
-                    <span className="text-sm font-bold text-white">AD</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-sidebar-foreground truncate">Admin User</p>
-                    <p className="text-[10px] sm:text-xs text-sidebar-foreground/60 truncate font-medium">admin@electionenroll.com</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/15 text-xs sm:text-sm h-9 sm:h-10 rounded-lg transition-all duration-200 hover:shadow-soft focus-ring group"
-                >
-                  <LogOut className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                  Sign out
-                </Button>
-              </div>
         </div>
       </div>
 
@@ -228,9 +175,10 @@ export function SidebarLayout({ children, currentRole }: SidebarLayoutProps) {
             </Button>
             <Button 
               size="sm" 
-              className="text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-medium hover:shadow-strong focus-ring transition-all duration-200"
+              className="text-xs sm:text-sm h-8 sm:h-9"
+              onClick={onNewEnrollmentClick}
             >
-              <UserCheck className="w-4 h-4 mr-2" />
+              <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">New Enrollment</span>
               <span className="sm:hidden">New</span>
             </Button>

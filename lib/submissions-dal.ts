@@ -1,4 +1,4 @@
-import { query, transaction } from './database'
+import { query, transaction, setUserContext, clearUserContext, pool } from './database'
 
 // Database row interface for type safety
 interface DatabaseRow {

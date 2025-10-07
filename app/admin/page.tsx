@@ -196,7 +196,7 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="students" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Students</span>
+              <span className="hidden sm:inline">Voters</span>
             </TabsTrigger>
             <TabsTrigger value="system" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
                               >
                                 {/* Tooltip on hover */}
                                 <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                  {item.students} students
+                                  {item.students} Voters
                                 </div>
                               </div>
                             </div>
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-center gap-4 sm:gap-6 mt-4 pt-4 border-t border-border">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-chart-1 rounded-sm"></div>
-                      <span className="text-xs sm:text-sm text-muted-foreground">Students</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">Voters</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-chart-2 rounded-sm"></div>
@@ -392,7 +392,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader className="pb-3 sm:pb-4">
                   <CardTitle className="text-base sm:text-lg">Top Performers</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Students with highest scores</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm"> highest scores</CardDescription>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                   <div className="space-y-3">
@@ -428,8 +428,8 @@ export default function AdminDashboard() {
           <TabsContent value="students" className="space-y-6">
             <Card>
               <CardHeader className="pb-3 sm:pb-4">
-                <CardTitle className="text-base sm:text-lg">Student Management</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Manage student registrations and applications</CardDescription>
+                <CardTitle className="text-base sm:text-lg">Voter Management</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Manage Voter registrations and applications</CardDescription>
               </CardHeader>
               <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                 <div className="overflow-x-auto">
@@ -555,7 +555,7 @@ export default function AdminDashboard() {
                           <FileText className="w-4 h-4" />
                           <span className="font-medium text-sm">View Submissions</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">View all student registrations</span>
+                        <span className="text-xs text-muted-foreground">View all Voter registrations</span>
                       </a>
                     </Button>
                   </div>
@@ -576,9 +576,9 @@ export default function AdminDashboard() {
                   <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2">
                     <div className="flex items-center space-x-2">
                       <Users className="w-4 h-4" />
-                      <span className="font-medium text-sm">Student Report</span>
+                      <span className="font-medium text-sm">Voter Report</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">Complete student enrollment data</span>
+                    <span className="text-xs text-muted-foreground">Complete Voter enrollment data</span>
                   </Button>
                   <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2">
                     <div className="flex items-center space-x-2">

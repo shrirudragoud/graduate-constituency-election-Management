@@ -51,7 +51,7 @@ export function PhoneVerificationButton({ phoneNumber, className = "" }: PhoneVe
       className={`flex items-center gap-2 text-xs ${className}`}
     >
       <ExternalLink className="w-3 h-3" />
-      {isVerifying ? "Verifying..." : "Verify"}
+      {isVerifying ? "Verifying..." : " Whatsapp Verify"}
     </Button>
   )
 }

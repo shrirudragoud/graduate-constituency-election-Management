@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SimpleStudentForm } from "@/components/forms/simple-student-form"
-import { generateSimpleStudentPDF, generateSimpleAllStudentsPDF } from "@/lib/simple-pdf-generator"
+import { DocumentsInfoPopup } from "@/components/documents-info-popup"
+// PDF generation is handled server-side via API endpoints
 import {
   Users,
   FileText,
@@ -78,6 +79,7 @@ interface Submission {
 
 export default function TeamDashboard() {
   const [showAddStudentForm, setShowAddStudentForm] = useState(false)
+  const [showDocumentsInfo, setShowDocumentsInfo] = useState(false)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,6 +90,24 @@ export default function TeamDashboard() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
+
+  // Handle Add Voter button click
+  const handleAddVoterClick = () => {
+    // Check if user has chosen to hide the documents info
+    const hideDocumentsInfo = localStorage.getItem('hideDocumentsInfo')
+    if (hideDocumentsInfo === 'true') {
+      // Skip popup and go directly to form
+      setShowAddStudentForm(true)
+    } else {
+      // Show documents info popup first
+      setShowDocumentsInfo(true)
+    }
+  }
+
+  // Handle proceed from documents popup
+  const handleProceedToForm = () => {
+    setShowAddStudentForm(true)
+  }
 
   useEffect(() => {
     // Check authentication first
@@ -274,7 +294,7 @@ export default function TeamDashboard() {
     setEditedSubmission(null)
   }
 
-  const convertToSimpleSubmissionData = (submission: Submission) => {
+  const convertToForm18SubmissionData = (submission: Submission) => {
     return {
       id: submission.id,
       firstName: submission.firstName,
@@ -287,14 +307,12 @@ export default function TeamDashboard() {
       dateOfBirth: submission.dateOfBirth,
       ageYears: parseInt(submission.ageYears.toString()),
       ageMonths: parseInt(submission.ageMonths.toString()),
-      address: {
         district: submission.district,
         taluka: submission.taluka,
         villageName: submission.villageName,
         houseNo: submission.houseNo,
         street: submission.street,
-        pinCode: submission.pinCode
-      },
+      pinCode: submission.pinCode,
       mobileNumber: submission.mobileNumber,
       aadhaarNumber: submission.aadhaarNumber,
       yearOfPassing: submission.yearOfPassing || '',
@@ -310,31 +328,78 @@ export default function TeamDashboard() {
     }
   }
 
-  const handleDownloadStudentPDF = (submission: Submission) => {
+  const handleDownloadStudentPDF = async (submission: Submission) => {
     try {
-      const simpleData = convertToSimpleSubmissionData(submission)
-      generateSimpleStudentPDF(simpleData)
+      console.log('🔄 Generating Form-18 PDF for submission:', submission.id)
+      
+      // Call API endpoint to generate PDF
+      const response = await fetch('/api/generate-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          submissionData: convertToForm18SubmissionData(submission)
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF')
+      }
+      
+      const result = await response.json()
+      console.log('✅ Form-18 PDF generated:', result.pdfPath)
+      
+      // Create download link
+      const filename = `student-form-${submission.id}.pdf`
+      const link = document.createElement('a')
+      link.href = `/api/files/${filename}`
+      link.download = filename
+      link.click()
+      
+      console.log('✅ PDF download initiated')
     } catch (error) {
-      console.error('PDF generation failed:', error)
+      console.error('❌ PDF generation failed:', error)
       alert('Error generating PDF. Please try again.')
     }
   }
 
-  const handleDownloadAllStudentsPDF = () => {
+  const handleDownloadAllStudentsPDF = async () => {
     try {
-      const simpleData = submissions.map(convertToSimpleSubmissionData)
-      generateSimpleAllStudentsPDF(simpleData)
+      console.log('🔄 Generating individual Form-18 PDFs for all Voters...')
+      
+      // Call API endpoint to generate PDFs for all submissions
+      const response = await fetch('/api/generate-bulk-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          submissions: submissions.map(convertToForm18SubmissionData)
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate PDFs')
+      }
+      
+      const result = await response.json()
+      console.log('✅ PDFs generated:', result.generatedCount)
+      
+      alert(`Individual Form-18 PDFs have been generated for ${result.generatedCount} Voters. Check the data/pdfs folder.`)
     } catch (error) {
-      console.error('PDF generation failed:', error)
-      alert('Error generating PDF. Please try again.')
+      console.error('❌ PDF generation failed:', error)
+      alert('Error generating PDFs. Please try again.')
     }
   }
 
 
   const totalSubmissions = submissions.length
-  const pendingSubmissions = submissions.length // All are pending for now
-  const verifiedSubmissions = 0 // You can add verification logic later
-  const followUpRequired = 0 // You can add follow-up logic later
+  const pendingSubmissions = submissions.filter(sub => sub.status === 'pending').length
+  const verifiedSubmissions = submissions.filter(sub => sub.status === 'approved').length
   
   // Calculate form source breakdown
   const publicSubmissions = submissions.filter(sub => sub.formSource === 'public').length
@@ -368,121 +433,107 @@ export default function TeamDashboard() {
   }
 
   return (
-    <SidebarLayout>
+    <SidebarLayout onNewEnrollmentClick={handleAddVoterClick}>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Karykarta Portal</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Welcome back, {user?.firstName}! Reach out to voters, collect voter information, and coordinate constituency outreach efforts.
+        <div className="space-y-3">
+          {/* Mobile-first header */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Karykarta Portal</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">
+                Welcome back, <span className="font-semibold text-foreground">{user?.firstName}</span>!
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline" className="bg-chart-4/10 text-chart-4 border-chart-4/20 text-xs sm:text-sm">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline">{pendingSubmissions} Pending</span>
-              <span className="sm:hidden">{pendingSubmissions}</span>
-            </Badge>
-            <Button onClick={() => setShowAddStudentForm(true)} className="text-xs sm:text-sm h-8 sm:h-9">
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Add Student</span>
-              <span className="sm:hidden">Add</span>
-            </Button>
-            <Button onClick={handleLogout} variant="outline" className="text-xs sm:text-sm h-8 sm:h-9">
-              <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Logout</span>
-              <span className="sm:hidden">Exit</span>
+            <div className="flex items-center gap-1 ml-2">
+              <Button onClick={handleLogout} variant="outline" size="sm" className="h-8 w-8 p-0">
+                <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-              <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-card via-card to-chart-1/5 border-chart-1/20 hover:scale-105 animate-fade-in-up">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Students Registered</p>
-                      <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-chart-1 tracking-tight group-hover:scale-110 transition-transform duration-300">{totalSubmissions}</p>
+          {/* Stats and actions row */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-chart-4/10 text-chart-4 border-chart-4/20 text-xs">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                {pendingSubmissions} Pending
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {submissions.length} Total
+              </Badge>
                     </div>
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
-                      <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-chart-1 group-hover:animate-bounce" />
+            <Button onClick={handleAddVoterClick} size="sm" className="h-8 text-xs">
+              <Plus className="w-3 h-3 mr-1" />
+              Add Voter
+            </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 p-2 bg-chart-1/10 rounded-lg group-hover:bg-chart-1/20 transition-colors duration-300">
-                    <TrendingUp className="w-3 h-3 text-chart-1 flex-shrink-0 group-hover:animate-pulse" />
-                    <span className="text-[10px] sm:text-xs text-chart-1 font-medium">+12%</span>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline font-medium">from last week</span>
-                  </div>
-                </CardContent>
-              </Card>
 
-          <Card className="group hover:border-chart-2/30 transition-all duration-300 hover:shadow-xl border-chart-2/20 bg-gradient-to-br from-background to-chart-2/5 hover:scale-105 animate-fade-in-up delay-100">
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Pending Verification</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2 group-hover:scale-110 transition-transform duration-300">{pendingSubmissions}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+              <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-lg bg-gradient-to-br from-card via-card to-chart-1/5 border-chart-1/20">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground font-medium truncate">Total Voters</p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-chart-1 tracking-tight">{totalSubmissions}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-2 group-hover:animate-pulse" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-chart-1/20 via-chart-1/10 to-chart-1/30 rounded-lg flex items-center justify-center">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-chart-1" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-chart-2">Needs verification</span>
+                  <div className="flex items-center gap-1 p-1.5 bg-chart-1/10 rounded text-xs">
+                    <TrendingUp className="w-3 h-3 text-chart-1" />
+                    <span className="text-chart-1 font-medium">+12%</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-xl border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5 hover:scale-105 animate-fade-in-up delay-200">
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Verified Students</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1 group-hover:scale-110 transition-transform duration-300">{verifiedSubmissions}</p>
+          <Card className="group hover:border-chart-2/30 transition-all duration-300 hover:shadow-lg border-chart-2/20 bg-gradient-to-br from-background to-chart-2/5">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">Pending</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-chart-2">{pendingSubmissions}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1 group-hover:animate-bounce" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-chart-2/20 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-chart-2" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-chart-1">87.3%</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">verification rate</span>
-              </div>
+              <div className="text-xs text-chart-2">Needs verification</div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:border-destructive/30 transition-all duration-300 hover:shadow-xl border-destructive/20 bg-gradient-to-br from-background to-destructive/5 hover:scale-105 animate-fade-in-up delay-300">
-            <CardContent className="p-3 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Follow-up Required</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-destructive group-hover:scale-110 transition-transform duration-300">{followUpRequired}</p>
+          <Card className="group hover:border-chart-1/30 transition-all duration-300 hover:shadow-lg border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">Verified</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-chart-1">{verifiedSubmissions}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-destructive/20 rounded-lg flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-destructive group-hover:animate-pulse" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-chart-1/20 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-chart-1" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-destructive">Needs follow-up</span>
-              </div>
+              <div className="text-xs text-chart-1">87.3% verified</div>
             </CardContent>
           </Card>
+
         </div>
 
-        {/* Form Source Analytics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Form Source Analytics - Hidden on mobile to save space */}
+        <div className="hidden md:grid grid-cols-3 gap-4">
           <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Public Registrations</p>
-                  <p className="text-2xl font-bold text-blue-900">{publicSubmissions}</p>
+                  <p className="text-sm font-medium text-blue-800">Public</p>
+                  <p className="text-xl font-bold text-blue-900">{publicSubmissions}</p>
                 </div>
-                <div className="w-10 h-10 bg-blue-200 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-700" />
+                <div className="w-8 h-8 bg-blue-200 rounded-lg flex items-center justify-center">
+                  <Users className="w-4 h-4 text-blue-700" />
                 </div>
               </div>
-              <p className="text-xs text-blue-600 mt-1">Self-registered by citizens</p>
+              <p className="text-xs text-blue-600 mt-1">Self-registered</p>
             </CardContent>
           </Card>
 
@@ -490,14 +541,14 @@ export default function TeamDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-800">Team Registrations</p>
-                  <p className="text-2xl font-bold text-green-900">{teamSubmissions}</p>
+                  <p className="text-sm font-medium text-green-800">Team</p>
+                  <p className="text-xl font-bold text-green-900">{teamSubmissions}</p>
                 </div>
-                <div className="w-10 h-10 bg-green-200 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-green-700" />
+                <div className="w-8 h-8 bg-green-200 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-green-700" />
                 </div>
               </div>
-              <p className="text-xs text-green-600 mt-1">Filled by team members</p>
+              <p className="text-xs text-green-600 mt-1">Team filled</p>
             </CardContent>
           </Card>
 
@@ -505,16 +556,16 @@ export default function TeamDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-800">Your Team's Work</p>
-                  <p className="text-2xl font-bold text-purple-900">
+                  <p className="text-sm font-medium text-purple-800">Your Work</p>
+                  <p className="text-xl font-bold text-purple-900">
                     {submissions.filter(sub => sub.filledByUserId === user?.id).length}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-purple-200 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-purple-700" />
+                <div className="w-8 h-8 bg-purple-200 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-purple-700" />
                 </div>
               </div>
-              <p className="text-xs text-purple-600 mt-1">Registrations you filled</p>
+              <p className="text-xs text-purple-600 mt-1">Your contributions</p>
             </CardContent>
           </Card>
         </div>
@@ -545,9 +596,9 @@ export default function TeamDashboard() {
                     </CardTitle>
                     <CardDescription>Manage voter information and constituency data</CardDescription>
                   </div>
-                  <Button onClick={() => setShowAddStudentForm(true)}>
+                  <Button onClick={handleAddVoterClick}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Student
+                    Add Voter
                   </Button>
                 </div>
               </CardHeader>
@@ -557,7 +608,7 @@ export default function TeamDashboard() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input 
-                      placeholder="Search students..." 
+                      placeholder="Search voters..." 
                       className="pl-10" 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -568,36 +619,14 @@ export default function TeamDashboard() {
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Students</SelectItem>
+                      <SelectItem value="all">All Voters</SelectItem>
                       <SelectItem value="pending">Pending Verification</SelectItem>
                       <SelectItem value="approved">Verified</SelectItem>
-                      <SelectItem value="rejected">Follow-up Required</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline" onClick={fetchSubmissions}>
                     <Filter className="w-4 h-4 mr-2" />
                     Refresh Data
-                  </Button>
-                  <div className="text-xs text-muted-foreground bg-yellow-50 px-2 py-1 rounded">
-                    🧪 Testing Mode: Showing all submissions
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={async () => {
-                      try {
-                        const response = await fetch('/api/test-submission', { method: 'POST' })
-                        const result = await response.json()
-                        if (result.success) {
-                          alert('Test submission created!')
-                          fetchSubmissions()
-                        }
-                      } catch (error) {
-                        console.error('Test submission failed:', error)
-                      }
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Test Data
                   </Button>
                 </div>
 
@@ -608,7 +637,7 @@ export default function TeamDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                          <TableHead>Student</TableHead>
+                          <TableHead>Voter</TableHead>
                           <TableHead>Registration ID</TableHead>
                         <TableHead>Status</TableHead>
                           <TableHead>Form Source</TableHead>
@@ -635,8 +664,8 @@ export default function TeamDashboard() {
                             <TableCell colSpan={7} className="text-center py-8">
                               <div className="flex flex-col items-center gap-2">
                                 <Users className="w-8 h-8 text-muted-foreground" />
-                                <p className="text-muted-foreground">No student registrations found</p>
-                                <p className="text-sm text-muted-foreground">Students will appear here once they start registering</p>
+                                <p className="text-muted-foreground">No voter registrations found</p>
+                                <p className="text-sm text-muted-foreground">Use the "Add Voter" button to register new voters</p>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -744,25 +773,24 @@ export default function TeamDashboard() {
                       <div className="text-center py-8">
                         <div className="flex flex-col items-center gap-2">
                           <Users className="w-8 h-8 text-muted-foreground" />
-                          <p className="text-muted-foreground">No student registrations found</p>
-                          <p className="text-sm text-muted-foreground">Students will appear here once they start registering</p>
+                          <p className="text-muted-foreground">No voter registrations found</p>
+                          <p className="text-sm text-muted-foreground">Use the "Add Voter" button to register new voters</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-3 p-3">
+                      <div className="space-y-2 p-2">
                         {filteredSubmissions.map((submission) => (
-                          <div key={submission.id} className="border rounded-lg p-4 bg-card hover:bg-muted/30 transition-colors">
-                            <div className="space-y-3">
-                          <div>
-                                <div className="font-medium text-lg">{submission.firstName} {submission.surname}</div>
-                                <div className="text-sm text-muted-foreground">{submission.mobileNumber}</div>
+                          <div key={submission.id} className="border rounded-lg p-3 bg-card hover:bg-muted/30 transition-colors shadow-sm">
+                            {/* Header with name and status */}
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-base truncate">{submission.firstName} {submission.surname}</div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Phone className="w-3 h-3" />
+                                  {submission.mobileNumber}
                           </div>
-                              
-                              <div className="flex items-center justify-between">
-                                <div className="text-xs text-muted-foreground font-mono">
-                                  ID: {submission.id}
                                 </div>
-                                <div className="flex gap-2">
+                              <div className="flex flex-col gap-1 ml-2">
                                   <Badge 
                                     variant={
                                       submission.status === 'approved' ? 'default' : 
@@ -770,67 +798,88 @@ export default function TeamDashboard() {
                                       'secondary'
                                     }
                                     className={
-                                      submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200 text-xs' :
-                                      submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200 text-xs' :
-                                      'bg-yellow-100 text-yellow-800 border-yellow-200 text-xs'
+                                    submission.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200 text-xs px-2 py-1' :
+                                    submission.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200 text-xs px-2 py-1' :
+                                    'bg-yellow-100 text-yellow-800 border-yellow-200 text-xs px-2 py-1'
                                     }
                                   >
                                     <div className="flex items-center gap-1">
                                       {submission.status === 'approved' ? (
                                         <>
                                           <CheckCircle className="w-3 h-3" />
-                                          <span>Approved</span>
+                                        <span className="hidden sm:inline">Approved</span>
+                                        <span className="sm:hidden">✓</span>
                                         </>
                                       ) : submission.status === 'rejected' ? (
                                         <>
                                           <X className="w-3 h-3" />
-                                          <span>Rejected</span>
+                                        <span className="hidden sm:inline">Rejected</span>
+                                        <span className="sm:hidden">✗</span>
                                         </>
                                       ) : (
                                         <>
                                           <Clock className="w-3 h-3" />
-                                          <span>Pending</span>
+                                        <span className="hidden sm:inline">Pending</span>
+                                        <span className="sm:hidden">⏳</span>
                                         </>
                                       )}
                                     </div>
                                   </Badge>
-                                  <Badge variant={submission.formSource === 'team' ? 'default' : 'secondary'} className="text-xs">
+                                <Badge 
+                                  variant={submission.formSource === 'team' ? 'default' : 'secondary'} 
+                                  className="text-xs px-2 py-1"
+                                >
                                     {submission.formSource === 'team' ? 'Team' : 'Public'}
                                   </Badge>
                                 </div>
                               </div>
                               
-                              <div className="text-xs text-muted-foreground">
-                                Submitted: {formatDate(submission.submittedAt)}
+                            {/* Details row */}
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono">#{submission.id.slice(-8)}</span>
+                                <span>•</span>
+                                <span>{formatDate(submission.submittedAt)}</span>
                               </div>
-                              
                               {submission.filledByName && (
-                                <div className="text-xs text-muted-foreground">
-                                  Filled by: {submission.filledByName}
-                                  {submission.filledByPhone && ` (${submission.filledByPhone})`}
+                                <div className="text-xs text-muted-foreground truncate max-w-32">
+                                  by {submission.filledByName}
                                 </div>
                               )}
+                            </div>
                               
-                              <div className="flex gap-2 pt-2">
+                            {/* Action buttons */}
+                            <div className="flex gap-1 pt-1">
                             <Button 
                               variant="outline" 
                               size="sm"
                                   onClick={() => setSelectedSubmission(submission)}
-                                  className="flex-1"
+                                className="flex-1 h-8 text-xs"
                             >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Details
+                                <Eye className="w-3 h-3 mr-1" />
+                                <span className="hidden sm:inline">View</span>
+                                <span className="sm:hidden"></span>
                             </Button>
                             <Button 
                               variant="outline" 
                               size="sm"
                                   onClick={() => handleEdit(submission)}
-                                  className="flex-1"
-                                >
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit
+                                className="flex-1 h-8 text-xs"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                <span className="hidden sm:inline">Edit</span>
+                                <span className="sm:hidden"></span>
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDownloadStudentPDF(submission)}
+                                className="flex-1 h-8 text-xs"
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                <span className="hidden sm:inline">PDF</span>
+                                <span className="sm:hidden"></span>
                             </Button>
-                          </div>
                             </div>
                           </div>
                         ))}
@@ -876,16 +925,12 @@ export default function TeamDashboard() {
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="pending">Pending Verification</SelectItem>
                       <SelectItem value="approved">Verified</SelectItem>
-                      <SelectItem value="rejected">Follow-up Required</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline" onClick={fetchSubmissions}>
                     <Filter className="w-4 h-4 mr-2" />
                     Refresh Data
                   </Button>
-                  <div className="text-xs text-muted-foreground bg-yellow-50 px-2 py-1 rounded">
-                    🧪 Testing Mode: Showing all submissions
-                  </div>
                 </div>
 
                 {/* Submissions Table */}
@@ -1147,6 +1192,12 @@ export default function TeamDashboard() {
         </Tabs>
       </div>
 
+      <DocumentsInfoPopup
+        open={showDocumentsInfo}
+        onOpenChange={setShowDocumentsInfo}
+        onProceed={handleProceedToForm}
+      />
+
       <SimpleStudentForm 
         open={showAddStudentForm} 
         onOpenChange={setShowAddStudentForm}
@@ -1164,7 +1215,7 @@ export default function TeamDashboard() {
           <DialogHeader className="p-4 sm:p-6 pb-2">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg sm:text-xl font-bold">
-                Student Registration Details
+              Voter Registration Details
               </DialogTitle>
               <div className="flex items-center gap-2">
                 {!isEditing ? (
@@ -1703,7 +1754,7 @@ export default function TeamDashboard() {
                   onClick={() => handleDownloadStudentPDF(selectedSubmission)}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Download Student PDF
+                  Download Voter PDF
                 </Button>
               </div>
             </div>
@@ -1723,7 +1774,7 @@ export default function TeamDashboard() {
               <iframe
                 src={`https://docs.google.com/gview?url=${encodeURIComponent('https://e5850872-baaa-4597-87ce-9befbc15af1e.usrfiles.com/ugd/e58508_3380a0454eec4527bff63f8b4dede599.pdf')}&embedded=true`}
                 className="w-full h-full border-0"
-                title="Student Registration Form"
+                title="Voter Registration Form"
                 style={{ minHeight: 'calc(100vh - 60px)' }}
                 allowFullScreen
               />
@@ -1746,3 +1797,6 @@ export default function TeamDashboard() {
     </SidebarLayout>
   )
 }
+
+
+
