@@ -6,7 +6,7 @@ const dbConfig = {
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'election_enrollment',
-  password: process.env.DB_PASSWORD || 'password',
+  password: process.env.DB_PASSWORD || 'Hivetech',
   port: parseInt(process.env.DB_PORT || '5432'),
   
   // Connection pool settings for high concurrency (100-200 users)
