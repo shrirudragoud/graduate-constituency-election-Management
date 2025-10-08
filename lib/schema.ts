@@ -38,9 +38,9 @@ export async function createSchema() {
         sex VARCHAR(10) NOT NULL CHECK (sex IN ('M', 'F')),
         qualification VARCHAR(255),
         occupation VARCHAR(255),
-        date_of_birth DATE NOT NULL,
-        age_years INTEGER NOT NULL CHECK (age_years >= 0 AND age_years <= 150),
-        age_months INTEGER NOT NULL CHECK (age_months >= 0 AND age_months <= 11),
+        date_of_birth DATE,
+        age_years INTEGER CHECK (age_years >= 0 AND age_years <= 150),
+        age_months INTEGER CHECK (age_months >= 0 AND age_months <= 11),
         
         -- Address Details
         district VARCHAR(255) NOT NULL,
@@ -63,8 +63,8 @@ export async function createSchema() {
         
         -- Additional Information
         have_changed_name VARCHAR(5) CHECK (have_changed_name IN ('Yes', 'No')),
-        place VARCHAR(255) NOT NULL,
-        declaration_date DATE NOT NULL,
+        place VARCHAR(255),
+        declaration_date DATE,
         
         -- Status and Metadata
         status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'deleted')),

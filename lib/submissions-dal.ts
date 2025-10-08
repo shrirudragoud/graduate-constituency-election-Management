@@ -16,10 +16,10 @@ interface DatabaseRow {
   age_months: number
   district: string
   taluka: string
-  village_name: string
-  house_no: string
-  street: string
-  pin_code: string
+  village_name?: string
+  house_no?: string
+  street?: string
+  pin_code?: string
   mobile_number: string
   email?: string
   aadhaar_number: string
@@ -70,10 +70,10 @@ export interface Submission {
   // Address Details (Required)
   district: string
   taluka: string
-  villageName: string
-  houseNo: string
-  street: string
-  pinCode: string
+  villageName?: string
+  houseNo?: string
+  street?: string
+  pinCode?: string
   
   // Contact Details (Required)
   mobileNumber: string
@@ -262,15 +262,18 @@ class SubmissionsDataAccessLayer {
           newSubmission.id, newSubmission.userId, newSubmission.surname, newSubmission.firstName, 
           newSubmission.fathersHusbandName || null, newSubmission.fathersHusbandFullName || null,
           newSubmission.sex || null, newSubmission.qualification || null, newSubmission.occupation || null, 
-          newSubmission.dateOfBirth || null, newSubmission.ageYears || null, newSubmission.ageMonths || null,
-          newSubmission.district, newSubmission.taluka, newSubmission.villageName || null, 
-          newSubmission.houseNo || null, newSubmission.street || null, 
-          (newSubmission.pinCode && newSubmission.pinCode.trim() && /^[0-9]{6}$/.test(newSubmission.pinCode.trim())) ? newSubmission.pinCode.trim() : null,
+          newSubmission.dateOfBirth && newSubmission.dateOfBirth.trim() ? newSubmission.dateOfBirth : null, 
+          newSubmission.ageYears || null, newSubmission.ageMonths || null,
+          newSubmission.district, newSubmission.taluka, newSubmission.villageName || '', 
+          newSubmission.houseNo || '', newSubmission.street || '', 
+          (newSubmission.pinCode && newSubmission.pinCode.trim() && /^[0-9]{6}$/.test(newSubmission.pinCode.trim())) ? newSubmission.pinCode.trim() : '',
           newSubmission.mobileNumber, newSubmission.email || null, newSubmission.aadhaarNumber,
           newSubmission.yearOfPassing || null, newSubmission.degreeDiploma || null, newSubmission.nameOfUniversity || null, 
           newSubmission.nameOfDiploma || null, newSubmission.educationType || null, newSubmission.documentType || null,
           newSubmission.haveChangedName, newSubmission.previousName || null, newSubmission.nameChangeDocumentType || null,
-          newSubmission.place || null, newSubmission.declarationDate || null, newSubmission.status, newSubmission.submittedAt, 
+          newSubmission.place || null, 
+          newSubmission.declarationDate || null, 
+          newSubmission.status, newSubmission.submittedAt, 
           newSubmission.updatedAt, newSubmission.files,
           newSubmission.ipAddress, newSubmission.userAgent, newSubmission.source,
           newSubmission.filledByUserId, newSubmission.filledByName, newSubmission.filledByPhone, 

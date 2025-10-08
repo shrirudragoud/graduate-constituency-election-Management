@@ -47,7 +47,9 @@ export async function generateStudentFormPDF(submission: StudentSubmissionData):
     const eciLogoBase64 = await getECILogoBase64()
     
     // Process uploaded photos
+    console.log('🔍 Files received for PDF generation:', submission.files)
     const processedPhotos = await processUploadedPhotos(submission.files)
+    console.log('🔍 Processed photos result:', Object.keys(processedPhotos))
     
     // Generate HTML content
     const htmlContent = generateImprovedStudentFormHTML(submission, eciLogoBase64, processedPhotos)
@@ -186,19 +188,36 @@ async function getECILogoBase64(): Promise<string> {
 async function processUploadedPhotos(files: Record<string, any>): Promise<Record<string, string>> {
   const processedPhotos: Record<string, string> = {}
   
+  console.log('🔍 Processing uploaded photos. Files received:', Object.keys(files))
+  
   for (const [fieldName, fileInfo] of Object.entries(files)) {
+    console.log(`🔍 Processing field: ${fieldName}`, fileInfo)
+    
     if (fileInfo && fileInfo.path && fileInfo.originalName) {
       try {
         const fileBuffer = await readFile(fileInfo.path)
-        const base64 = `data:image/jpeg;base64,${fileBuffer.toString('base64')}`
+        
+        // Determine MIME type based on file extension
+        const fileExtension = fileInfo.originalName.split('.').pop()?.toLowerCase()
+        let mimeType = 'image/jpeg' // default
+        if (fileExtension === 'png') {
+          mimeType = 'image/png'
+        } else if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+          mimeType = 'image/jpeg'
+        }
+        
+        const base64 = `data:${mimeType};base64,${fileBuffer.toString('base64')}`
         processedPhotos[fieldName] = base64
-        console.log(`✅ Processed photo: ${fieldName}`)
+        console.log(`✅ Processed photo: ${fieldName} (${mimeType})`)
       } catch (error) {
         console.log(`⚠️ Could not process photo ${fieldName}:`, error)
       }
+    } else {
+      console.log(`⚠️ Skipping ${fieldName}: missing path or originalName`, fileInfo)
     }
   }
   
+  console.log('🔍 Final processed photos:', Object.keys(processedPhotos))
   return processedPhotos
 }
 
@@ -495,7 +514,7 @@ function generateImprovedStudentFormHTML(
     <div class="photo-section">
       <div style="font-size: 6px; margin-bottom: 2px; line-height: 1.1;"><br><br><br><br><br><br><br></div>
       ${processedPhotos.idPhoto ? 
-        `<img src="${processedPhotos.idPhoto}" alt="ID Photo">` : 
+        `<img src="${processedPhotos.idPhoto}" alt="ID Photo" style="max-width: 100%; height: auto;">` : 
         `<div class="photo-placeholder">Photo<br>Not Provided</div>`
       }
     </div>

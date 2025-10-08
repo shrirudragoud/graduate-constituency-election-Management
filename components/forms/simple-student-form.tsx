@@ -207,18 +207,21 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
 
   // Calculate form completion percentage
   const formCompletion = useMemo(() => {
-    // Required fields based on form validation and UI requirements
+    // Required fields based on API validation (only truly required fields)
     const requiredFields = [
-      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka',
-      'sex', 'dateOfBirth', 'ageYears', 'ageMonths', 'educationType', 'documentType'
+      'surname', 'firstName', 'mobileNumber', 'aadhaarNumber', 'district', 'taluka'
     ]
     
     // Optional fields that contribute to completion
     const optionalFields = [
       'fathersHusbandName', 'qualification', 'occupation', 'villageName', 'houseNo', 
       'street', 'pinCode', 'email', 'yearOfPassing', 'degreeDiploma', 'nameOfUniversity', 
-      'nameOfDiploma', 'haveChangedName'
+      'nameOfDiploma', 'haveChangedName', 'sex', 'dateOfBirth', 'ageYears', 'ageMonths',
+      'educationType', 'documentType'
     ]
+    
+    // Optional files
+    const optionalFiles = ['degreeCertificate', 'residentialProof']
     
     // Conditional required fields (only required if certain conditions are met)
     const conditionalRequiredFields = []
@@ -226,15 +229,15 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
       conditionalRequiredFields.push('previousName', 'nameChangeDocumentType')
     }
     
-    // Required files
-    const requiredFiles = ['degreeCertificate', 'aadhaarCard', 'residentialProof', 'idPhoto']
+    // Required files (only truly required files)
+    const requiredFiles = ['aadhaarCard', 'idPhoto']
     
     // Conditional required files
     const conditionalFiles = formData.haveChangedName === 'Yes' ? ['marriageCertificate'] : []
     
     // Calculate totals
     const totalRequired = requiredFields.length + conditionalRequiredFields.length + requiredFiles.length + conditionalFiles.length
-    const totalOptional = optionalFields.length
+    const totalOptional = optionalFields.length + optionalFiles.length
     
     let completedRequired = 0
     let completedOptional = 0
@@ -263,6 +266,14 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
     optionalFields.forEach(field => {
       const value = formData[field as keyof typeof formData]
       if (value && value.toString().trim() !== '') {
+        completedOptional++
+      }
+    })
+    
+    // Check optional files
+    optionalFiles.forEach(field => {
+      const file = files[field as keyof typeof files]
+      if (file) {
         completedOptional++
       }
     })

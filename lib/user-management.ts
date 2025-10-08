@@ -309,8 +309,6 @@ Your account has been successfully created!
 
 📋 Account Details:
 • Name: ${user.firstName} ${user.lastName}
-• Email: ${user.email}
-• Role: ${user.role.toUpperCase()}
 • Phone: ${user.phone}
 ${user.district ? `• District: ${user.district}` : ''}
 ${user.taluka ? `• Taluka: ${user.taluka}` : ''}

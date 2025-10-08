@@ -195,7 +195,7 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       sex: (formData.get('sex') as 'M' | 'F') || 'M',
       qualification: (formData.get('qualification') as string)?.trim() || undefined,
       occupation: (formData.get('occupation') as string)?.trim() || undefined,
-      dateOfBirth: (formData.get('dateOfBirth') as string) || '',
+      dateOfBirth: (formData.get('dateOfBirth') as string)?.trim() || undefined,
       ageYears: parseInt(formData.get('ageYears') as string) || 0,
       ageMonths: parseInt(formData.get('ageMonths') as string) || 0,
 
@@ -224,8 +224,8 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       haveChangedName: (formData.get('haveChangedName') as 'Yes' | 'No') || 'No',
       previousName: (formData.get('previousName') as string)?.trim() || '',
       nameChangeDocumentType: (formData.get('nameChangeDocumentType') as string)?.trim() || '',
-      place: (formData.get('place') as string)?.trim() || '',
-      declarationDate: (formData.get('declarationDate') as string) || '',
+      place: undefined, // Not used in current form
+      declarationDate: (formData.get('declarationDate') as string)?.trim() || undefined,
       
       // Files will be handled separately
       files: {} as Record<string, any>,
@@ -348,7 +348,13 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
     console.log('✅ Public submission saved with ID:', savedSubmission.id)
     
     // Generate PDF asynchronously (don't block response)
-    const pdfPromise = generateStudentFormPDF(savedSubmission)
+    const pdfPromise = generateStudentFormPDF({
+      ...savedSubmission,
+      villageName: savedSubmission.villageName || '',
+      houseNo: savedSubmission.houseNo || '',
+      street: savedSubmission.street || '',
+      pinCode: savedSubmission.pinCode || ''
+    })
       .then(pdfPath => {
         console.log('✅ Voter form PDF generated:', pdfPath)
         return pdfPath

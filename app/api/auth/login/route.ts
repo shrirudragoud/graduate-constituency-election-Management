@@ -81,8 +81,6 @@ Your account has been successfully created!
 
 📋 Account Details:
 • Name: ${firstName} ${lastName}
-• Email: ${email}
-• Role: VOLUNTEER
 • Phone: ${phone}
 ${district ? `• District: ${district}` : ''}
 ${taluka ? `• Taluka: ${taluka}` : ''}

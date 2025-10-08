@@ -441,11 +441,21 @@ export default function TeamDashboard() {
           {/* Mobile-first header */}
           <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground truncate"></h1>
-               <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                   Welcome , <span className="font-semibold text-foreground">{user?.firstName}</span>!
-              </p>
-          </div>
+  <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground truncate">
+   
+  </h1>
+  <p className="text-sm sm:text-base text-muted-foreground mt-1">
+    Welcome,&nbsp;
+    <span
+      className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 
+                 font-extrabold text-2xl sm:text-3xl lg:text-4xl tracking-tight"
+    >
+      {user?.firstName}
+    </span>
+    !
+  </p>
+</div>
+
             <div className="flex items-center gap-1 ml-2">
               <Button onClick={handleLogout} variant="outline" size="sm" className="h-8 w-8 p-0">
                 <X className="w-4 h-4" />

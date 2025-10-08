@@ -295,23 +295,7 @@ export default function LandingPage() {
             <p className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base px-4">
               तंत्रज्ञानाद्वारे लोकशाही सशक्त करत आहोत
             </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">
-              <button 
-                onClick={() => handleNavigation('/student', 'student')}
-                disabled={isLoading}
-                className="hover:text-white hover:scale-105 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                मतदार नोंदणी
-              </button>
-              <button 
-                onClick={() => handleNavigation('/karykarta-portal', 'karykarta')}
-                disabled={isLoading}
-                className="hover:text-white hover:scale-105 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                टीममध्ये सामील व्हा
-              </button>
-              <Link href="/auth/login" className="hover:text-white hover:scale-105 transition-all duration-200 font-medium">साइन इन</Link>
-            </div>
+            
             <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-700 text-xs text-gray-400 px-4">
               © 2024 भारतीय जनता पक्ष. सर्व हक्क राखीव.
             </div>

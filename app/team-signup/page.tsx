@@ -207,7 +207,7 @@ export default function TeamSignupPage() {
             <div>
               <Label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Password (Optional - Min 4 chars)
+                Password ( Min 4 chars)
               </Label>
               <Input
                 id="password"

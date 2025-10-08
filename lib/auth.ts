@@ -74,14 +74,14 @@ export async function authenticateUser(
     )
 
     if (result.rows.length === 0) {
-      return { success: false, error: 'Invalid credentials' }
+      return { success: false, error: 'पासवर्ड किंवा नंबर अवैध आहे.' }
     }
 
     const user = result.rows[0]
     const isValidPassword = await verifyPassword(password, user.password)
 
     if (!isValidPassword) {
-      return { success: false, error: 'Invalid credentials' }
+      return { success: false, error: 'पासवर्ड किंवा नंबर अवैध आहे.' }
     }
 
     const userData: User = {

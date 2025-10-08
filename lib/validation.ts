@@ -76,10 +76,11 @@ export const validateDateOfBirth = (dateOfBirth: string): ValidationResult => {
   return { isValid: true }
 }
 
-// Email validation
+// Email validation (optional field)
 export const validateEmail = (email: string): ValidationResult => {
-  if (!email) {
-    return { isValid: false, error: "Email is required" }
+  // Email is optional, so empty email is valid
+  if (!email || email.trim() === '') {
+    return { isValid: true }
   }
   
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
@@ -323,7 +324,10 @@ export const validateStudentForm = (formData: any, files: any = {}): FieldValida
   // Contact validation
   errors.mobileNumber = validateMobileNumber(formData.mobileNumber)
   errors.aadhaarNumber = validateAadhaarNumber(formData.aadhaarNumber)
-  errors.email = validateEmail(formData.email)
+  // Only validate email if it's provided
+  if (formData.email && formData.email.trim() !== '') {
+    errors.email = validateEmail(formData.email)
+  }
   
   // Education validation - only validate if education type is selected
   if (formData.educationType) {
