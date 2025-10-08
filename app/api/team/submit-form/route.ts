@@ -219,7 +219,7 @@ export const POST = withAuth(withRateLimit(RATE_LIMITS.formSubmission, async (re
       villageName: (formData.get('villageName') as string) || '',
       houseNo: (formData.get('houseNo') as string) || '',
       street: (formData.get('street') as string) || '',
-      pinCode: (formData.get('pinCode') as string) || '',
+      pinCode: (formData.get('pinCode') as string)?.trim() || '000000',
 
       // Contact and Identification
       mobileNumber: (formData.get('mobileNumber') as string) || '',

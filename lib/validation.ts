@@ -182,7 +182,7 @@ export const validatePinCode = (pinCode: string): ValidationResult => {
   
   // Check length (6 digits for Indian PIN)
   if (cleanPinCode.length !== 6) {
-    return { isValid: false, error: "PIN code must be 6 digits" }
+    return { isValid: false, error: "PIN code must be exactly 6 digits" }
   }
   
   return { isValid: true }

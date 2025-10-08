@@ -266,7 +266,7 @@ class SubmissionsDataAccessLayer {
           newSubmission.ageYears || null, newSubmission.ageMonths || null,
           newSubmission.district, newSubmission.taluka, newSubmission.villageName || '', 
           newSubmission.houseNo || '', newSubmission.street || '', 
-          (newSubmission.pinCode && newSubmission.pinCode.trim() && /^[0-9]{6}$/.test(newSubmission.pinCode.trim())) ? newSubmission.pinCode.trim() : '',
+          (newSubmission.pinCode && newSubmission.pinCode.trim() && /^[0-9]{6}$/.test(newSubmission.pinCode.trim())) ? newSubmission.pinCode.trim() : '000000',
           newSubmission.mobileNumber, newSubmission.email || null, newSubmission.aadhaarNumber,
           newSubmission.yearOfPassing || null, newSubmission.degreeDiploma || null, newSubmission.nameOfUniversity || null, 
           newSubmission.nameOfDiploma || null, newSubmission.educationType || null, newSubmission.documentType || null,

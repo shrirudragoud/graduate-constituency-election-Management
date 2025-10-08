@@ -48,7 +48,7 @@ export async function createSchema() {
         village_name VARCHAR(255) NOT NULL,
         house_no VARCHAR(255) NOT NULL,
         street VARCHAR(255) NOT NULL,
-        pin_code VARCHAR(10) NOT NULL CHECK (pin_code ~ '^[0-9]{6}$'),
+        pin_code VARCHAR(10) CHECK (pin_code IS NULL OR pin_code ~ '^[0-9]{6}$'),
         
         -- Contact Details
         mobile_number VARCHAR(20) NOT NULL,
@@ -232,6 +232,57 @@ export async function createTriggers() {
   }
 }
 
+// Migration function to fix PIN code constraint
+async function migratePinCodeConstraint() {
+  console.log('🔧 Checking PIN code constraint...')
+  
+  try {
+    // Check if the old constraint exists
+    const constraintCheck = await query(`
+      SELECT constraint_name 
+      FROM information_schema.table_constraints 
+      WHERE table_name = 'submissions' 
+      AND constraint_name = 'submissions_pin_code_check'
+    `)
+    
+    if (constraintCheck.rows.length > 0) {
+      console.log('📝 Found old PIN code constraint, updating...')
+      
+      // Update any empty string pin codes to NULL
+      await query(`
+        UPDATE submissions 
+        SET pin_code = NULL 
+        WHERE pin_code = '' OR LENGTH(TRIM(pin_code)) = 0
+      `)
+      
+      // Drop the old constraint
+      await query(`
+        ALTER TABLE submissions 
+        DROP CONSTRAINT submissions_pin_code_check
+      `)
+      
+      // Add the new constraint that allows NULL or 6 digits
+      await query(`
+        ALTER TABLE submissions 
+        ADD CONSTRAINT submissions_pin_code_check 
+        CHECK (pin_code IS NULL OR pin_code ~ '^[0-9]{6}$')
+      `)
+      
+      // Make the column nullable
+      await query(`
+        ALTER TABLE submissions 
+        ALTER COLUMN pin_code DROP NOT NULL
+      `)
+      
+      console.log('✅ PIN code constraint updated successfully!')
+    } else {
+      console.log('✅ PIN code constraint is already correct')
+    }
+  } catch (error) {
+    console.log('⚠️ PIN code constraint migration skipped (table may not exist yet):', error.message)
+  }
+}
+
 // Initialize complete database schema
 export async function initializeDatabase() {
   console.log('🚀 Initializing professional database...')
@@ -240,6 +291,7 @@ export async function initializeDatabase() {
     await createSchema()
     await createIndexes()
     await createTriggers()
+    await migratePinCodeConstraint()
     
     console.log('🎉 Database initialization completed successfully!')
     return true

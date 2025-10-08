@@ -1,3 +1,5 @@
+"use client"
+
 import { SidebarLayout } from "@/components/sidebar-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -5,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   BarChart3,
   Users,
@@ -18,7 +22,10 @@ import {
   Clock,
   FileText,
   ArrowRight,
+  RefreshCw,
+  Lock,
 } from "lucide-react"
+import { useState, useEffect } from "react"
 
 const registrationData = [
   { name: "Jan", students: 120, approved: 110 },
@@ -85,27 +92,260 @@ const topStudents = [
   { id: 5, name: "Eva Brown", email: "eva@university.edu", status: "Approved", score: 90 },
 ]
 
+interface Submission {
+  id: string
+  surname: string
+  first_name: string
+  mobile_number: string
+  email?: string
+  district: string
+  taluka: string
+  status: string
+  created_at: string
+  filled_by_user_id?: number
+}
+
+interface User {
+  id: number
+  email: string
+  role: string
+  firstName?: string
+  lastName?: string
+  district?: string
+  taluka?: string
+  isActive: boolean
+  lastLogin?: string
+  createdAt: string
+}
+
+interface UserStats {
+  totalUsers: number
+  activeUsers: number
+  usersByRole: Record<string, number>
+  usersByDistrict: Record<string, number>
+}
+
 export default function AdminDashboard() {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [phone, setPhone] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [authError, setAuthError] = useState("")
+
+  // Data state
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Admin credentials
+  const ADMIN_CREDENTIALS = {
+    phone: "8700546080",
+    email: "Shridhar.Rudragoud@hivetech.in",
+    password: "!23456Seven"
+  }
+
+  // Handle authentication
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    setAuthError("")
+
+    if (phone === ADMIN_CREDENTIALS.phone && 
+        email === ADMIN_CREDENTIALS.email && 
+        password === ADMIN_CREDENTIALS.password) {
+      setIsAuthenticated(true)
+      fetchData()
+    } else {
+      setAuthError("Invalid credentials. Please check your phone, email, and password.")
+    }
+  }
+
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch submissions
+      const submissionsResponse = await fetch('/api/admin/submissions?limit=20')
+      const submissionsData = await submissionsResponse.json()
+
+      // Fetch users
+      const usersResponse = await fetch('/api/admin/users?limit=50')
+      const usersData = await usersResponse.json()
+
+      // Fetch user stats
+      const statsResponse = await fetch('/api/admin/users/stats')
+      const statsData = await statsResponse.json()
+
+      console.log('Submissions data:', submissionsData)
+      console.log('Users data:', usersData)
+      console.log('Stats data:', statsData)
+
+      if (submissionsData.success) {
+        setSubmissions(submissionsData.submissions || [])
+        console.log('Submissions loaded:', submissionsData.submissions?.length || 0)
+      } else {
+        console.error('Submissions API error:', submissionsData.error)
+      }
+
+      if (usersData.success) {
+        setUsers(usersData.users || [])
+        console.log('Users loaded:', usersData.users?.length || 0)
+      } else {
+        console.error('Users API error:', usersData.error)
+      }
+
+      if (statsData.success) {
+        setUserStats(statsData)
+        console.log('Stats loaded:', statsData)
+      } else {
+        console.error('Stats API error:', statsData.error)
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+      setError('Failed to load data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Calculate submission stats
+  const submissionStats = {
+    total: submissions.length,
+    approved: submissions.filter(s => s.status === 'approved').length,
+    pending: submissions.filter(s => s.status === 'pending').length,
+    rejected: submissions.filter(s => s.status === 'rejected').length,
+  }
+
+  // Calculate team activity
+  const teamActivity = users.map(user => {
+    const userSubmissions = submissions.filter(s => s.filled_by_user_id === user.id)
+    return {
+      ...user,
+      submissionCount: userSubmissions.length,
+      recentActivity: userSubmissions.length > 0 ? 'Active' : 'Inactive'
+    }
+  }).sort((a, b) => b.submissionCount - a.submissionCount)
+
+  // Show authentication form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Lock className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Admin Access</CardTitle>
+              <CardDescription>
+                Enter your credentials to access the admin dashboard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="8700546080"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                {authError && (
+                  <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
+                    {authError}
+                  </div>
+                )}
+                <Button type="submit" className="w-full">
+                  Access Admin Dashboard
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </SidebarLayout>
+    )
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span>Loading admin data...</span>
+          </div>
+        </div>
+      </SidebarLayout>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <SidebarLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
+            <p className="text-destructive">{error}</p>
+            <Button onClick={fetchData} className="mt-2">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      </SidebarLayout>
+    )
+  }
+
   return (
     <SidebarLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Manager Analytics</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Admin Dashboard</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Monitor team performance, view analytics, and manage volunteer activities.
+              Real-time view of submissions and team activity.
             </p>
           </div>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="bg-chart-1/10 text-chart-1 border-chart-1/20 text-xs sm:text-sm">
-              <Shield className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline">System Healthy</span>
-              <span className="sm:hidden">Healthy</span>
+              Live Data
             </Badge>
-            <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs sm:text-sm">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              99.9% Uptime
-            </Badge>
+            <Button onClick={fetchData} size="sm" variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
         </div>
 
@@ -114,17 +354,15 @@ export default function AdminDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Total Registrations</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">1,247</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total Submissions</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">{submissionStats.total}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <TrendingUp className="w-2 h-2 sm:w-3 sm:h-3 text-chart-1" />
-                <span className="text-[10px] sm:text-xs text-chart-1">+15.2%</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">vs last month</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">All time submissions</span>
               </div>
             </CardContent>
           </Card>
@@ -133,17 +371,15 @@ export default function AdminDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Approval Rate</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">87.3%</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Approved</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">{submissionStats.approved}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-600" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <TrendingUp className="w-2 h-2 sm:w-3 sm:h-3 text-chart-1" />
-                <span className="text-[10px] sm:text-xs text-chart-1">+2.1%</span>
-                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">improvement</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Successfully approved</span>
               </div>
             </CardContent>
           </Card>
@@ -152,40 +388,56 @@ export default function AdminDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Active Team Members</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-2">24</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Pending</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-600">{submissionStats.pending}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-2/20 rounded-lg flex items-center justify-center">
-                  <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-2" />
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-yellow-600" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-chart-2">3 online now</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Awaiting review</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-chart-1/20 bg-gradient-to-br from-background to-chart-1/5">
+          <Card className="border-chart-3/20 bg-gradient-to-br from-background to-chart-3/5">
             <CardContent className="p-3 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">System Uptime</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-1">99.9%</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Team Members</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-chart-3">{users.length}</p>
                 </div>
-                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-1/20 rounded-lg flex items-center justify-center">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-1" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-3/20 rounded-lg flex items-center justify-center">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-chart-3" />
                 </div>
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <span className="text-[10px] sm:text-xs text-chart-1 hidden sm:inline">All systems operational</span>
-                <span className="text-[10px] sm:text-xs text-chart-1 sm:hidden">Operational</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">{userStats?.activeUsers || 0} active</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-chart-4/20 bg-gradient-to-br from-background to-chart-4/5">
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600">{submissionStats.rejected}</p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-chart-4/20 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-red-600" />
+                </div>
+              </div>
+              <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Requires attention</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-12 bg-muted">
+          <TabsList className="grid w-full grid-cols-4 h-12 bg-muted">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -194,13 +446,9 @@ export default function AdminDashboard() {
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="students" className="flex items-center gap-2">
+            <TabsTrigger value="voters" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Voters</span>
-            </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">System</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <Download className="w-4 h-4" />
@@ -211,11 +459,11 @@ export default function AdminDashboard() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-              {/* Registration Trends */}
+              {/* Recent Submissions */}
               <Card>
                 <CardHeader className="pb-3 sm:pb-4">
-                  <CardTitle className="text-base sm:text-lg">Registration Trends</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Monthly registration and approval statistics</CardDescription>
+                  <CardTitle className="text-base sm:text-lg">Recent Submissions</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Latest voter registration submissions</CardDescription>
                 </CardHeader>
                 <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                   {/* Chart Container */}

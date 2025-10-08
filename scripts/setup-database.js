@@ -94,7 +94,7 @@ async function setupDatabase() {
         village_name VARCHAR(255),
         house_no VARCHAR(255),
         street VARCHAR(255),
-        pin_code VARCHAR(10) NOT NULL CHECK (pin_code ~ '^[0-9]{6}$'),
+        pin_code VARCHAR(10) CHECK (pin_code IS NULL OR pin_code ~ '^[0-9]{6}$'),
         
         -- Contact Details
         mobile_number VARCHAR(20) NOT NULL,
@@ -296,6 +296,53 @@ async function setupDatabase() {
       console.log('✅ Default admin user created (email: admin@election.com, password: admin123)')
     } catch (error) {
       console.log('⚠️ Default admin user already exists or could not be created')
+    }
+
+    // Migrate PIN code constraint if needed
+    console.log('🔧 Checking PIN code constraint...')
+    try {
+      const constraintCheck = await appPool.query(`
+        SELECT constraint_name 
+        FROM information_schema.table_constraints 
+        WHERE table_name = 'submissions' 
+        AND constraint_name = 'submissions_pin_code_check'
+      `)
+      
+      if (constraintCheck.rows.length > 0) {
+        console.log('📝 Found old PIN code constraint, updating...')
+        
+        // Update any empty string pin codes to NULL
+        await appPool.query(`
+          UPDATE submissions 
+          SET pin_code = NULL 
+          WHERE pin_code = '' OR LENGTH(TRIM(pin_code)) = 0
+        `)
+        
+        // Drop the old constraint
+        await appPool.query(`
+          ALTER TABLE submissions 
+          DROP CONSTRAINT submissions_pin_code_check
+        `)
+        
+        // Add the new constraint that allows NULL or 6 digits
+        await appPool.query(`
+          ALTER TABLE submissions 
+          ADD CONSTRAINT submissions_pin_code_check 
+          CHECK (pin_code IS NULL OR pin_code ~ '^[0-9]{6}$')
+        `)
+        
+        // Make the column nullable
+        await appPool.query(`
+          ALTER TABLE submissions 
+          ALTER COLUMN pin_code DROP NOT NULL
+        `)
+        
+        console.log('✅ PIN code constraint updated successfully!')
+      } else {
+        console.log('✅ PIN code constraint is already correct')
+      }
+    } catch (error) {
+      console.log('⚠️ PIN code constraint migration skipped:', error.message)
     }
 
     console.log('🎉 Professional database setup complete!')

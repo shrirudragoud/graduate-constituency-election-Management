@@ -120,7 +120,7 @@ export default function LandingPage() {
                 ) : (
                   <Vote className="w-4 h-4 mr-2" />
                 )}
-                कार्यकर्ता नोंदणी
+                कार्यकर्त्यासाठी
                 {!isLoading && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
               </Button>
              
@@ -233,47 +233,6 @@ export default function LandingPage() {
           <div className="absolute bottom-5 left-5 w-20 h-20 sm:w-24 sm:h-24 bg-white/10 rounded-full blur-2xl animate-pulse"></div>
         </div>
         
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
-            सुरुवात करण्यास तयार आहात?
-          </h2>
-          <p className="text-sm sm:text-base text-orange-100 mb-4 sm:mb-6 px-2">
-            तुमचा मार्ग निवडा आणि मजबूत लोकशाही निर्माण करण्यात सहभागी व्हा
-          </p>
-          <div className="flex flex-col gap-2 sm:gap-3 justify-center max-w-sm sm:max-w-none mx-auto">
-            <Button 
-              size="lg" 
-              variant="secondary" 
-              onClick={() => handleNavigation('/student', 'student')}
-              disabled={isLoading}
-              className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 group bg-white text-orange-600 hover:bg-orange-50 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isLoading && loadingType === 'student' ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Vote className="w-4 h-4 mr-2" />
-              )}
-              मतदार नोंदणी करा
-              {!isLoading && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              onClick={() => handleNavigation('/karykarta-portal', 'karykarta')}
-              disabled={isLoading}
-              className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base border-2 border-white text-white hover:bg-white hover:text-orange-600 transition-all duration-300 group shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {isLoading && loadingType === 'karykarta' ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <UserPlus className="w-4 h-4 mr-2" />
-              )}
-              <span className="hidden sm:inline">आमच्या टीममध्ये सामील व्हा</span>
-              <span className="sm:hidden">टीममध्ये सामील व्हा</span>
-              {!isLoading && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
-            </Button>
-          </div>
-        </div>
       </section>
 
       {/* Footer - Compact mobile design */}

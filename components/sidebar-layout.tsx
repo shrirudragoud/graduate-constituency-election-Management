@@ -39,9 +39,9 @@ const navigation = [
   },
   {
     name: "Manager Analytics",
-    href: "/admin",
+    href: "/admin-new",
     icon: BarChart3,
-    description: "Team analytics",
+    description: "Team analytics with live data",
     roles: ["manager", "admin"]
   },
   {

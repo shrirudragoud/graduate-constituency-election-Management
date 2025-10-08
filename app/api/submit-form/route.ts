@@ -205,7 +205,7 @@ export const POST = withRateLimit(RATE_LIMITS.formSubmission, async (request: Ne
       villageName: (formData.get('villageName') as string)?.trim() || '',
       houseNo: (formData.get('houseNo') as string)?.trim() || '',
       street: (formData.get('street') as string)?.trim() || '',
-      pinCode: (formData.get('pinCode') as string)?.trim() || '',
+      pinCode: (formData.get('pinCode') as string)?.trim() || '000000',
 
       // Contact and Identification
       mobileNumber: (formData.get('mobileNumber') as string)?.trim() || '',

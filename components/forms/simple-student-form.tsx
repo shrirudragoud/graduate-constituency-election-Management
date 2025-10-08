@@ -794,8 +794,9 @@ export function SimpleStudentForm({ open, onOpenChange, onSubmissionSuccess, api
                     value={formData.pinCode}
                     onChange={(e) => handleInputChange("pinCode", e.target.value)}
                     placeholder="Enter pin code (optional)"
-                    className="mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg"
+                    className={getInputClassName("pinCode", "mt-1 border-2 border-gray-300 focus:border-green-500 rounded-lg")}
                   />
+                  <ValidationError field="pinCode" />
                 </div>
               </div>
               

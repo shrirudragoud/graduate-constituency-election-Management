@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Form-18 | ECI - Shridhar Rudragoud</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "Roboto", "Arial", "Helvetica", "sans-serif", "Times New Roman", serif;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      font-size: 10px;
+      line-height: 1.2;
+      color: #000;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .marathi {
+      font-family: "Noto Sans", "Arial", "sans-serif";
+      font-size: 9px;
+    }
+    
+    .form-container {
+      width: 100%;
+      max-width: 21cm;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #000;
+      padding: 15px;
+      position: relative;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      border-bottom: 1px solid #000;
+      padding-bottom: 10px;
+    }
+    
+    .eci-logo {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 50px;
+      height: 50px;
+      border: 1px solid #000;
+      background: #fff;
+    }
+    
+    .eci-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    .header h1 {
+      margin: 2px 0;
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .header h2 {
+      margin: 2px 0;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .header h3 {
+      margin: 2px 0;
+      font-size: 10px;
+      font-weight: normal;
+    }
+    
+    .photo-section {
+      float: right;
+      width: 45mm;
+      height: 35mm;
+      border: 1px solid #000;
+      margin: 5px 0 10px 10px;
+      text-align: center;
+      font-size: 8px;
+      padding: 2px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .photo-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      max-width: 100%;
+      max-height: 100%;
+    }
+    
+    .photo-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #666;
+      font-size: 7px;
+      line-height: 1.1;
+      text-align: center;
+    }
+    
+    .form-content {
+      clear: both;
+    }
+    
+    .section {
+      margin: 8px 0;
+      padding: 5px;
+    }
+    
+    .section-title {
+      font-weight: bold;
+      font-size: 10px;
+      margin-bottom: 5px;
+      color: #000;
+    }
+    
+    .field-row {
+      display: flex;
+      margin: 3px 0;
+      align-items: center;
+      min-height: 15px;
+    }
+    
+    .field-label {
+      font-weight: bold;
+      min-width: 80px;
+      margin-right: 5px;
+      font-size: 9px;
+    }
+    
+    .field-value {
+      border-bottom: 1px solid #000;
+      flex: 1;
+      padding: 1px 3px;
+      min-height: 15px;
+      background: #fff;
+      font-size: 9px;
+    }
+    
+    .field-value-long {
+      border-bottom: 1px solid #000;
+      flex: 1;
+      padding: 1px 3px;
+      min-height: 15px;
+      background: #fff;
+      min-width: 200px;
+      font-size: 9px;
+    }
+    
+    .checkbox-field {
+      display: flex;
+      align-items: center;
+      margin: 2px 0;
+    }
+    
+    .checkbox {
+      width: 10px;
+      height: 10px;
+      border: 1px solid #000;
+      margin-right: 5px;
+      display: inline-block;
+    }
+    
+    .checkbox.checked {
+      background: #000;
+    }
+    
+    .photos-section {
+      margin-top: 20px;
+      page-break-inside: avoid;
+    }
+    
+    .supporting-doc-page {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .doc-page-content {
+      width: 90%;
+      height: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .doc-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .doc-image-wrapper {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .doc-full-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border: 1px solid #ddd;
+    }
+    
+    .doc-signature-area {
+      width: 100%;
+      text-align: center;
+    }
+    
+    .doc-signature-line {
+      border-bottom: 2px solid #000;
+      width: 200px;
+      margin: 0 auto 10px auto;
+    }
+    
+    .doc-signature-text {
+      font-size: 12px;
+      font-style: italic;
+    }
+    
+    .signature-section {
+      margin-top: 30px;
+      text-align: right;
+    }
+    
+    .signature-line {
+      border-bottom: 1px solid #000;
+      width: 200px;
+      margin: 5px 0;
+      display: inline-block;
+    }
+    
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 10px;
+      border-top: 1px solid #000;
+      padding-top: 10px;
+    }
+    
+    @media print {
+      body { margin: 0; padding: 10px; }
+      .form-container { border: 2px solid #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <div class="header">
+      <div class="eci-logo"><img src="data:image/png;base64,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" alt="ECI Logo"></div>
+      <h1>ELECTION COMMISSION OF INDIA</h1>
+      <h2>Form-18 (See Rule 31)</h2>
+      <h3>Claim for inclusion of name in the electoral roll for a Graduates' Constituency</h3>
+    </div>
+    
+    <div class="photo-section">
+      <div style="font-size: 6px; margin-bottom: 2px; line-height: 1.1;"><br><br><br><br><br><br><br></div>
+      <div class="photo-placeholder">Photo<br>Not Provided</div>
+    </div>
+    
+    <div class="form-content">
+      <div style="margin-bottom: 10px;">
+        <div style="font-size: 9px; margin-bottom: 5px;">
+          <strong>To.<br>
+          The Electoral Registration Officer,<br>
+          (Graduates) Constituency.<br><br>
+          Sir,<br>
+          I request that my name be registered in the Electoral Roll for the<br>
+          (Graduates') Constituency.</strong>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">1. The particulars are :-</div>
+        <div class="field-row">
+          <div class="field-label">Full Name</div>
+          <div class="field-value">Shridhar Rudragoud</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Father's/Mother's/Husband's Name (in full)</div>
+          <div class="field-value-long">qwd</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Qualification</div>
+          <div class="field-value">Not Provided</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Occupation</div>
+          <div class="field-value">PROGRAMMER</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Sex</div>
+          <div class="field-value">Male</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Date of Birth</div>
+          <div class="field-value">Wed Jan 29 1992 00:00:00 GMT+0000 (Coordinated Universal Time)</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Age</div>
+          <div class="field-value">33 Years 9 Months</div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">House Address (Place of ordinary residence)</div>
+        <div class="field-row">
+          <div class="field-label">House/Building/Apartment No.</div>
+          <div class="field-value"></div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Street/Mohalla</div>
+          <div class="field-value-long">Emral height 303, prasad nagar near hemant bora classe</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Town/Village</div>
+          <div class="field-value-long"></div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Police Station/Tehsil/Taluqa/Mouza</div>
+          <div class="field-value">Bhokardan</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">District</div>
+          <div class="field-value">Jalna</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Post Office</div>
+          <div class="field-value">411014</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">State</div>
+          <div class="field-value">Maharashtra</div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">Contact Number :-</div>
+        <div class="field-row">
+          <div class="field-label">Mobile No. (optional)</div>
+          <div class="field-value">8700546080</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Email Id (if any)</div>
+          <div class="field-value-long">shridharrudragoud6@gmail.com</div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Aadhaar Number</div>
+          <div class="field-value-long">111223344544</div>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">2. Educational Qualification:</div>
+        <div style="font-size: 9px; margin: 5px 0;">
+          I am a graduate of the University having passed the degree/diploma examination in Graduation in the year Not Provided.
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">3. Supporting Documents:</div>
+        <div style="font-size: 9px; margin: 5px 0;">
+          In support of my claim as being a graduate/in possession of the above diploma/certificate. I submit herewith the following documents:
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">4. Declaration:</div>
+        <div style="font-size: 9px; margin: 5px 0;">
+          My name has not been included in the electoral roll for this or any other graduates' constituency.
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">5. Final Declaration:</div>
+        <div style="font-size: 9px; margin: 5px 0;">
+          I declare that I am a citizen of India and that all the particulars given above are true to the best of my knowledge and belief.
+        </div>
+      </div>
+      
+      <div class="signature-section" style="margin-top: 20px;">
+        <div style="margin: 10px 0;">
+          <span style="font-size: 9px;">Place</span>
+          <div style="display: inline-block; width: 100px; border-bottom: 1px solid #000; margin: 0 10px;"></div>
+          <span style="font-size: 9px;">Date</span>
+          <div style="display: inline-block; width: 100px; border-bottom: 1px solid #000; margin: 0 10px;"></div>
+        </div>
+        <div style="margin: 10px 0;">
+          <span style="font-size: 9px;">Signature of claimant</span>
+        </div>
+      </div>
+      
+      <!-- NOTE and Form ID section - at bottom of ECI Form-18 -->
+      <div class="footer" style="margin-top: 30px; font-size: 8px; text-align: left; border-top: 1px solid #000; padding-top: 10px;">
+        <div style="margin-bottom: 5px;">
+          <strong>NOTE:</strong> Any person who makes a statement or declaration which is false and which he either knows or believes to be false or does not believe to be true is punishable under section 31 of the Representation of the People Act, 1950
+        </div>
+        <div style="margin-top: 10px; font-size: 7px; text-align: center;">
+          <strong>Form ID:</strong> SUB_1759907533438_gv8zfr | <strong>Generated:</strong> 08/10/2025, 07:12:13
+        </div>
+      </div>
+      
+      
+    </div>
+  </div>
+</body>
+</html>

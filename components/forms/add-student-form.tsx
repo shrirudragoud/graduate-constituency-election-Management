@@ -25,6 +25,8 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
   const [showThankYou, setShowThankYou] = useState(false)
   const [submissionId, setSubmissionId] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<FieldValidation>({})
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
   const [formData, setFormData] = useState({
     // Personal Details
     surname: "",
@@ -227,6 +229,18 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       
       return newData
     })
+    
+    // Mark field as touched
+    setTouchedFields(prev => new Set([...prev, field]))
+    
+    // Validate field
+    if (typeof value === 'string') {
+      const fieldError = validateField(field, value, formData)
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: fieldError
+      }))
+    }
   }
 
   const handleFileChange = (field: string, file: File | null) => {
@@ -272,6 +286,37 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
       panCard: null,
       signaturePhoto: null,
     })
+    setValidationErrors({})
+    setTouchedFields(new Set())
+  }
+
+  // Helper component for validation error display
+  const ValidationError = ({ field }: { field: string }) => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched || !error || error.isValid) return null
+    
+    return (
+      <div className="flex items-center gap-1 text-red-600 text-xs mt-1">
+        <AlertCircle className="h-3 w-3" />
+        <span>{error.error}</span>
+      </div>
+    )
+  }
+
+  // Helper function to get input className with validation state
+  const getInputClassName = (field: string, baseClassName: string = "") => {
+    const error = validationErrors[field]
+    const isTouched = touchedFields.has(field)
+    
+    if (!isTouched) return `${baseClassName} transition-all duration-200 focus:ring-2 focus:ring-blue-500/20`
+    
+    if (error && !error.isValid) {
+      return `${baseClassName} border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-200`
+    }
+    
+    return `${baseClassName} border-green-500 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200`
   }
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -687,10 +732,11 @@ export function AddStudentForm({ open, onOpenChange }: AddStudentFormProps) {
                               value={formData.pinCode}
                               onChange={(e) => handleInputChange("pinCode", e.target.value)}
                               placeholder="Enter pin code (optional)"
-                              className="h-11 sm:h-10 text-sm sm:text-base"
+                              className={getInputClassName("pinCode", "h-11 sm:h-10 text-sm sm:text-base")}
                               maxLength={6}
                               pattern="[0-9]{6}"
                             />
+                            <ValidationError field="pinCode" />
                           </div>
                         </div>
 

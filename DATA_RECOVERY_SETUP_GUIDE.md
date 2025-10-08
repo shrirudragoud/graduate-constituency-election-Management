@@ -111,7 +111,7 @@ const dbConfig = {
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'election_enrollment',
-  password: process.env.DB_PASSWORD || 'password',
+  password: process.env.DB_PASSWORD || 'HiveTech',
   port: parseInt(process.env.DB_PORT || '5432'),
   
   // High-concurrency pool settings
@@ -188,7 +188,7 @@ export async function testConnection(retries = 3): Promise<boolean> {
 #### Backup Creation
 ```bash
 # Automatic backup with timestamp
-pg_dump -h localhost -U postgres -d election_enrollment -f "backup-2024-01-15T10-30-00.sql"
+pg_dump -h localhost -U postgres -d election_enrollment -f "backup-2025-01-15T10-30-00.sql"
 ```
 
 #### Data Validation
